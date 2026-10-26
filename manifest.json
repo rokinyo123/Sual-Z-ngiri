@@ -10,5 +10,12 @@
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#14532d",
-  "icons": []
+  "icons": [
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
