@@ -7,10 +7,10 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#5C2E0E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-:root{--bg:#f5f6f8;--card:#fff;--text:#1d2330;--muted:#6b7280;--line:#e2e5ea;--accent:#2563eb;--late:#b91c1c;--ok:#15803d;--soft:#eef2f7}
+:root{--bg:#F5E6CC;--card:#FFF8EC;--text:#3B1F0E;--muted:#7A5C43;--line:#E3CFAE;--accent:#5C2E0E;--late:#B91C1C;--ok:#15803D;--soft:#F0DFC2}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.4}
 header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 14px}
@@ -47,7 +47,7 @@ main{padding:12px 14px 60px;max-width:760px;margin:0 auto}
 
 /* ===== Görünüş təkmilləşdirmələri ===== */
 @media (prefers-color-scheme: dark){
-  :root{--bg:#14171c;--card:#1d2128;--text:#e8eaee;--muted:#9aa3b2;--line:#2c323c;--soft:#252b35}
+  :root{--bg:#1F1510;--card:#2A1D16;--text:#F5E6CC;--muted:#C9A989;--line:#4A3328;--accent:#D9A066;--soft:#3A2A20}
 }
 body{-webkit-font-smoothing:antialiased}
 header{box-shadow:0 2px 10px rgba(0,0,0,.06)}
@@ -85,7 +85,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 <div id="appView" style="display:none">
   <header>
     <div class="row" style="justify-content:space-between">
-      <b style="font-size:18px">Sual Zənciri</b>
+      <div class="row" style="gap:10px"><img src="logo.jpg" alt="Almond" style="height:38px;border-radius:8px"><b style="font-size:18px">Sual Zənciri</b></div>
       <div class="row"><span class="hint" id="whoami"></span><button id="logoutBtn">Çıxış</button></div>
     </div>
     <div class="err" id="status"></div>
@@ -131,9 +131,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ===== Bunları öz Supabase layihənizdən götürüb yazın =====
-const SUPABASE_URL = "https://qzvyawuhmqdhzawfihzy.supabase.co/";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s";
-
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
 // ==========================================================
 
 const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Satış","Rəhbərlik"];
