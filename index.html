@@ -135,7 +135,7 @@ const SUPABASE_URL = "https://qzvyawuhmqdhzawfihzy.supabase.co/";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s";
 // ==========================================================
 
-const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Satış","Rəhbərlik"];
+const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Satış","Çeşidləmə","Rəhbərlik"];
 const HOUR = 3600000;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -181,7 +181,7 @@ async function loadProfile(uid){
 }
 
 // Hər şöbənin daxili e-poçtu: slug@sual.local (istifadəçi görmür)
-const SLUGS = {"Anbar":"anbar","Anbar (İnqilab)":"anbar-inqilab","Satınalma":"satinalma","Texnoloq":"texnoloq","Keyfiyyət":"keyfiyyet","İstehsalat":"istehsalat","Satış":"satis","Rəhbərlik":"rehberlik"};
+const SLUGS = {"Anbar":"anbar","Anbar (İnqilab)":"anbar-inqilab","Satınalma":"satinalma","Texnoloq":"texnoloq","Keyfiyyət":"keyfiyyet","İstehsalat":"istehsalat","Satış":"satis","Çeşidləmə":"cesidleme","Rəhbərlik":"rehberlik"};
 $("loginDept").innerHTML = DEPTS.map(d => '<option value="' + esc(d) + '">' + esc(d) + '</option>').join("");
 
 $("loginBtn").onclick = async () => {
