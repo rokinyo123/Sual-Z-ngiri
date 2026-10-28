@@ -411,7 +411,7 @@ function card(q){
     '<div class="q">' + esc(q.text) + '</div>' +
     '<div class="chain">' + chain + '</div>' +
     (q.status === "answered" ? '<div class="comment"><b>Cavab:</b> ' + esc(q.answer) + '</div>' : "") +
-    dueBox(q) + files + '<div style="margin-top:6px">' + fileBox + '</div>' +
+    dueBox(q) + delBox(q) + files + '<div style="margin-top:6px">' + fileBox + '</div>' +
     '<div style="margin-top:8px">' + actions + '</div>' +
     commentBox + cs +
     '</div>';
@@ -431,6 +431,15 @@ function dueBox(q){
     : '<span class="b late">⚠ GƏLİŞ TARİXİ ÇATDI: ' + esc(q.expected_date) + '</span>';
   const btn = (canArrive && days <= 0) ? ' <button class="pri" data-act="arrived" data-id="' + q.id + '">Gəldi</button>' : '';
   return '<div>' + line + btn + '</div>';
+}
+// Arxivlənmiş sual arxivə düşdükdən 24 saat sonra pg_cron ilə silinir; burada yalnız vaxt göstərilir
+function delBox(q){
+  if (!(q.confirmed || q.arrived)) return "";
+  const ts = [q.confirmed ? q.confirmed_at : null, q.arrived ? q.arrived_at : null]
+    .filter(Boolean).map(t => new Date(t).getTime()).filter(n => !isNaN(n));
+  if (!ts.length) return "";
+  const at = new Date(Math.min(...ts) + 24 * HOUR).toLocaleString("az-AZ", { timeZone: "Asia/Baku", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return '<div class="hint" style="margin-top:4px">🗑 Silinəcək: ' + esc(at) + ' (Bakı vaxtı)</div>';
 }
 function stat(n, label){ return '<div class="stat"><b>' + n + '</b><span>' + label + '</span></div>'; }
 function renderDash(){
