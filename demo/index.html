@@ -98,6 +98,7 @@ tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.o
 .pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
 .pname:hover{border-color:var(--line)}
 .imp{background:var(--info-bg);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.addtag{display:inline-block;font-size:11px;font-weight:600;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px}
 .newtag{display:inline-block;font-size:11px;font-weight:600;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px}
 .it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
 .pact{display:flex;gap:6px;margin-top:4px}
@@ -400,9 +401,10 @@ function orderCard(o){
   const showState = o.eta && o.status!=="acik" && !o.missing;
   const rows = o.items.map((i,k)=>{
     const st = showState ? itemState(o,i) : null;
-    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(pmeta(i.pid)?'<div class="meta">'+esc(pmeta(i.pid))+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
+    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(i.added?' <span class="addtag">+ əlavə</span>':"")+(pmeta(i.pid)?'<div class="meta">'+esc(pmeta(i.pid))+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
   }).join("");
   let pills = '<span class="pill '+stc+'">'+(o.status==="yolda"?"Gözlənilir":stl)+'</span><span class="pill p-mute">'+esc(o.type)+'</span>';
+  if (o.addedAt && isOpen(o) && o.status==="acik") pills = '<span class="pill p-warn">SİFARİŞƏ ƏLAVƏ EDİLDİ · '+fmtT(o.addedAt).slice(11)+'</span>' + pills;
   if (o.missing) pills = '<span class="pill p-bad">GƏLMƏYƏN MALLAR · #'+o.parent+'</span>' + pills;
   if (o.followup) pills += '<span class="pill p-bad">'+o.items.filter(itemMissing).length+' mal gəlmədi → #'+o.followup+'</span>';
   if (h) pills += '<span class="pill '+(lt?"p-bad":"p-warn")+'">'+(lt?"GECİKİR · Rəhbərlik":"Növbə: "+esc(h))+' · '+age(Date.now()-new Date(o.last_move))+'</span>';
@@ -417,7 +419,7 @@ function orderCard(o){
     (o.note?'<div>'+esc(o.note)+'</div>':"")+
     '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th>'+(showState?'<th>Vəziyyət</th>':"")+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
     (o.supplier?'<div class="meta">Təchizatçı: '+esc(o.supplier)+'</div>':"")+
-    photos + fileList(o.files||[],o.id) + (m ? actions(o) : "") + comments +
+    photos + fileList(o.files||[],o.id) + (m ? actions(o) : "") + addBox(o) + comments +
     '<div class="row"><input class="grow" id="c-'+o.id+'" placeholder="Şərh yazın"><button class="sm" data-act="comment" data-id="'+o.id+'">Şərh</button>'+
     '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📷 Şəkil<input type="file" accept="image/*" data-photo="'+o.id+'" hidden></label>'+
     '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📎 Fayl<input type="file" data-file="'+o.id+'" hidden></label>'+
@@ -460,6 +462,42 @@ function viewSheet(key, i){
   box.hidden = false;
 }
 
+// ----- Göndərilmiş sifarişə əlavə (yalnız göndərən, həmin günün sonuna qədər) -----
+// Mal qəbulu başlamayıbsa əlavə olunur. Satınalma sifarişi artıq qəbul edibsə, sifariş
+// əlavələrlə birlikdə yenidən Satınalmaya qayıdır ki, yeni malları da sifariş etsin.
+const addDraft = {};
+const canAdd = o => o.from===role && !o.missing && o.created.slice(0,10)===today() && ["acik","yolda"].includes(o.status) && o.items.every(i=>i.got==null);
+function addBox(o){
+  if (!canAdd(o)) return "";
+  const d = addDraft[o.id];
+  if (!d) return '<div class="row"><button class="sm" data-addopen="'+o.id+'">+ Sifarişə əlavə et</button><span class="hint">Bu gün 23:59-a qədər mümkündür.</span></div>';
+  return '<div class="box"><h3>Sifarişə əlavə</h3>'+datalist()+
+    d.map((r,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adı" data-ad="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ad="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'"><button class="sm" data-addrow="'+o.id+'-'+k+'" aria-label="Sil">×</button></div>').join("")+
+    '<div class="row"><button class="sm" data-addmore="'+o.id+'">+ Sətir</button></div>'+
+    '<div class="hint">'+(o.status==="yolda"?"Satınalma bu sifarişi artıq qəbul edib. Göndərəndə sifariş yeni mallarla birlikdə yenidən Satınalmaya qayıdacaq.":"Sifariş hələ Satınalmadadır, yeni mallar dərhal ona görünəcək.")+'</div>'+
+    '<div class="row"><button class="pri" data-addsend="'+o.id+'">Əlavəni göndər</button><button data-addcancel="'+o.id+'">Ləğv et</button></div></div>';
+}
+function addSend(id){
+  const o = S.orders.find(x=>x.id===id), d = addDraft[id] || [];
+  if (!canAdd(o)) { delete addDraft[id]; render(); return toast("Bu sifarişə artıq əlavə etmək olmaz"); }
+  const rows = d.filter(r=>r.n.trim() || r.q.trim());
+  const bad = rows.find(r=>!pidByName(r.n));
+  if (bad) return toast("“"+bad.n+"” kataloqda yoxdur, siyahıdan seçin");
+  const noQ = rows.find(r=>!r.q.trim());
+  if (noQ) return toast(noQ.n+": miqdarı yazın");
+  if (!rows.length) return toast("Ən azı bir məhsul yazın");
+  rows.forEach(r=>o.items.push({pid:pidByName(r.n), qty:normQty(r.q), added:true}));
+  const note = rows.map(r=>r.n.trim()+" "+normQty(r.q)).join(", ");
+  o.addedAt = new Date().toISOString();
+  if (o.status==="yolda"){
+    const si = o.chain.indexOf("Satınalma");
+    o.status = "acik"; if (si>=0) o.step = si; o.last_move = o.addedAt;
+    addLog(o,"Sifarişə əlavə edildi, yenidən Satınalmaya göndərildi",note);
+  } else addLog(o,"Sifarişə əlavə edildi",note);
+  delete addDraft[id]; save(); render();
+  toast(rows.length+" mal əlavə olundu → Satınalma");
+}
+
 // Şöbəyə görə düymələr — zəncirin "ağıllı" hissəsi
 function actions(o){
   const h = holder(o);
@@ -468,7 +506,7 @@ function actions(o){
   if (actor==="Satınalma" && o.status==="acik"){
     b += '<h3>'+(o.missing?"Satınalma: bu mallar niyə gəlmədi?":"Satınalma: sifarişi qəbul et")+'</h3>'+
       (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb, maşın gecikdi)">':"")+
-      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><input class="grow" type="date" id="eta-'+o.id+'" value="'+plusDays(1)+'"></div>'+
+      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><input class="grow" type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'"></div>'+
       '<div class="hint">Gəliş tarixi (adətən sabah). Sifariş <b>'+esc(o.chain[o.step+1]||"—")+'</b> şöbəsinin “Gözləyən” siyahısına həmin tarixlə düşəcək və kalendarda görünəcək.</div>'+
       '<div class="row"><button class="pri" data-act="buy" data-id="'+o.id+'">Qəbul etdim → gözləyənə göndər</button><button data-act="fwd" data-id="'+o.id+'">Yalnız ötür</button></div>';
   } else if (WAREHOUSES.includes(actor) && o.status==="yolda"){
@@ -843,7 +881,7 @@ $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-full],[data-zoom],[data-range],[data-jf],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-full],[data-zoom],[data-range],[data-jf],[data-addopen],[data-addrow],[data-addmore],[data-addsend],[data-addcancel],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
@@ -853,6 +891,11 @@ $("main").addEventListener("click", e => {
   if (t.dataset.catfirm){ catFirm=t.dataset.catfirm; catQ=""; render(); $("cF").scrollIntoView({block:"start"}); return; }
   if (t.dataset.unfirm) return unFirm(Number(t.dataset.unfirm));
   if (t.id==="ffAdd") return addToFirm();
+  if (t.dataset.addopen){ addDraft[t.dataset.addopen] = [{n:"",q:""}]; render(); return; }
+  if (t.dataset.addmore){ addDraft[t.dataset.addmore].push({n:"",q:""}); render(); return; }
+  if (t.dataset.addrow){ const [id,k]=t.dataset.addrow.split("-"); addDraft[id].splice(Number(k),1); if (!addDraft[id].length) addDraft[id].push({n:"",q:""}); render(); return; }
+  if (t.dataset.addcancel){ delete addDraft[t.dataset.addcancel]; render(); return; }
+  if (t.dataset.addsend) return addSend(Number(t.dataset.addsend));
   if (t.dataset.range){ setRange(t.dataset.range); render(); return; }
   if (t.dataset.jf){ jf=t.dataset.jf; render(); return; }
   if (t.dataset.goorder){ const o=S.orders.find(x=>x.id===Number(t.dataset.goorder)); tab="orders"; filter=isOpen(o)?"all":"arch"; RF=RT=odate(o); render(); return; }
@@ -904,7 +947,7 @@ function saveGot(el){
   addLog(o,"Qeyd edildi",pname(i.pid)+": "+i.qty+" sifariş, "+val+" gəldi ("+gotState(i.qty,val)[0]+")");
   save(); renderTabs();
 }
-$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } });
+$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; } if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } });
 
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
@@ -1013,7 +1056,7 @@ function delFirm(f){
 }
 
 // Müddət keçdikcə görünüşü yenilə
-setInterval(()=>{ if (!["new","catalog","arr","orders"].includes(tab)) render(); }, 60000);
+setInterval(()=>{ if (!["new","catalog","arr","orders"].includes(tab) && !Object.keys(addDraft).length) render(); }, 60000);
 renderRole(); render();
 </script>
 </body>
