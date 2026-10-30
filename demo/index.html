@@ -258,7 +258,7 @@ S.products.forEach(p=>{ if (p.size===undefined) p.size = guessSize(p.name); });
 S.moves = S.moves.map(m=>m.wh ? m : { id:m.id, wh:m.from, to:m.to, product:(m.items||[]).map(i=>pname(i.pid)+" "+i.qty).join(", "), note:m.note||"", by:m.by, at:m.created });
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
-let RF = "", RT = "", jf = "all";
+let RF = "", RT = "", jf = "all", catFirm = "", catQ = "";
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
 let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
 
@@ -344,6 +344,7 @@ function render(){
   const v = { panel:vPanel, orders:vOrders, new:vNew, cal:vCal, arr:vArr, stock:vStock, moves:vMoves, catalog:vCatalog, history:vHistory }[tab];
   $("main").innerHTML = v();
   if (tab==="new") bindNew();
+  if (tab==="catalog") filterRows($("cQ"));
 }
 
 // ----- Panel -----
@@ -717,16 +718,22 @@ function vCatalog(){
     html += '<div class="card mine"><h3>Admin · yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><select class="grow" id="pF">'+firmOpts("")+'</select><button class="pri" id="pAdd">Məhsul əlavə et</button></div></div>'+
       '<div class="hint">Şəkil əlavə etmək üçün məhsulun yanındakı 📷 xanasına basın. Məhsulun adını və ya ölçüsünü dəyişmək üçün siyahıda həmin xanaya basın, düzəldin və Enter basın. Ölçülər addan avtomatik götürülüb, yoxlayın.</div>'+
       '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
-      '<div class="firms">'+S.firms.map(f=>'<span class="firm">'+esc(f)+' <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
+      '<div class="firms">'+S.firms.map(f=>'<span class="firm"><button class="linkb" data-catfirm="'+esc(f)+'">'+esc(f)+'</button> <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
       '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
   } else {
     html += '<div class="hint">Kataloqu yalnız <b>Admin</b> dəyişə bilər: məhsul və firma əlavə etmək, silmək. Siz yalnız baxa bilərsiniz.</div>';
   }
-  html += '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..."><select id="cF" style="width:auto;max-width:100%">'+fopts+'</select><span class="hint" id="cN">'+P.length+' məhsul</span></div>'+
+  const byFirm = catFirm && catFirm!=="-";
+  html += '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..." value="'+esc(catQ)+'"><select id="cF" style="width:auto;max-width:100%">'+fopts.replace('value="'+esc(catFirm)+'"','value="'+esc(catFirm)+'" selected')+'</select><span class="hint" id="cN">'+P.length+' məhsul</span></div>';
+  if (byFirm && admin) html += '<div class="card mine"><h3>'+esc(catFirm)+' · '+P.filter(p=>p.firm===catFirm).length+' məhsul</h3>'+
+    '<div class="row"><input class="grow" id="ffN" list="ffl" placeholder="Bu firmaya məhsul əlavə et (siyahıdan seçin və ya yeni ad yazın)"><datalist id="ffl">'+P.filter(p=>p.firm!==catFirm).map(p=>'<option value="'+esc(p.name)+'">'+esc(p.firm||"firmasız")+'</option>').join("")+'</datalist><button class="pri" id="ffAdd">Əlavə et</button></div>'+
+    '<div class="hint">Məhsul bu firmadan artıq gəlmirsə, sətirdəki <b>“Firmadan çıxar”</b> düyməsini basın: məhsul kataloqda qalır, sadəcə firmasız olur. Məhsulu kataloqdan tamamilə silmək üçün <b>“Sil”</b> basın.</div></div>';
+  else if (byFirm) html += '<div class="hint">Bu firmaya məhsul əlavə etmək və ya çıxarmaq üçün yuxarıdan <b>Admin</b> seçin.</div>';
+  html += ''+
     '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Ölçü</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
     P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı">':esc(p.name))+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
-      (admin?'<td><button class="sm badb" data-pdel="'+p.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>';
+      (admin?'<td><div class="row" style="flex-wrap:nowrap">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div></td>':"")+'</tr>').join("")+'</tbody></table></div>';
   return html;
 }
 
@@ -741,13 +748,16 @@ $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-full],[data-zoom],[data-range],[data-jf],[data-goorder],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-full],[data-zoom],[data-range],[data-jf],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
   if (t.dataset.cal){ calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+Number(t.dataset.cal),1); calSel=null; render(); return; }
   if (t.dataset.day){ calSel = calSel===t.dataset.day ? null : t.dataset.day; render(); return; }
   if (t.dataset.del){ draft.items.splice(Number(t.dataset.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
+  if (t.dataset.catfirm){ catFirm=t.dataset.catfirm; catQ=""; render(); $("cF").scrollIntoView({block:"start"}); return; }
+  if (t.dataset.unfirm) return unFirm(Number(t.dataset.unfirm));
+  if (t.id==="ffAdd") return addToFirm();
   if (t.dataset.range){ setRange(t.dataset.range); render(); return; }
   if (t.dataset.jf){ jf=t.dataset.jf; render(); return; }
   if (t.dataset.goorder){ const o=S.orders.find(x=>x.id===Number(t.dataset.goorder)); tab="orders"; filter=isOpen(o)?"all":"arch"; RF=RT=odate(o); render(); return; }
@@ -771,7 +781,7 @@ $("main").addEventListener("change", async e => {
   if (el.dataset.got){ saveGot(el); return; }
   if (el.dataset.pphoto){ setPhoto(el); return; }
   if (el.dataset.ii!=null){ setItem(el); return; }
-  if (el.id==="cF"){ filterRows($("cQ")); return; }
+  if (el.id==="cF"){ catFirm=el.value; render(); return; }
   if (el.dataset.pname && role==="Admin"){ renameProduct(el); return; }
   if (el.dataset.psize && role==="Admin"){ const p=prod(el.dataset.psize), v=el.value.trim(); if (v===(p.size||"")) return; S.log.push({by:role,act:"Ölçü dəyişdirildi",note:p.name+": "+(p.size||"—")+" → "+(v||"—"),at:now()}); p.size=v; save(); el.closest("tr").dataset.s=(p.name+" "+v).toLowerCase(); toast("Ölçü yadda saxlandı"); return; }
   if (el.dataset.firm && role==="Admin"){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
@@ -801,7 +811,7 @@ function saveGot(el){
   addLog(o,"Qeyd edildi",pname(i.pid)+": "+i.qty+" sifariş, "+val+" gəldi ("+gotState(i.qty,val)[0]+")");
   save(); renderTabs();
 }
-$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"||el.id==="sQ") filterRows(el); });
+$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } if (el.id==="sQ") filterRows(el); });
 
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
@@ -888,6 +898,20 @@ function delProduct(id){
   S.log.push({by:role,act:"Məhsul kataloqdan silindi",note:p.name,at:now()});
   save(); render(); toast(p.name+" silindi");
 }
+function unFirm(id){
+  if (role!=="Admin") return;
+  const p=prod(id), f=p.firm; p.firm="";
+  S.log.push({by:role,act:"Məhsul firmadan çıxarıldı",note:p.name+" · "+f,at:now()});
+  save(); render(); toast(p.name+" artıq "+f+" firmasından gəlmir");
+}
+function addToFirm(){
+  if (role!=="Admin") return;
+  const name=$("ffN").value.trim(); if (!name) return toast("Məhsulun adını yazın və ya seçin");
+  const id=pidByName(name);
+  if (id){ const p=prod(id), old=p.firm; p.firm=catFirm; S.log.push({by:role,act:"Məhsul firmaya əlavə edildi",note:p.name+" · "+(old||"firmasız")+" → "+catFirm,at:now()}); toast(p.name+" → "+catFirm); }
+  else { const p={id:Math.max(...S.products.map(x=>x.id))+1,name,firm:catFirm,size:guessSize(name)}; S.products.push(p); S.log.push({by:role,act:"Kataloqa məhsul əlavə edildi",note:name+" · "+catFirm,at:now()}); toast("Yeni məhsul: "+name+" · "+catFirm); }
+  save(); render();
+}
 function addFirm(){
   if (role!=="Admin") return;
   const f=$("fN").value.trim(); if(!f) return toast("Firmanın adını yazın");
@@ -899,6 +923,7 @@ function addFirm(){
 function delFirm(f){
   if (role!=="Admin") return;
   S.firms = S.firms.filter(x=>x!==f);
+  if (catFirm===f) catFirm="";
   S.products.forEach(p=>{ if (p.firm===f) p.firm=""; });
   S.log.push({by:role,act:"Firma silindi",note:f,at:now()});
   save(); render(); toast(f+" silindi");
