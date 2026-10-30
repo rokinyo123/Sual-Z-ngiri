@@ -91,6 +91,9 @@ td.low{color:var(--bad);font-weight:700}
 .btnlink{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:13px;color:var(--fg);text-decoration:none}
 .sheet{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px}
 .sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
+.pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
+.pname:hover{border-color:var(--line)}
+.pname:focus{background:var(--bg);border-color:var(--accent)}
 .firms{display:flex;flex-wrap:wrap;gap:6px}
 .firm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--bg)}
 .firm button{padding:0 7px;border-radius:999px;font-size:13px;line-height:20px}
@@ -542,6 +545,7 @@ function vCatalog(){
   let html = '<h2>Məhsul kataloqu</h2>';
   if (admin){
     html += '<div class="card mine"><h3>Admin · yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><select class="grow" id="pF">'+firmOpts("")+'</select><button class="pri" id="pAdd">Məhsul əlavə et</button></div></div>'+
+      '<div class="hint">Məhsulun adını dəyişmək üçün aşağıdakı siyahıda adın üstünə basın, düzəldin və Enter basın.</div>'+
       '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
       '<div class="firms">'+S.firms.map(f=>'<span class="firm">'+esc(f)+' <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
       '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
@@ -550,7 +554,7 @@ function vCatalog(){
   }
   html += '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..."><select id="cF" style="width:auto;max-width:100%">'+fopts+'</select><span class="hint" id="cN">'+P.length+' məhsul</span></div>'+
     '<div class="card tbl"><table><thead><tr><th>#</th><th>Məhsul</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
-    P.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td>'+esc(p.name)+'</td><td>'+
+    P.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı">':esc(p.name))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
       (admin?'<td><button class="sm badb" data-pdel="'+p.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>';
   return html;
@@ -589,6 +593,7 @@ $("main").addEventListener("change", async e => {
   const el = e.target;
   if (el.dataset.ii!=null){ setItem(el); return; }
   if (el.id==="cF"){ filterRows($("cQ")); return; }
+  if (el.dataset.pname && role==="Admin"){ renameProduct(el); return; }
   if (el.dataset.firm && role==="Admin"){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
   if (el.dataset.chain){ const d=el.dataset.chain; draft.chain = el.checked ? draft.chain.concat([d]) : draft.chain.filter(x=>x!==d); render(); return; }
   if (el.dataset.file){ const o=S.orders.find(x=>x.id===Number(el.dataset.file)); o.files=o.files||[]; for (const f of el.files){ const x=await readFile(f); if (x){ o.files.push(x); addLog(o,"Fayl əlavə edildi",x.name); } } save(); render(); return; }
@@ -657,6 +662,18 @@ function addProduct(){
   const p={id:Math.max(...S.products.map(x=>x.id))+1,name,firm:$("pF").value};
   S.products.push(p); S.log.push({by:role,act:"Kataloqa məhsul əlavə edildi",note:name+(p.firm?" · "+p.firm:""),at:now()});
   save(); render(); toast(name+" əlavə olundu");
+}
+// Ad dəyişəndə köhnə sifarişlərdə də yeni ad görünür (sifariş məhsulu nömrə ilə saxlayır)
+function renameProduct(el){
+  const p = prod(el.dataset.pname), name = el.value.trim();
+  if (!name){ el.value = p.name; return toast("Ad boş ola bilməz"); }
+  if (name === p.name) return;
+  const other = pidByName(name);
+  if (other && other !== p.id){ el.value = p.name; return toast("“"+name+"” adlı məhsul artıq var"); }
+  S.log.push({by:role,act:"Məhsulun adı dəyişdirildi",note:p.name+" → "+name,at:now()});
+  p.name = name; save();
+  el.value = name; el.closest("tr").dataset.s = name.toLowerCase();
+  toast("Ad dəyişdirildi: "+name);
 }
 // Silinən məhsul köhnə sifarişlərdə adı ilə qalır, sadəcə yeni sifarişdə seçilmir
 function delProduct(id){
