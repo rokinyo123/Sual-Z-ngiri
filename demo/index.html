@@ -79,6 +79,9 @@ details.more>summary::-webkit-details-marker{display:none}
 details.more[open]>summary{margin-bottom:8px}
 .more-in{display:flex;flex-direction:column;gap:8px}
 .ometa{font-size:13px;color:var(--muted)}
+.timing{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.timing>div{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:center}
+.tl{display:block;width:100%;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 details.rangebar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 details.rangebar>summary{cursor:pointer;font-size:14px}
 details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
@@ -234,7 +237,7 @@ function seed(){
   const now = Date.now();
   const H = (by,act,note,ago) => ({by,act,note:note||"",at:new Date(now-ago*HOUR).toISOString()});
   const orders = [
-    { id:101, type:"Həftəlik", from:"Anbar", wh:"Anbar", created:new Date(now-50*HOUR).toISOString(),
+    { id:101, etaTime:"10:00", type:"Həftəlik", from:"Anbar", wh:"Anbar", created:new Date(now-50*HOUR).toISOString(),
       items:[{pid:id("bulğur"),qty:"20 kq"},{pid:id("Düyü uzun"),qty:"25 kq"},{pid:id("Mayonez"),qty:"2 qutu"},{pid:id("suxarı unu"),qty:"10 kq"}],
       chain:["Satınalma","Anbar","Keyfiyyət","Texnoloq"], step:1, status:"yolda", eta:plusDays(0), supplier:"Tayqa (Veliyev Nahid Abbas oglu)",
       deadline_h:48, last_move:new Date(now-20*HOUR).toISOString(), note:"Həftəlik ümumi sifariş", photos:[], comments:[],
@@ -244,25 +247,25 @@ function seed(){
       chain:["Satınalma","Anbar (İnqilab)","Texnoloq"], step:0, status:"acik", deadline_h:4,
       last_move:new Date(now-6*HOUR).toISOString(), note:"Bu gün sirniki çox satılıb, kəsmik çatmır", photos:[], comments:[{by:"Satınalma",text:"Şünasifə zəng edirik",at:new Date(now-2*HOUR).toISOString()}],
       history:[H("İstehsalat","Sifariş yaradıldı","",6)] },
-    { id:103, type:"Gündəlik", from:"Satış", wh:"Anbar", created:new Date(now-30*HOUR).toISOString(),
+    { id:103, etaTime:"11:00", type:"Gündəlik", from:"Satış", wh:"Anbar", created:new Date(now-30*HOUR).toISOString(),
       items:[{pid:id("D38 penaplast"),qty:"500"},{pid:id("40*80 penaplast"),qty:"200"}],
       chain:["Satınalma","Anbar","Keyfiyyət"], step:1, status:"yolda", eta:plusDays(3), supplier:"İlkin penaplast",
       deadline_h:72, last_move:new Date(now-28*HOUR).toISOString(), note:"Bayram üçün qab ehtiyatı", photos:[], comments:[],
       history:[H("Satış","Sifariş yaradıldı","",30),H("Satınalma","Təchizatçıya sifariş verildi","İlkin penaplast · gəliş "+fmtD(plusDays(3)),28)] },
-    { id:104, type:"Gündəlik", from:"Texnoloq", wh:"Anbar", created:new Date(now-26*HOUR).toISOString(),
+    { id:104, etaTime:"09:30", type:"Gündəlik", from:"Texnoloq", wh:"Anbar", created:new Date(now-26*HOUR).toISOString(),
       items:[{pid:id("keşniş"),qty:"15 dəstə",got:15},{pid:id("Bibər"),qty:"10 kq",got:8}],
       chain:["Satınalma","Anbar","Keyfiyyət","Texnoloq"], step:2, status:"qebul", eta:plusDays(-1), supplier:"Rofruit",
       deadline_h:6, last_move:new Date(now-3*HOUR).toISOString(), note:"Salat xəttinə", photos:[], comments:[],
       history:[H("Texnoloq","Sifariş yaradıldı","",26),H("Satınalma","Təchizatçıya sifariş verildi","Rofruit",24),H("Anbar","Mal qəbul edildi","Bibər: 10 əvəzinə 8 gəldi",3)] },
-    { id:105, type:"Gündəlik", from:"Çeşidləmə", wh:"Anbar", created:new Date(now-8*DAY).toISOString(),
+    { id:105, etaTime:"10:00", type:"Gündəlik", from:"Çeşidləmə", wh:"Anbar", created:new Date(now-8*DAY).toISOString(),
       items:[{pid:id("Kakos iri"),qty:"10 kq",got:10}], chain:["Satınalma","Anbar","Keyfiyyət"], step:3, status:"bagli", eta:plusDays(-6), supplier:"RİCH S.A. MMC",
       deadline_h:24, last_move:new Date(now-6*DAY).toISOString(), note:"", photos:[], comments:[],
       history:[H("Çeşidləmə","Sifariş yaradıldı","",192),H("Keyfiyyət","Keyfiyyət təsdiqlədi","Nəmlik normadadır",144),H("Sistem","Zəncir tamamlandı","",144)] },
-    { id:106, type:"Gündəlik", from:"Anbar (İnqilab)", wh:"Anbar (İnqilab)", created:new Date(now-3*DAY).toISOString(),
+    { id:106, etaTime:"09:00", type:"Gündəlik", from:"Anbar (İnqilab)", wh:"Anbar (İnqilab)", created:new Date(now-3*DAY).toISOString(),
       items:[{pid:id("Strec"),qty:"6"},{pid:id("Paraşok"),qty:"5"}], chain:["Satınalma","Anbar (İnqilab)"], step:1, status:"yolda", eta:plusDays(7), supplier:"Loyal Packing",
       deadline_h:200, last_move:new Date(now-2*DAY).toISOString(), note:"", photos:[], comments:[],
       history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",72),H("Satınalma","Təchizatçıya sifariş verildi","Loyal Packing",48)] },
-    { id:107, type:"Gündəlik", from:"Anbar", wh:"Anbar", created:new Date(now-40*HOUR).toISOString(),
+    { id:107, etaTime:"08:30", type:"Gündəlik", from:"Anbar", wh:"Anbar", created:new Date(now-40*HOUR).toISOString(),
       items:[{pid:id("Yumurta"),qty:"900",got:900},{pid:id("kəsmik"),qty:"20 kq",got:20},{pid:id("xama 10%"),qty:"4 kq",got:2},{pid:id("toyuq file"),qty:"15 kq"},{pid:id("Aysberq"),qty:"5 kq"},{pid:id("keşniş"),qty:"15 dəstə",got:15}],
       chain:["Satınalma","Anbar","Keyfiyyət"], step:1, status:"yolda", eta:plusDays(-1), supplier:"",
       deadline_h:24, last_move:new Date(now-30*HOUR).toISOString(), note:"24 saatlıq sifariş", photos:[], comments:[],
@@ -298,7 +301,7 @@ let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let RF = "", RT = "", jf = "all", catFirm = "", catQ = "";
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
-let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
+let draft = { type:"Gündəlik", wh:WAREHOUSES.includes(role)?role:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
 
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
 const prod = id => S.products.find(p=>p.id===Number(id));
@@ -437,7 +440,7 @@ function spWaiting(){
            : '<div class="meta">'+(r.i.reason?'Səbəb: '+esc(r.i.reason):'Səbəb yazılmayıb')+'</div>')+'</div>';
     const names = rs => rs.map(r=>esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span>').join(" · ");
     return '<div class="card'+(G.bad.length?" late":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.from)+' → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'</h3><span class="pill '+state[1]+'">'+state[0]+'</span></div>'+
-      '<div class="row">'+(G.bad.length?'<span class="pill p-bad">'+G.bad.length+' gəlmədi</span>':"")+(G.warn.length?'<span class="pill p-warn">'+G.warn.length+' yarımçıq</span>':"")+(G.ok.length?'<span class="pill p-ok">'+G.ok.length+' tam gəldi</span>':"")+(G.wait.length?'<span class="pill p-info">'+G.wait.length+' gözlənilir</span>':"")+'<span class="meta">Gəliş '+fmtD(o.eta)+'</span></div>'+
+      '<div class="row">'+(G.bad.length?'<span class="pill p-bad">'+G.bad.length+' gəlmədi</span>':"")+(G.warn.length?'<span class="pill p-warn">'+G.warn.length+' yarımçıq</span>':"")+(G.ok.length?'<span class="pill p-ok">'+G.ok.length+' tam gəldi</span>':"")+(G.wait.length?'<span class="pill p-info">'+G.wait.length+' gözlənilir</span>':"")+'<span class="meta">Gəliş '+etaTxt(o)+' · '+o.deadline_h+' saatlıq</span></div>'+
       (G.bad.length?'<div class="grp"><div class="gh bad">🔴 Gəlməyən mallar</div>'+G.bad.map(reasonRow).join("")+'</div>':"")+
       (G.warn.length?'<div class="grp"><div class="gh warn">🟡 Yarımçıq gələn mallar</div>'+G.warn.map(reasonRow).join("")+'</div>':"")+
       (G.ok.length?'<div class="grp"><div class="gh ok">🟢 Tam gələn mallar</div><div class="small">'+names(G.ok)+'</div></div>':"")+
@@ -459,12 +462,27 @@ function upcoming(){
   const by = {}; list.forEach(o=>(by[o.eta]=by[o.eta]||[]).push(o));
   return '<h2>Yaxın günlərdə gələcəklər</h2><div class="card up">'+Object.keys(by).sort().map(d=>
     '<div class="upd"><div class="upday"><b>'+fmtD(d).slice(0,5)+'</b><span>'+(d===today()?"bu gün":daysTo(d)===1?"sabah":wday(d))+'</span></div><div class="upf">'+
-    by[d].map(o=>'<button class="chipb" data-goorder="'+o.id+'"><b>'+esc(o.supplier||"Firmasız")+'</b> <span class="meta">#'+o.id+' · '+o.items.length+' mal · '+esc(o.wh)+'</span></button>').join("")+'</div></div>').join("")+'</div>';
+    by[d].map(o=>'<button class="chipb" data-goorder="'+o.id+'"><b>'+esc(o.supplier||"Firmasız")+'</b> <span class="meta">'+(o.etaTime?o.etaTime+' · ':"")+'#'+o.id+' · '+o.items.length+' mal · '+esc(o.wh)+'</span></button>').join("")+'</div></div>').join("")+'</div>';
 }
 function tile(label,n,cls,go){ return '<button class="tile '+cls+'" data-go="'+go+'"><b>'+n+'</b><span>'+label+'</span></button>'; }
 function itemsShort(o){ return o.items.map(i=>pname(i.pid)+" "+i.qty).join(", "); }
 
 // ----- Sifariş kartı -----
+// Sifarişin vaxtı: göndərən neçə saatlıq istəyib, Satınalma nə vaxt gətirəcəyini deyib
+const needBy = o => new Date(new Date(o.created).getTime() + o.deadline_h*HOUR);
+const etaAt = o => o.eta ? new Date(o.eta+"T"+(o.etaTime||"23:59")+":00") : null;
+const etaTxt = o => o.eta ? fmtD(o.eta)+(o.etaTime?" · "+o.etaTime:"") : "";
+function timing(o){
+  const nb = needBy(o), ea = etaAt(o);
+  let sp;
+  if (o.eta && o.status!=="acik"){
+    const diffH = Math.round((ea - nb)/HOUR);
+    sp = '<b>'+etaTxt(o)+'</b> gətirəcək'+(o.supplier?' <span class="meta">('+esc(o.supplier)+')</span>':"")+
+      (o.etaTime && diffH>0 ? ' <span class="pill p-bad">tələbdən '+diffH+' saat gec</span>' : o.etaTime ? ' <span class="pill p-ok">vaxtında</span>' : "");
+  } else sp = '<span class="meta">hələ qəbul etməyib, gəliş vaxtı yazılmayıb</span>';
+  return '<div class="timing"><div><span class="tl">'+esc(o.from)+'</span><b>'+o.deadline_h+' saatlıq</b> sifariş · '+fmtT(nb)+'-dək lazımdır</div>'+
+    '<div><span class="tl">Satınalma</span>'+sp+'</div></div>';
+}
 const openMore = new Set();
 function orderCard(o){
   const h = holder(o), lt = late(o), m = mine(o);
@@ -483,14 +501,14 @@ function orderCard(o){
   // bir status nişanı + yalnız diqqət tələb edənlər
   let main;
   if (lt) main = ['GECİKİR · Rəhbərlik · '+age(Date.now()-new Date(o.last_move)),"p-bad"];
-  else if (o.status==="yolda"){ const d=daysTo(o.eta); main = ['Gözlənilir · '+(d>0?fmtD(o.eta).slice(0,5)+" ("+d+" gün)":d===0?"bu gün":(-d)+" gün gecikir"), d<0?"p-bad":"p-info"]; }
+  else if (o.status==="yolda"){ const d=daysTo(o.eta); main = ['Gözlənilir · '+(d>0?fmtD(o.eta).slice(0,5):d===0?"bu gün":(-d)+" gün gecikir")+(o.etaTime?" "+o.etaTime:""), d<0?"p-bad":"p-info"]; }
   else if (h) main = ['Növbə: '+esc(h)+' · '+age(Date.now()-new Date(o.last_move)),"p-warn"];
   else main = [stl,stc];
   let pills = '<span class="pill '+main[1]+'">'+main[0]+'</span>';
   if (o.missing) pills = '<span class="pill p-bad">GƏLMƏYƏN MALLAR · #'+o.parent+'</span>' + pills;
   if (o.addedAt && isOpen(o) && o.status==="acik") pills += '<span class="pill p-warn">Əlavə edildi · '+fmtT(o.addedAt).slice(11)+'</span>';
   if (o.followup) pills += '<span class="pill p-bad">'+o.items.filter(itemMissing).length+' mal gəlmədi → #'+o.followup+'</span>';
-  const meta = [o.type, o.supplier, o.group?"#"+o.group+" sifarişinin hissəsi "+o.part:"", fmtT(o.created)].filter(Boolean).map(esc).join(" · ");
+  const meta = [o.type, o.group?"#"+o.group+" sifarişinin hissəsi "+o.part:"", fmtT(o.created)].filter(Boolean).map(esc).join(" · ");
   const photos = o.photos.length ? '<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>' : "";
   const comments = o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+'</div>').join("");
   const nf = o.photos.length + (o.files||[]).length;
@@ -503,7 +521,7 @@ function orderCard(o){
     '<div class="log">'+o.history.map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div></details>';
   return '<div class="card'+(m?" mine":"")+(lt||(o.missing&&isOpen(o))?" late":"")+'">'+
     '<div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.from)+' → '+esc(o.wh)+'</h3><div class="row">'+pills+'</div></div>'+
-    '<div class="ometa">'+meta+'</div>'+
+    '<div class="ometa">'+meta+'</div>'+ timing(o) +
     (o.note?'<div>'+esc(o.note)+'</div>':"")+
     (receiving ? "" : '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th>'+(showState?'<th>Vəziyyət</th>':"")+'</tr></thead><tbody>'+rows+'</tbody></table></div>')+
     (m ? actions(o) : "") + addBox(o) + more + '</div>';
@@ -596,29 +614,31 @@ function firmGroups(o){
 }
 function firmDates(o){
   const G = firmGroups(o);
-  return '<div class="hint">Bu sifarişdə <b>'+G.length+' firmanın</b> malı var. Hər firma üçün gəliş tarixini yazın: sifariş firmalar üzrə bölünəcək və hər biri öz günündə gözləniləcək.</div>'+
+  return '<div class="hint">Bu sifarişdə <b>'+G.length+' firmanın</b> malı var. Hər firma üçün gəliş tarixini və saatını yazın: sifariş firmalar üzrə bölünəcək və hər biri öz günündə gözləniləcək.</div>'+
     G.map((g,k)=>'<div class="fgrp"><div class="pn"><b>'+(g.firm?esc(g.firm):"Firmasız")+'</b><span class="meta">'+g.idx.length+' mal: '+esc(g.idx.slice(0,4).map(i=>pname(o.items[i].pid)).join(", "))+(g.idx.length>4?"…":"")+'</span></div>'+
-      '<div class="row"><input class="grow" id="gsup-'+o.id+'-'+k+'" list="flist" placeholder="Təchizatçı" value="'+esc(g.firm)+'"><input class="grow" type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'"></div></div>').join("");
+      '<div class="row"><input class="grow" id="gsup-'+o.id+'-'+k+'" list="flist" placeholder="Təchizatçı" value="'+esc(g.firm)+'"><input class="grow" type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'"><input type="time" id="getat-'+o.id+'-'+k+'" value="'+(o.etaTime||"")+'" style="width:auto" aria-label="Gəliş saatı"></div></div>').join("");
 }
 function splitAccept(o){
   const G = firmGroups(o), parts = [];
   for (let k=0;k<G.length;k++){
     const eta = ($("geta-"+o.id+"-"+k)||{}).value;
+    const tm = ($("getat-"+o.id+"-"+k)||{}).value;
     if (!eta) return toast((G[k].firm||"Firmasız")+": gəliş tarixini seçin"), null;
-    parts.push({ eta, sup:(($("gsup-"+o.id+"-"+k)||{}).value||"").trim(), items:G[k].idx.map(i=>o.items[i]) });
+    if (!tm) return toast((G[k].firm||"Firmasız")+": gəliş saatını yazın"), null;
+    parts.push({ eta, tm, sup:(($("gsup-"+o.id+"-"+k)||{}).value||"").trim(), items:G[k].idx.map(i=>o.items[i]) });
   }
   o.chain = ensureWh(o.chain, o.wh);
   const all = o.items, base = JSON.parse(JSON.stringify(o));
   const list = parts.map((pt,k)=>{
     const x = k===0 ? o : Object.assign(JSON.parse(JSON.stringify(base)), { id:nextId(), comments:[] });
     x.items = k===0 ? pt.items : JSON.parse(JSON.stringify(pt.items));
-    x.eta = pt.eta; x.supplier = pt.sup; x.status = "yolda";
+    x.eta = pt.eta; x.etaTime = pt.tm; x.acceptedAt = new Date().toISOString(); x.supplier = pt.sup; x.status = "yolda";
     if (parts.length>1){ x.group = o.id; x.part = (k+1)+"/"+parts.length; }
     if (k>0) S.orders.unshift(x);
     return x;
   });
-  const summary = list.map(x=>(x.supplier||"Firmasız")+" → "+fmtD(x.eta)).join("; ");
-  list.forEach(x=>advance(x, "Sifariş qəbul edildi"+(list.length>1?" (firmalar üzrə bölündü, "+x.part+")":""), (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(list.length>1?" · hamısı: "+summary:"")));
+  const summary = list.map(x=>(x.supplier||"Firmasız")+" → "+etaTxt(x)).join("; ");
+  list.forEach(x=>advance(x, "Sifariş qəbul edildi"+(list.length>1?" (firmalar üzrə bölündü, "+x.part+")":""), (x.supplier||"Firmasız")+" · gəliş "+etaTxt(x)+(list.length>1?" · hamısı: "+summary:"")));
   return list;
 }
 
@@ -632,8 +652,8 @@ function actions(o){
       (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb, maşın gecikdi)" value="'+esc(parentReasons(o))+'">':"")+
       '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       (firmGroups(o).length>1 ? firmDates(o) :
-      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><input class="grow" type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'"></div>'+
-      '<div class="hint">Gəliş tarixi (adətən sabah). Sifariş <b>'+esc(o.wh)+'</b> anbarının “Gözləyən” siyahısına həmin tarixlə düşəcək və kalendarda görünəcək.</div>')+
+      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><input class="grow" type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'"><input type="time" id="etat-'+o.id+'" value="'+(o.etaTime||"")+'" style="width:auto" aria-label="Gəliş saatı"></div>'+
+      '<div class="hint">Gəliş tarixi və <b>saatı</b> mütləqdir. Sifariş <b>'+esc(o.wh)+'</b> anbarının “Gözləyən” siyahısına həmin tarixlə düşəcək və kalendarda görünəcək.</div>')+
       '<div class="row"><button class="pri" data-act="buy" data-id="'+o.id+'">Qəbul etdim → gözləyənə göndər</button><button data-act="fwd" data-id="'+o.id+'">Yalnız ötür</button></div>';
   } else if (WAREHOUSES.includes(actor) && o.status==="yolda"){
     const d = daysTo(o.eta);
@@ -858,7 +878,7 @@ function vNew(){
     '<div class="meta">Göndərən: <b>'+esc(role)+'</b></div>'+
     '<div class="row"><div class="grow"><div class="hint">Növ</div><select id="nType"><option'+(draft.type==="Gündəlik"?" selected":"")+'>Gündəlik</option><option'+(draft.type==="Həftəlik"?" selected":"")+'>Həftəlik</option></select></div>'+
     '<div class="grow"><div class="hint">Hansı anbara gəlsin</div><select id="nWh">'+WAREHOUSES.map(w=>'<option'+(draft.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></div>'+
-    '<div class="grow"><div class="hint">Hər addım üçün müddət</div><select id="nDl">'+[2,4,8,24,48,72].map(h=>'<option value="'+h+'"'+(draft.deadline==h?" selected":"")+'>'+h+' saat</option>').join("")+'</select></div></div>'+
+    '<div class="grow"><div class="hint">Sifariş neçə saatlıqdır</div><select id="nDl">'+[2,4,8,12,24,48,72].map(h=>'<option value="'+h+'"'+(draft.deadline==h?" selected":"")+'>'+h+' saatlıq</option>').join("")+'</select></div></div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><h3>Məhsullar'+(draft.items.filter(i=>i.pid||i.pname).length?' ('+draft.items.filter(i=>i.pid||i.pname).length+')':"")+'</h3><div class="row"><label class="btnlink" style="cursor:pointer">📥 Excel-dən doldur<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>'+(canOcr?'<label class="btnlink" style="cursor:pointer">📷 Şəkildən doldur<input type="file" id="nOcr" accept="image/*" multiple hidden></label>':"")+'</div></div>'+importInfo()+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
     '<div class="box"><div class="row" style="justify-content:space-between"><h3>Zəncir</h3><button class="sm" id="autoChain">Avtomatik zəncir qur</button></div>'+
     '<div class="hint">Şöbələri sıra ilə seçin. Sifariş bu ardıcıllıqla keçəcək.</div><div class="checks" id="nChain">'+chainChecks+'</div></div>'+
@@ -1007,7 +1027,7 @@ function vCatalog(){
 }
 
 // ===================== Hadisələr =====================
-$("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+"-role",role);}catch(x){} draft.chain=[]; render(); toast(role+" ekranı"); };
+$("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+"-role",role);}catch(x){} draft.chain=[]; if (WAREHOUSES.includes(role)) draft.wh=role; render(); toast(role+" ekranı"); };
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
@@ -1094,10 +1114,11 @@ function orderAct(act, id){
       save(); render(); return toast(list.length+" firmaya bölündü: "+list.map(x=>fmtD(x.eta)).filter((d,i,a)=>a.indexOf(d)===i).join(", "));
     }
     o.chain = ensureWh(o.chain, o.wh);
-    o.eta=eta; o.supplier=v("sup").trim(); o.status="yolda";
+    const tm=v("etat"); if (!tm) return toast("Gəliş saatını yazın");
+    o.eta=eta; o.etaTime=tm; o.acceptedAt=new Date().toISOString(); o.supplier=v("sup").trim(); o.status="yolda";
     if (o.missing) o.comments.push({by:role,text:"Səbəb: "+v("why").trim(),at:new Date().toISOString()});
-    advance(o,"Sifariş qəbul edildi",[o.supplier, "gəliş "+fmtD(eta), o.missing?"səbəb: "+v("why").trim():""].filter(Boolean).join(" · "));
-    toast(o.chain[o.step]+" gözləyən siyahısına düşdü · "+fmtD(eta));
+    advance(o,"Sifariş qəbul edildi",[o.supplier, "gəliş "+etaTxt(o), o.missing?"səbəb: "+v("why").trim():""].filter(Boolean).join(" · "));
+    toast(o.chain[o.step]+" gözləyən siyahısına düşdü · "+etaTxt(o));
   }
   else if (act==="save-got" || act==="receive"){
     const got=[];
