@@ -149,7 +149,7 @@ const pad = n => String(n).padStart(2,"0");
 const dstr = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today = () => dstr(new Date());
 const plusDays = n => dstr(new Date(Date.now()+n*DAY));
-const fmtT = t => new Date(t).toLocaleString("az-AZ",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+const fmtT = t => { const d = new Date(t); return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear()+" "+pad(d.getHours())+":"+pad(d.getMinutes()); };
 const fmtD = s => { const [y,m,d] = s.split("-"); return d+"."+m+"."+y; };
 const daysTo = s => Math.round((new Date(s+"T00:00:00") - new Date(today()+"T00:00:00"))/DAY);
 const age = ms => { const m = Math.max(1,Math.floor(ms/60000)); if (m<60) return m+" dəq"; const h=Math.floor(m/60); return h<24 ? h+" saat" : Math.floor(h/24)+" gün"; };
@@ -202,8 +202,10 @@ function seed(){
       history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",72),H("Satınalma","Təchizatçıya sifariş verildi","Loyal Packing",48)] }
   ];
   const moves = [
-    { id:201, from:"Anbar", to:"Anbar (İnqilab)", items:[{pid:id("Yumurta"),qty:"180"},{pid:id("D38 penaplast"),qty:"50"}], status:"gozle", by:"Anbar", created:new Date(now-5*HOUR).toISOString(), note:"Səhər maşınla göndərildi" },
-    { id:202, from:"Anbar (İnqilab)", to:"Anbar", items:[{pid:id("Kakos iri"),qty:"3 kq"}], status:"islendi", by:"Anbar (İnqilab)", created:new Date(now-2*DAY).toISOString(), note:"", done_by:"Anbar", done_at:new Date(now-40*HOUR).toISOString() }
+    { id:201, wh:"Anbar", to:"İstehsalat", product:"Yumurta 180 ədəd", note:"Səhər növbəsi üçün", by:"Anbar", at:new Date(now-5*HOUR).toISOString() },
+    { id:202, wh:"Anbar", to:"Anbar (İnqilab)", product:"D38 penaplast", note:"50 ədəd", by:"Anbar", at:new Date(now-26*HOUR).toISOString() },
+    { id:203, wh:"Anbar (İnqilab)", to:"Mağaza 2", product:"almond kulok böyük", note:"200 ədəd", by:"Anbar (İnqilab)", at:new Date(now-3*HOUR).toISOString() },
+    { id:204, wh:"Anbar (İnqilab)", to:"Anbar", product:"Kakos iri", note:"3 kq geri qaytarıldı", by:"Anbar (İnqilab)", at:new Date(now-2*DAY).toISOString() }
   ];
   const log = [];
   orders.forEach(o=>o.history.forEach(h=>log.push({...h,ref:"Sifariş #"+o.id})));
@@ -215,8 +217,8 @@ const KEY = "almond-anbar-demo-v2";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
-// köhnə demo məlumatı: yer dəyişmə artıq yalnız iki anbar arasında qeyddir
-S.moves = S.moves.filter(m=>WAREHOUSES.includes(m.from)&&WAREHOUSES.includes(m.to)).map(m=>(m.status==="gozle"||m.status==="islendi") ? m : {...m,status:m.status==="qebul"?"islendi":"gozle"});
+// köhnə demo məlumatı: yer dəyişmə artıq hər anbarın öz sadə qeyd siyahısıdır
+S.moves = S.moves.map(m=>m.wh ? m : { id:m.id, wh:m.from, to:m.to, product:(m.items||[]).map(i=>pname(i.pid)+" "+i.qty).join(", "), note:m.note||"", by:m.by, at:m.created });
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
@@ -258,7 +260,7 @@ function renderRole(){
   $("role").innerHTML = DEPTS.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
 }
 function renderTabs(){
-  const n = S.orders.filter(mine).length + S.moves.filter(moveMine).length;
+  const n = S.orders.filter(mine).length;
   $("tabs").innerHTML = TABS.map(([k,l])=>'<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'">'+l+(k==="panel"&&n?'<span class="n">'+n+'</span>':"")+'</button>').join("");
 }
 function render(){
@@ -271,11 +273,10 @@ function render(){
 // ----- Panel -----
 function vPanel(){
   const my = S.orders.filter(mine);
-  const myMoves = S.moves.filter(moveMine);
   const dueToday = S.orders.filter(o=>o.status==="yolda" && o.eta && daysTo(o.eta)<=0);
   const lt = S.orders.filter(late);
   const tiles =
-    tile("Mənim növbəm", my.length+myMoves.length, my.length?"warn":"", "orders:mine") +
+    tile("Mənim növbəm", my.length, my.length?"warn":"", "orders:mine") +
     tile("Bu gün / gecikən gəliş", dueToday.length, dueToday.length?"bad":"", "cal") +
     tile("Müddəti keçən", lt.length, lt.length?"bad":"", "orders:late") +
     tile("Yolda olan", S.orders.filter(o=>o.status==="yolda").length, "", "orders:yolda") +
@@ -284,8 +285,8 @@ function vPanel(){
   html += '<div class="tiles">'+tiles+'</div>';
   if (dueToday.length) html += '<div class="card late"><h3>⚠ Gəliş tarixi çatıb</h3>'+dueToday.map(o=>'<div class="row"><span class="mono">#'+o.id+'</span><span class="grow">'+esc(itemsShort(o))+'</span><span class="pill p-bad">'+fmtD(o.eta)+'</span><span class="meta">'+esc(o.wh)+'</span></div>').join("")+'</div>';
   html += '<h2>Sizin növbənizdə</h2>';
-  html += (my.length ? my.map(orderCard).join("") : "") + (myMoves.length ? myMoves.map(moveCard).join("") : "");
-  if (!my.length && !myMoves.length) html += '<div class="card"><div class="hint">'+esc(role)+' üçün hazırda gözləyən iş yoxdur.</div></div>';
+  html += my.map(orderCard).join("");
+  if (!my.length) html += '<div class="card"><div class="hint">'+esc(role)+' üçün hazırda gözləyən iş yoxdur.</div></div>';
   return html;
 }
 function tile(label,n,cls,go){ return '<button class="tile '+cls+'" data-go="'+go+'"><b>'+n+'</b><span>'+label+'</span></button>'; }
@@ -501,33 +502,35 @@ function filterRows(el){
   if ($("cN") && el.id==="cQ") $("cN").textContent = n+" məhsul";
 }
 
-// ----- Yer dəyişmə: yalnız Anbar ↔ Anbar (İnqilab), qeyd kimi -----
-// Əsl yer dəyişmə 1C-də aparılır. Burada sadəcə "1C-yə hələ vurulmayıb" xatırlatması saxlanılır, qalığa toxunmur.
-const MV = { gozle:["1C-yə vurulmayıb","p-warn"], islendi:["1C-də işləndi","p-ok"] };
-function moveMine(mv){ return mv.status==="gozle" && (role===mv.from || role===mv.to); }
-function moveCard(mv){
-  const [l,c] = MV[mv.status];
-  const can = mv.status==="gozle" && (WAREHOUSES.includes(role) || role==="Rəhbərlik");
-  return '<div class="card'+(moveMine(mv)?" mine":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">YD-'+mv.id+'</span> · '+esc(mv.from)+' → '+esc(mv.to)+'</h3><span class="meta">'+fmtT(mv.created)+' · '+esc(mv.by)+'</span></div>'+
-    '<div class="row"><span class="pill '+c+'">'+l+'</span>'+(mv.done_by?'<span class="meta">'+esc(mv.done_by)+' · '+fmtT(mv.done_at)+'</span>':"")+'</div>'+
-    '<div>'+mv.items.map(i=>esc(pname(i.pid))+': <span class="mono">'+esc(i.qty)+'</span>').join(" · ")+'</div>'+
-    (mv.note?'<div class="hint">'+esc(mv.note)+'</div>':"")+
-    (can?'<div class="row"><button class="okb sm" data-mv="done" data-id="'+mv.id+'">1C-də işləndi</button></div>':"")+'</div>';
+// ----- Yer dəyişmə: hər anbarın öz qeyd siyahısı -----
+// Əsl yer dəyişmə 1C-də aparılır; burada sadəcə nə, haraya, nə vaxt getdiyi yazılır. Qalığa toxunmur.
+// Əsas Anbar adətən İstehsalatla, Anbar (İnqilab) isə mağazalarla işləyir.
+const MOVE_TO = { "Anbar":["İstehsalat","Anbar (İnqilab)"], "Anbar (İnqilab)":["Anbar"] };
+function moveSection(wh){
+  const list = S.moves.filter(m=>m.wh===wh).sort((a,b)=>new Date(b.at)-new Date(a.at));
+  const own = role===wh;
+  const sug = [...new Set(MOVE_TO[wh].concat(list.map(m=>m.to)))];
+  const k = wh==="Anbar" ? "a" : "i";
+  return '<div class="card">'+
+    '<h3>'+esc(wh)+'</h3>'+
+    (own?'<div class="box">'+
+      '<div class="row"><input class="grow" id="mTo-'+k+'" list="mto-'+k+'" placeholder="Haraya (adı özünüz yazın)"><datalist id="mto-'+k+'">'+sug.map(x=>'<option value="'+esc(x)+'">').join("")+'</datalist>'+
+      '<input class="grow" id="mP-'+k+'" list="plist" placeholder="Məhsulun adı"></div>'+
+      '<input id="mN-'+k+'" placeholder="Qeyd (miqdar və s.)">'+
+      '<div class="row"><button class="pri" data-mv="new" data-wh="'+esc(wh)+'" data-k="'+k+'">Yaz</button><span class="hint">Tarix avtomatik düşür.</span></div></div>':"")+
+    (list.length?'<div class="tbl"><table><thead><tr><th>Tarix</th><th>Haraya</th><th>Məhsul</th><th>Qeyd</th>'+(own?'<th></th>':"")+'</tr></thead><tbody>'+
+      list.map(m=>'<tr><td class="mono" style="white-space:nowrap">'+fmtT(m.at)+'</td><td>'+esc(m.to)+'</td><td>'+esc(m.product)+'</td><td class="meta">'+esc(m.note)+'</td>'+
+        (own?'<td><button class="sm badb" data-mvdel="'+m.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>'
+      :'<div class="hint">Hələ yer dəyişmə yazılmayıb.</div>')+
+    '</div>';
 }
 function vMoves(){
-  const can = WAREHOUSES.includes(role) || role==="Rəhbərlik";
-  const from = WAREHOUSES.includes(role) ? role : "Anbar";
-  const wait = S.moves.filter(m=>m.status==="gozle"), done = S.moves.filter(m=>m.status==="islendi");
-  return '<h2>Yer dəyişmə · Anbar ↔ Anbar (İnqilab)</h2>'+
-    '<div class="hint">Bu bölmə yalnız qeyd üçündür. Yer dəyişmə 1C-də aparılır. Mal göndəriləndə burada qeyd yazılır və 1C-yə vurulana qədər <b>“1C-yə vurulmayıb”</b> kimi görünür. Qalığa təsir etmir.</div>'+
-    (can?'<div class="card"><h3>Yeni qeyd</h3>'+
-      '<div class="row"><div class="grow"><div class="hint">Haradan → haraya</div><select id="mDir">'+WAREHOUSES.map(w=>{ const t=WAREHOUSES.find(x=>x!==w); return '<option value="'+esc(w)+'"'+(w===from?" selected":"")+'>'+esc(w)+' → '+esc(t)+'</option>'; }).join("")+'</select></div></div>'+
-      '<div class="row"><input class="grow" id="mP" list="plist" placeholder="Məhsulun adını yazın...">'+datalist()+'<input id="mQ" placeholder="məs. 15 kq" style="width:120px"></div>'+
-      '<input id="mN" placeholder="Qeyd (istəyə görə)">'+
-      '<div class="row"><button class="pri" data-mv="new">Qeydi yaz</button></div></div>'
-      :'<div class="hint">Qeydi yalnız Anbar, Anbar (İnqilab) və Rəhbərlik yaza bilər.</div>')+
-    '<h2>1C-yə vurulmayıb ('+wait.length+')</h2>'+(wait.length?wait.slice().reverse().map(moveCard).join(""):'<div class="card"><div class="hint">Hamısı 1C-də işlənib.</div></div>')+
-    (done.length?'<details><summary>1C-də işlənənlər ('+done.length+')</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'+done.slice().reverse().map(moveCard).join("")+'</div></details>':"");
+  // Anbarçı yalnız öz anbarını görür, digər şöbələr hər ikisinə ayrı-ayrı baxır
+  const whs = WAREHOUSES.includes(role) ? [role] : WAREHOUSES;
+  return '<h2>Yer dəyişmə</h2>'+
+    '<div class="hint">Bu yalnız qeyddir, əsl yer dəyişmə 1C-də aparılır. Qalığa təsir etmir.</div>'+
+    (WAREHOUSES.includes(role) ? datalist() : "")+
+    whs.map(moveSection).join("");
 }
 
 // ----- Kataloq -----
@@ -564,14 +567,15 @@ $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
   if (t.dataset.cal){ calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+Number(t.dataset.cal),1); calSel=null; render(); return; }
   if (t.dataset.day){ calSel = calSel===t.dataset.day ? null : t.dataset.day; render(); return; }
   if (t.dataset.del){ draft.items.splice(Number(t.dataset.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
-  if (t.dataset.mv) return moveAct(t.dataset.mv, Number(t.dataset.id));
+  if (t.dataset.mv) return addMove(t.dataset.wh, t.dataset.k);
+  if (t.dataset.mvdel) return sure(t, ()=>{ S.moves = S.moves.filter(m=>m.id!==Number(t.dataset.mvdel)); save(); render(); toast("Silindi"); });
   if (t.dataset.view){ const [k,i]=t.dataset.view.split(":"); viewSheet(k,Number(i)); return; }
   if (t.dataset.fdel){ draft.files.splice(Number(t.dataset.fdel),1); render(); return; }
   if (t.dataset.pdel) return sure(t, ()=>delProduct(Number(t.dataset.pdel)));
@@ -629,21 +633,14 @@ function orderAct(act, id){
   save(); render();
 }
 
-function moveAct(act, id){
-  if (act==="new"){
-    const from=$("mDir").value, to=WAREHOUSES.find(x=>x!==from), pid=pidByName($("mP").value), q=$("mQ").value.trim();
-    if (!pid) return toast("Məhsulu siyahıdan seçin");
-    if (!q) return toast("Miqdarı yazın");
-    const mv={id:nextId(),from,to,items:[{pid,qty:q}],status:"gozle",by:role,created:new Date().toISOString(),note:$("mN").value.trim()};
-    S.moves.push(mv); S.log.push({by:role,act:"Yer dəyişmə qeydi",note:from+" → "+to+": "+pname(pid)+" "+q,at:mv.created,ref:"YD-"+mv.id});
-    toast("Qeyd yazıldı");
-  } else if (act==="done"){
-    const mv=S.moves.find(x=>x.id===id);
-    mv.status="islendi"; mv.done_by=role; mv.done_at=new Date().toISOString();
-    S.log.push({by:role,act:"Yer dəyişmə 1C-də işləndi",note:mv.from+" → "+mv.to,at:mv.done_at,ref:"YD-"+mv.id});
-    toast("1C-də işləndi kimi qeyd olundu");
-  }
-  save(); render();
+function addMove(wh, k){
+  if (role!==wh) return;
+  const to=$("mTo-"+k).value.trim(), product=$("mP-"+k).value.trim();
+  if (!to) return toast("Haraya getdiyini yazın");
+  if (!product) return toast("Məhsulun adını yazın");
+  const mv={id:nextId(),wh,to,product,note:$("mN-"+k).value.trim(),by:role,at:new Date().toISOString()};
+  S.moves.push(mv); S.log.push({by:role,act:"Yer dəyişmə",note:wh+" → "+to+": "+product+(mv.note?" ("+mv.note+")":""),at:mv.at});
+  save(); render(); toast("Yazıldı");
 }
 
 // ----- Admin: kataloq əməliyyatları -----
