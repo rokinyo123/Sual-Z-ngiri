@@ -264,7 +264,7 @@ let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let RF = "", RT = "", jf = "all", catFirm = "", catQ = "";
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
-let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null };
+let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
 
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
 const prod = id => S.products.find(p=>p.id===Number(id));
@@ -583,8 +583,18 @@ function parseOrderSheet(ws){
   return out;
 }
 function importInfo(){
+  return xlsInfo() + ocrInfo();
+}
+function ocrInfo(){
+  const o = draft.ocr; if (!o) return "";
+  if (o.state==="busy") return '<div class="imp"><div>📷 <b>'+o.n+' şəkil oxunur...</b> Məhsullar bir az sonra aşağıya yazılacaq (adətən 10–40 saniyə).</div></div>';
+  if (o.state==="err") return '<div class="imp"><div>📷 '+esc(o.msg)+' Şəkil sifarişdə qaldı.</div></div>';
+  const imp = draft.items.filter(i=>i.src==="img"), miss = imp.filter(i=>!i.pid).length;
+  return '<div class="imp"><div>📷 Şəkildən <b>'+o.got+' məhsul</b> oxundu'+(o.got?(miss?': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span>':', hamısı kataloqda tapıldı'):' — şəkildə sifariş siyahısı tapılmadı')+'. Şəkil sifarişdə qaldı. Oxunanları yoxlayın: əl yazısında səhv ola bilər.</div></div>';
+}
+function xlsInfo(){
   if (!draft.xls) return "";
-  const imp = draft.items.filter(i=>i.imp), miss = imp.filter(i=>!i.pid).length;
+  const imp = draft.items.filter(i=>i.src==="xls"), miss = imp.filter(i=>!i.pid).length;
   const names = draft.xls.sheets;
   return '<div class="imp">'+
     (names.length>1?'<div class="row"><span class="hint">Vərəq</span><select id="nSheet" class="grow">'+names.slice().reverse().map(n=>'<option'+(n===draft.sheet?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select></div>':"")+
@@ -611,8 +621,8 @@ async function addDraftFiles(list){
 // Seçilmiş vərəqi məhsullar siyahısına yaz və faylı sifarişə qoş (böyük fayldan yalnız bu vərəq saxlanılır)
 function applySheet(){
   const rows = parseOrderSheet(draft.wb.Sheets[draft.sheet]);
-  draft.items = draft.items.filter(i=>!i.imp && (i.pid || (i.pname||"").trim()));
-  rows.forEach(r=>{ const pid = pidByName(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, firm:r.firm}); });
+  draft.items = draft.items.filter(i=>i.src!=="xls" && (i.pid || (i.pname||"").trim()));
+  rows.forEach(r=>{ const pid = pidByName(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, src:"xls", firm:r.firm}); });
   if (!draft.items.length) draft.items = [{pid:"",qty:""}];
   if (/həftəlik/i.test(draft.sheet)) draft.type = "Həftəlik";
   draft.files = draft.files.filter(x=>!x.xls);
@@ -626,6 +636,44 @@ function applySheet(){
   }
   draft.files.push({...att, xls:true, by:role, at:new Date().toISOString()});
   toast(rows.length+" məhsul Excel-dən yazıldı");
+}
+
+// ----- Şəkildən sifariş -----
+// Sifariş siyahısının şəkli (əl yazısı və ya çap): şəkil sifarişdə qalır, Claude şəkildəki
+// məhsulları və miqdarları oxuyur və kataloq adları ilə uyğunlaşdırır. Yalnız Claude linkində işləyir.
+let sampleFn = null, canOcr = false;
+(async () => {
+  try {
+    sampleFn = window.claude && await window.claude.use("sample");
+    const lim = sampleFn && await sampleFn.limits().catch(()=>null);
+    canOcr = !!(lim && lim.images);
+  } catch(e){ canOcr = false; }
+  if (canOcr && tab==="new") render();
+})();
+async function addDraftPhotos(list){
+  const files = Array.from(list).filter(f=>/^image\//.test(f.type));
+  if (!files.length) return;
+  for (const f of files) draft.photos.push(await shrink(f));
+  if (!canOcr){ render(); return; }
+  draft.ocr = { state:"busy", n:files.length }; render();
+  const names = live().map(p=>p.name).join("\n");
+  const prompt = "Şəkil(lər)də şirniyyat sexinin anbar sifarişi var: əl ilə və ya çapla yazılmış məhsul siyahısı (Azərbaycan dilində, bəzən rus dilində). "+
+    "Hər sətirdən məhsulun adını və miqdarını (vahidi ilə, məs. \"15 kq\", \"2 qutu\", \"60 əd\") çıxar. Miqdarı yazılmayan sətirləri və firma başlıqlarını götürmə. "+
+    "Məhsul aşağıdakı kataloqdakı biri ilə eyni məhsuldursa, kataloqdakı adı hərfbəhərf yaz; deyilsə, şəkildə yazıldığı kimi yaz. "+
+    "Cavab yalnız JSON massivi olsun: [{\"name\":\"Pralin\",\"qty\":\"120 kq\"}]. Şəkildə sifariş siyahısı yoxdursa [] qaytar.\n\nKataloq:\n"+names;
+  try {
+    const rows = await sampleFn.json(prompt, { images: files });
+    const ok = Array.isArray(rows) ? rows.filter(r=>r && String(r.name||"").trim() && String(r.qty??"").trim()) : [];
+    draft.items = draft.items.filter(i=>i.pid || (i.pname||"").trim());
+    ok.forEach(r=>{ const n = String(r.name).trim(); draft.items.push({pid:pidByName(n), pname:n, qty:normQty(r.qty), imp:true, src:"img"}); });
+    if (!draft.items.length) draft.items = [{pid:"",qty:""}];
+    draft.ocr = { state:"done", got:ok.length };
+    toast(ok.length ? ok.length+" məhsul şəkildən yazıldı" : "Şəkildə sifariş siyahısı tapılmadı");
+  } catch(e){
+    const msg = { not_granted:"Şəkli oxumaq üçün Claude-a icazə verilmədi.", rate_limited:"Çox sorğu getdi, bir az sonra yenidən cəhd edin.", image_rejected:"Bu şəkli oxumaq olmadı, başqa şəkil seçin.", invalid_json:"Şəkildəki siyahını oxumaq olmadı." }[e && e.code] || "Şəkli oxumaq alınmadı.";
+    draft.ocr = { state:"err", msg };
+  }
+  if (tab==="new") render();
 }
 
 // ----- Yeni sifariş -----
@@ -643,11 +691,11 @@ function vNew(){
     '<div class="row"><div class="grow"><div class="hint">Növ</div><select id="nType"><option'+(draft.type==="Gündəlik"?" selected":"")+'>Gündəlik</option><option'+(draft.type==="Həftəlik"?" selected":"")+'>Həftəlik</option></select></div>'+
     '<div class="grow"><div class="hint">Hansı anbara gəlsin</div><select id="nWh">'+WAREHOUSES.map(w=>'<option'+(draft.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></div>'+
     '<div class="grow"><div class="hint">Hər addım üçün müddət</div><select id="nDl">'+[2,4,8,24,48,72].map(h=>'<option value="'+h+'"'+(draft.deadline==h?" selected":"")+'>'+h+' saat</option>').join("")+'</select></div></div>'+
-    '<div class="items-edit box"><div class="row" style="justify-content:space-between"><h3>Məhsullar'+(draft.items.filter(i=>i.pid||i.pname).length?' ('+draft.items.filter(i=>i.pid||i.pname).length+')':"")+'</h3><label class="btnlink" style="cursor:pointer">📥 Excel-dən doldur<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label></div>'+importInfo()+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
+    '<div class="items-edit box"><div class="row" style="justify-content:space-between"><h3>Məhsullar'+(draft.items.filter(i=>i.pid||i.pname).length?' ('+draft.items.filter(i=>i.pid||i.pname).length+')':"")+'</h3><div class="row"><label class="btnlink" style="cursor:pointer">📥 Excel-dən doldur<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>'+(canOcr?'<label class="btnlink" style="cursor:pointer">📷 Şəkildən doldur<input type="file" id="nOcr" accept="image/*" multiple hidden></label>':"")+'</div></div>'+importInfo()+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
     '<div class="box"><div class="row" style="justify-content:space-between"><h3>Zəncir</h3><button class="sm" id="autoChain">Avtomatik zəncir qur</button></div>'+
     '<div class="hint">Şöbələri sıra ilə seçin. Sifariş bu ardıcıllıqla keçəcək.</div><div class="checks" id="nChain">'+chainChecks+'</div></div>'+
     '<textarea id="nNote" placeholder="Qeyd: niyə lazımdır, nə qədər təcilidir...">'+esc(draft.note)+'</textarea>'+
-    '<div class="row"><label style="cursor:pointer" class="hint">📷 Şəkil əlavə et <input type="file" accept="image/*" id="nPhoto" multiple hidden></label><div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div></div>'+
+    '<div class="row"><label style="cursor:pointer" class="hint">📷 Şəkil əlavə et'+(canOcr?' (sifariş siyahısının şəklidirsə, məhsullar avtomatik yazılır)':"")+' <input type="file" accept="image/*" id="nPhoto" multiple hidden></label><div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div></div>'+
     '<div class="row"><label style="cursor:pointer" class="hint">📎 Fayl əlavə et (Excel, PDF, Word...). Excel faylının məhsulları avtomatik yuxarıya yazılır. <input type="file" id="nFile" multiple hidden></label></div>'+fileList(draft.files,"d")+
     '<div class="row"><button class="pri" id="send">Sifarişi göndər</button><span class="hint" id="nErr"></span></div></div>';
 }
@@ -661,7 +709,8 @@ function bindNew(){
   $("nFile").onchange = e => addDraftFiles(e.target.files);
   $("nXls").onchange = e => addDraftFiles(e.target.files);
   if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
-  $("nPhoto").onchange = async e => { for (const f of e.target.files) draft.photos.push(await shrink(f)); render(); };
+  $("nPhoto").onchange = e => addDraftPhotos(e.target.files);
+  if ($("nOcr")) $("nOcr").onchange = e => addDraftPhotos(e.target.files);
   $("send").onclick = sendOrder;
 }
 function sendOrder(){
@@ -681,7 +730,7 @@ function sendOrder(){
     status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
-  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null };
+  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
   tab = "orders"; filter = "all"; render(); toast("Sifariş #"+o.id+" göndərildi → "+o.chain[0]);
 }
 function shrink(file, max){
