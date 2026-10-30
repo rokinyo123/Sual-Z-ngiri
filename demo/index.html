@@ -168,7 +168,7 @@ const HOUR = 3600000, DAY = 86400000;
 
 const TABS = [
   ["panel","Panel"],["orders","Sifarişlər"],["new","+ Yeni sifariş"],["arr","Gələn / Gəlməyən"],["cal","Kalendar"],
-  ["stock","Qalıq"],["moves","Yer dəyişmə"],["catalog","Kataloq"],["history","Tarixçə"]
+  ["catalog","Kataloq"]
 ];
 
 // ===================== Kömək funksiyaları =====================
@@ -345,7 +345,7 @@ function renderTabs(){
 function render(){
   autoMissing();
   renderTabs();
-  const v = { panel:vPanel, orders:vOrders, new:vNew, cal:vCal, arr:vArr, stock:vStock, moves:vMoves, catalog:vCatalog, history:vHistory }[tab];
+  const v = { panel:vPanel, orders:vOrders, new:vNew, cal:vCal, arr:vArr, catalog:vCatalog }[tab];
   $("main").innerHTML = v();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
@@ -363,7 +363,7 @@ function vPanel(){
     tile("Gözləyən (gəlişi gözlənilən)", S.orders.filter(o=>o.status==="yolda").length, "", "orders:yolda") +
     tile("Gəlməyən mallar · açıq", S.orders.filter(o=>o.missing&&isOpen(o)).length, S.orders.some(o=>o.missing&&isOpen(o))?"bad":"", "orders:miss") +
     tile("Kataloqda məhsul", live().length, "", "catalog");
-  let html = '<div class="banner">Bu demo versiyadır. Yuxarıdan <b>“Kim kimi baxırsınız”</b> seçimini dəyişərək hər şöbənin ekranını görə bilərsiniz. Hazırda: <b>'+esc(role)+'</b>.</div>';
+  let html = '<div class="banner">Bu demo versiyadır. Yuxarıdan <b>“Kim kimi baxırsınız”</b> seçimini dəyişərək hər şöbənin ekranını görə bilərsiniz. Hazırda: <b>'+esc(role)+'</b>. <button class="sm badb" id="reset">Demonu sıfırla</button></div>';
   html += '<div class="tiles">'+tiles+'</div>';
   if (dueToday.length) html += '<div class="card late"><h3>⚠ Gəliş tarixi çatıb</h3>'+dueToday.map(o=>'<div class="row"><span class="mono">#'+o.id+'</span><span class="grow">'+esc(itemsShort(o))+'</span><span class="pill p-bad">'+fmtD(o.eta)+'</span><span class="meta">'+esc(o.wh)+'</span></div>').join("")+'</div>';
   if (role==="Satınalma" || role==="Rəhbərlik") html += arrivals();
@@ -768,52 +768,11 @@ function vCal(){
       : '<div class="card"><div class="hint">Bu dövr üçün gözlənilən mal yoxdur.</div></div>');
 }
 
-// ----- Qalıq -----
-function vStock(){
-  const rows = S.products.filter(p=>LOCS.some(l=>S.stock[l][p.id]));
-  const head = '<tr><th>Məhsul</th><th>Firma</th>'+LOCS.map(l=>'<th class="num">'+esc(l)+'</th>').join("")+'</tr>';
-  const body = rows.map(p=>'<tr data-s="'+esc((p.name+" "+(p.firm||"")).toLowerCase())+'"><td>'+esc(p.name)+'</td><td class="meta">'+esc(p.firm||"—")+'</td>'+LOCS.map(l=>'<td class="num">'+(S.stock[l][p.id]||"—")+'</td>').join("")+'</tr>').join("");
-  return '<h2>Anbar və mağaza qalıqları</h2>'+
-    '<input id="sQ" placeholder="Məhsul və ya firma axtar...">'+
-    '<div class="card tbl"><table><thead>'+head+'</thead><tbody id="sBody">'+body+'</tbody></table></div>'+
-    '<div class="hint">Burada yalnız qalığı olan məhsullar göstərilir (nümunə rəqəmlər). Qalıq mal qəbulu, keyfiyyət rəddi və yer dəyişmələri ilə avtomatik dəyişir.</div>';
-}
 function filterRows(el){
-  const q = el.value.trim().toLowerCase(), body = $(el.id==="cQ"?"cBody":"sBody"), firm = $("cF") ? $("cF").value : "";
+  const q = el.value.trim().toLowerCase(), body = $("cBody"), firm = $("cF") ? $("cF").value : "";
   let n = 0;
-  body.querySelectorAll("tr").forEach(tr=>{ const ok = tr.dataset.s.includes(q) && (el.id!=="cQ" || !firm || tr.dataset.f===firm); tr.hidden=!ok; if (ok) n++; });
+  body.querySelectorAll("tr").forEach(tr=>{ const ok = tr.dataset.s.includes(q) && (!firm || tr.dataset.f===firm); tr.hidden=!ok; if (ok) n++; });
   if ($("cN") && el.id==="cQ") $("cN").textContent = n+" məhsul";
-}
-
-// ----- Yer dəyişmə: hər anbarın öz qeyd siyahısı -----
-// Əsl yer dəyişmə 1C-də aparılır; burada sadəcə nə, haraya, nə vaxt getdiyi yazılır. Qalığa toxunmur.
-// Əsas Anbar adətən İstehsalatla, Anbar (İnqilab) isə mağazalarla işləyir.
-const MOVE_TO = { "Anbar":["İstehsalat","Anbar (İnqilab)"], "Anbar (İnqilab)":["Anbar"] };
-function moveSection(wh){
-  const list = S.moves.filter(m=>m.wh===wh).sort((a,b)=>new Date(b.at)-new Date(a.at));
-  const own = role===wh;
-  const sug = [...new Set(MOVE_TO[wh].concat(list.map(m=>m.to)))];
-  const k = wh==="Anbar" ? "a" : "i";
-  return '<div class="card">'+
-    '<h3>'+esc(wh)+'</h3>'+
-    (own?'<div class="box">'+
-      '<div class="row"><input class="grow" id="mTo-'+k+'" list="mto-'+k+'" placeholder="Haraya (adı özünüz yazın)"><datalist id="mto-'+k+'">'+sug.map(x=>'<option value="'+esc(x)+'">').join("")+'</datalist>'+
-      '<input class="grow" id="mP-'+k+'" list="plist" placeholder="Məhsulun adı"></div>'+
-      '<input id="mN-'+k+'" placeholder="Qeyd (miqdar və s.)">'+
-      '<div class="row"><button class="pri" data-mv="new" data-wh="'+esc(wh)+'" data-k="'+k+'">Yaz</button><span class="hint">Tarix avtomatik düşür.</span></div></div>':"")+
-    (list.length?'<div class="tbl"><table><thead><tr><th>Tarix</th><th>Haraya</th><th>Məhsul</th><th>Qeyd</th>'+(own?'<th></th>':"")+'</tr></thead><tbody>'+
-      list.map(m=>'<tr><td class="mono" style="white-space:nowrap">'+fmtT(m.at)+'</td><td>'+esc(m.to)+'</td><td>'+esc(m.product)+'</td><td class="meta">'+esc(m.note)+'</td>'+
-        (own?'<td><button class="sm badb" data-mvdel="'+m.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>'
-      :'<div class="hint">Hələ yer dəyişmə yazılmayıb.</div>')+
-    '</div>';
-}
-function vMoves(){
-  // Anbarçı yalnız öz anbarını görür, digər şöbələr hər ikisinə ayrı-ayrı baxır
-  const whs = WAREHOUSES.includes(role) ? [role] : WAREHOUSES;
-  return '<h2>Yer dəyişmə</h2>'+
-    '<div class="hint">Bu yalnız qeyddir, əsl yer dəyişmə 1C-də aparılır. Qalığa təsir etmir.</div>'+
-    (WAREHOUSES.includes(role) ? datalist() : "")+
-    whs.map(moveSection).join("");
 }
 
 // ----- Məhsul şəkli -----
@@ -879,18 +838,12 @@ function vCatalog(){
   return html;
 }
 
-// ----- Tarixçə -----
-function vHistory(){
-  return '<div class="row" style="justify-content:space-between"><h2>Bütün əməliyyatlar</h2><button class="sm badb" id="reset">Demonu sıfırla</button></div>'+
-    '<div class="card"><div class="log">'+S.log.slice().reverse().slice(0,200).map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.ref?' <span class="meta">('+esc(x.ref)+')</span>':"")+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div>';
-}
-
 // ===================== Hadisələr =====================
 $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+"-role",role);}catch(x){} draft.chain=[]; render(); toast(role+" ekranı"); };
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-full],[data-zoom],[data-range],[data-jf],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-full],[data-zoom],[data-range],[data-jf],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
@@ -905,8 +858,6 @@ $("main").addEventListener("click", e => {
   if (t.dataset.goorder){ const o=S.orders.find(x=>x.id===Number(t.dataset.goorder)); tab="orders"; filter=isOpen(o)?"all":"arch"; RF=RT=odate(o); render(); return; }
   if (t.dataset.zoom){ openZoom(t.dataset.zoom); return; }
   if (t.dataset.full){ const el=$("got-"+t.dataset.full); el.value = t.dataset.q; paintGot(el); saveGot(el); return; }
-  if (t.dataset.mv) return addMove(t.dataset.wh, t.dataset.k);
-  if (t.dataset.mvdel) return sure(t, ()=>{ S.moves = S.moves.filter(m=>m.id!==Number(t.dataset.mvdel)); save(); render(); toast("Silindi"); });
   if (t.dataset.view){ const [k,i]=t.dataset.view.split(":"); viewSheet(k,Number(i)); return; }
   if (t.dataset.fdel){ draft.files.splice(Number(t.dataset.fdel),1); render(); return; }
   if (t.dataset.pdel) return sure(t, ()=>delProduct(Number(t.dataset.pdel)));
@@ -953,7 +904,7 @@ function saveGot(el){
   addLog(o,"Qeyd edildi",pname(i.pid)+": "+i.qty+" sifariş, "+val+" gəldi ("+gotState(i.qty,val)[0]+")");
   save(); renderTabs();
 }
-$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } if (el.id==="sQ") filterRows(el); });
+$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } });
 
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
@@ -994,16 +945,6 @@ function orderAct(act, id){
   else if (act==="fwd"){ advance(o,"Ötürüldü"+(o.chain[o.step+1]?" → "+o.chain[o.step+1]:""),v("fn")); }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
-}
-
-function addMove(wh, k){
-  if (role!==wh) return;
-  const to=$("mTo-"+k).value.trim(), product=$("mP-"+k).value.trim();
-  if (!to) return toast("Haraya getdiyini yazın");
-  if (!product) return toast("Məhsulun adını yazın");
-  const mv={id:nextId(),wh,to,product,note:$("mN-"+k).value.trim(),by:role,at:new Date().toISOString()};
-  S.moves.push(mv); S.log.push({by:role,act:"Yer dəyişmə",note:wh+" → "+to+": "+product+(mv.note?" ("+mv.note+")":""),at:mv.at});
-  save(); render(); toast("Yazıldı");
 }
 
 // ----- Admin: kataloq əməliyyatları -----
@@ -1072,7 +1013,7 @@ function delFirm(f){
 }
 
 // Müddət keçdikcə görünüşü yenilə
-setInterval(()=>{ if (!["new","catalog","stock","moves","arr","orders"].includes(tab)) render(); }, 60000);
+setInterval(()=>{ if (!["new","catalog","arr","orders"].includes(tab)) render(); }, 60000);
 renderRole(); render();
 </script>
 </body>
