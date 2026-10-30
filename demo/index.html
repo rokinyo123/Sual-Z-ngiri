@@ -97,6 +97,9 @@ tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.o
 .sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
 .pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
 .pname:hover{border-color:var(--line)}
+.imp{background:var(--info-bg);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.newtag{display:inline-block;font-size:11px;font-weight:600;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px}
+.it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
 .pact{display:flex;gap:6px;margin-top:4px}
 .psz{min-width:110px;font-family:var(--mono);font-size:13px}
 .sz{display:inline-block;font-family:var(--mono);font-size:12px;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px;white-space:nowrap}
@@ -261,7 +264,7 @@ let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let RF = "", RT = "", jf = "all", catFirm = "", catQ = "";
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
-let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
+let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null };
 
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
 const prod = id => S.products.find(p=>p.id===Number(id));
@@ -544,6 +547,87 @@ function vOrders(){
     (list.length ? list.map(orderCard).join("") : '<div class="card"><div class="hint">Bu bölmədə sifariş yoxdur.</div></div>');
 }
 
+// ----- Excel-dən sifariş -----
+// İki cür vərəq tanınır:
+//  1) "Məhsul | Sifariş" başlıqlı bloklar (gündəlik vərəqlər), blokun üstündə firma adı;
+//  2) sütun cütləri "ad | miqdar" (həftəlik vərəq): miqdarı boş olan sətir firma başlığıdır.
+const normName = n => String(n).toLowerCase().replace(/i̇/g,"i").replace(/\s+/g," ").trim();
+const normQty = q => String(q).trim().replace(/^(\d+(?:[.,]\d+)?)\s*([^\d\s.,].*)$/,"$1 $2");
+const findFirm = h => { const n = normName(h); return n ? S.firms.find(f=>normName(f).startsWith(n) || n.startsWith(normName(f))) || "" : ""; };
+function parseOrderSheet(ws){
+  const A = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
+  const txt = v => String(v??"").trim();
+  const out = [];
+  const heads = [];
+  A.forEach((row,r)=>row.forEach((v,c)=>{ if (normName(v)==="məhsul") heads.push([r,c]); }));
+  if (heads.length){
+    heads.forEach(([r,c])=>{
+      const firm = findFirm(txt((A[r-1]||[])[c]));
+      for (let rr=r+1; A[rr] && txt(A[rr][c]); rr++){
+        const n = txt(A[rr][c]), q = txt(A[rr][c+1]);
+        if (normName(n)==="məhsul") break;
+        if (q) out.push({name:n, qty:normQty(q), firm});
+      }
+    });
+  } else {
+    const W = Math.max(0,...A.map(r=>r.length));
+    for (let c=0; c<W; c+=2){
+      let firm = "";
+      A.forEach(row=>{ const n = txt(row[c]), q = txt(row[c+1]);
+        if (!n) return;
+        if (!q){ firm = findFirm(n); return; }
+        out.push({name:n, qty:normQty(q), firm});
+      });
+    }
+  }
+  return out;
+}
+function importInfo(){
+  if (!draft.xls) return "";
+  const imp = draft.items.filter(i=>i.imp), miss = imp.filter(i=>!i.pid).length;
+  const names = draft.xls.sheets;
+  return '<div class="imp">'+
+    (names.length>1?'<div class="row"><span class="hint">Vərəq</span><select id="nSheet" class="grow">'+names.slice().reverse().map(n=>'<option'+(n===draft.sheet?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select></div>':"")+
+    '<div><b>'+esc(draft.xls.name)+'</b> · “'+esc(draft.sheet)+'” vərəqindən <b>'+imp.length+' məhsul</b> götürüldü'+
+    (miss?': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span> (sifariş göndəriləndə kataloqa “Excel-dən” kimi əlavə olunacaq)':', hamısı kataloqda tapıldı')+'. Aşağıda yoxlayın, lazım olsa düzəldin.</div></div>';
+}
+async function addDraftFiles(list){
+  for (const f of list){
+    if (isSheet(f.name)){
+      if (!window.XLSX){ toast("Excel oxuyucu yüklənmədi, internet bağlantısını yoxlayın"); continue; }
+      let wb;
+      toast(f.name+" oxunur..."); await new Promise(r=>setTimeout(r,30));
+      try { wb = XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:"array"}); } catch(e){ toast(f.name+": faylı oxumaq olmadı"); continue; }
+      draft.wb = wb;
+      draft.xls = { name:f.name, size:f.size, sheets:wb.SheetNames.slice() };
+      draft.sheet = wb.SheetNames[wb.SheetNames.length-1]; // ən son vərəq
+      applySheet();
+      continue;
+    }
+    const x = await readFile(f); if (x) draft.files.push(x);
+  }
+  render();
+}
+// Seçilmiş vərəqi məhsullar siyahısına yaz və faylı sifarişə qoş (böyük fayldan yalnız bu vərəq saxlanılır)
+function applySheet(){
+  const rows = parseOrderSheet(draft.wb.Sheets[draft.sheet]);
+  draft.items = draft.items.filter(i=>!i.imp && (i.pid || (i.pname||"").trim()));
+  rows.forEach(r=>{ const pid = pidByName(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, firm:r.firm}); });
+  if (!draft.items.length) draft.items = [{pid:"",qty:""}];
+  if (/həftəlik/i.test(draft.sheet)) draft.type = "Həftəlik";
+  draft.files = draft.files.filter(x=>!x.xls);
+  let att;
+  if (draft.xls.size <= MAXF && draft.xls.sheets.length===1){
+    att = { name:draft.xls.name, size:draft.xls.size, data:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+XLSX.write(draft.wb,{type:"base64",bookType:"xlsx"}) };
+  } else {
+    const one = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(one, draft.wb.Sheets[draft.sheet], draft.sheet.slice(0,31));
+    const b64 = XLSX.write(one,{type:"base64",bookType:"xlsx"});
+    att = { name:draft.xls.name.replace(/\.[^.]+$/,"")+" — "+draft.sheet+".xlsx", size:Math.round(b64.length*3/4), data:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64 };
+  }
+  draft.files.push({...att, xls:true, by:role, at:new Date().toISOString()});
+  toast(rows.length+" məhsul Excel-dən yazıldı");
+}
+
 // ----- Yeni sifariş -----
 function defaultChain(){
   const c = ["Satınalma", draft.wh, "Keyfiyyət"];
@@ -552,19 +636,19 @@ function defaultChain(){
   return c.filter((d,i)=>c.indexOf(d)===i);
 }
 function vNew(){
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adını yazın..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="məs. 15 kq" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsulun adını yazın..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="məs. 15 kq" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   const chainChecks = DEPTS.filter(d=>d!==role).map(d=>{ const i=draft.chain.indexOf(d); return '<label class="'+(i>=0?"on":"")+'"><input type="checkbox" data-chain="'+esc(d)+'"'+(i>=0?" checked":"")+'>'+(i>=0?(i+1)+". ":"")+esc(d)+'</label>'; }).join("");
   return '<h2>Yeni sifariş</h2><div class="card">'+
     '<div class="meta">Göndərən: <b>'+esc(role)+'</b></div>'+
     '<div class="row"><div class="grow"><div class="hint">Növ</div><select id="nType"><option'+(draft.type==="Gündəlik"?" selected":"")+'>Gündəlik</option><option'+(draft.type==="Həftəlik"?" selected":"")+'>Həftəlik</option></select></div>'+
     '<div class="grow"><div class="hint">Hansı anbara gəlsin</div><select id="nWh">'+WAREHOUSES.map(w=>'<option'+(draft.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></div>'+
     '<div class="grow"><div class="hint">Hər addım üçün müddət</div><select id="nDl">'+[2,4,8,24,48,72].map(h=>'<option value="'+h+'"'+(draft.deadline==h?" selected":"")+'>'+h+' saat</option>').join("")+'</select></div></div>'+
-    '<div class="items-edit box"><h3>Məhsullar</h3>'+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
+    '<div class="items-edit box"><div class="row" style="justify-content:space-between"><h3>Məhsullar'+(draft.items.filter(i=>i.pid||i.pname).length?' ('+draft.items.filter(i=>i.pid||i.pname).length+')':"")+'</h3><label class="btnlink" style="cursor:pointer">📥 Excel-dən doldur<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label></div>'+importInfo()+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
     '<div class="box"><div class="row" style="justify-content:space-between"><h3>Zəncir</h3><button class="sm" id="autoChain">Avtomatik zəncir qur</button></div>'+
     '<div class="hint">Şöbələri sıra ilə seçin. Sifariş bu ardıcıllıqla keçəcək.</div><div class="checks" id="nChain">'+chainChecks+'</div></div>'+
     '<textarea id="nNote" placeholder="Qeyd: niyə lazımdır, nə qədər təcilidir...">'+esc(draft.note)+'</textarea>'+
     '<div class="row"><label style="cursor:pointer" class="hint">📷 Şəkil əlavə et <input type="file" accept="image/*" id="nPhoto" multiple hidden></label><div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div></div>'+
-    '<div class="row"><label style="cursor:pointer" class="hint">📎 Fayl əlavə et (Excel, PDF, Word...) <input type="file" id="nFile" multiple hidden></label></div>'+fileList(draft.files,"d")+
+    '<div class="row"><label style="cursor:pointer" class="hint">📎 Fayl əlavə et (Excel, PDF, Word...). Excel faylının məhsulları avtomatik yuxarıya yazılır. <input type="file" id="nFile" multiple hidden></label></div>'+fileList(draft.files,"d")+
     '<div class="row"><button class="pri" id="send">Sifarişi göndər</button><span class="hint" id="nErr"></span></div></div>';
 }
 function bindNew(){
@@ -574,13 +658,21 @@ function bindNew(){
   $("nNote").oninput = e => draft.note = e.target.value;
   $("addItem").onclick = () => { draft.items.push({pid:"",qty:""}); render(); };
   $("autoChain").onclick = () => { draft.chain = defaultChain(); render(); };
-  $("nFile").onchange = async e => { for (const f of e.target.files){ const x = await readFile(f); if (x) draft.files.push(x); } render(); };
+  $("nFile").onchange = e => addDraftFiles(e.target.files);
+  $("nXls").onchange = e => addDraftFiles(e.target.files);
+  if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   $("nPhoto").onchange = async e => { for (const f of e.target.files) draft.photos.push(await shrink(f)); render(); };
   $("send").onclick = sendOrder;
 }
 function sendOrder(){
-  const bad = draft.items.find(i=>!i.pid && (i.pname||"").trim());
+  const bad = draft.items.find(i=>!i.pid && !i.imp && (i.pname||"").trim());
   if (bad) return $("nErr").textContent = "“"+bad.pname+"” kataloqda yoxdur. Siyahıdan seçin və ya əvvəl Kataloqa əlavə edin.";
+  draft.items.forEach(i=>{ if (!i.pid && i.imp && (i.pname||"").trim()){
+    const ex = pidByName(i.pname);
+    if (ex) i.pid = ex;
+    else { const p = {id:Math.max(...S.products.map(x=>x.id))+1, name:i.pname.trim(), firm:i.firm||"", size:guessSize(i.pname), fromExcel:true}; S.products.push(p); i.pid = p.id;
+      S.log.push({by:role,act:"Kataloqa Excel-dən məhsul əlavə edildi",note:p.name,at:new Date().toISOString()}); }
+  } });
   const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>({pid:Number(i.pid),qty:String(i.qty).trim()}));
   if (!items.length) return $("nErr").textContent = "Ən azı bir məhsul və miqdar yazın.";
   if (!draft.chain.length) return $("nErr").textContent = "Zəncir üçün ən azı bir şöbə seçin və ya “Avtomatik zəncir qur” düyməsini basın.";
@@ -589,7 +681,7 @@ function sendOrder(){
     status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
-  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
+  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null };
   tab = "orders"; filter = "all"; render(); toast("Sifariş #"+o.id+" göndərildi → "+o.chain[0]);
 }
 function shrink(file, max){
@@ -732,7 +824,7 @@ function vCatalog(){
   else if (byFirm) html += '<div class="hint">Bu firmaya məhsul əlavə etmək və ya çıxarmaq üçün yuxarıdan <b>Admin</b> seçin.</div>';
   html += ''+
     '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Ölçü</th><th>Firma</th></tr></thead><tbody id="cBody">'+
-    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı"><div class="pact">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div>':esc(p.name))+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
+    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı"><div class="pact">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div>':esc(p.name))+(p.fromExcel?' <span class="newtag">Excel-dən</span>':"")+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
       '</tr>').join("")+'</tbody></table></div>';
   return html;
