@@ -85,6 +85,15 @@ td.low{color:var(--bad);font-weight:700}
 .checks label.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .checks input{display:none}
 .photos{display:flex;gap:6px;flex-wrap:wrap}
+.files{display:flex;flex-direction:column;gap:6px}
+.file{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sunk);border-radius:8px;padding:6px 8px;font-size:13px}
+.fic{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--ok-bg);color:var(--ok);border-radius:4px;padding:2px 5px}
+.btnlink{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:13px;color:var(--fg);text-decoration:none}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px}
+.sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
+.firms{display:flex;flex-wrap:wrap;gap:6px}
+.firm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--bg)}
+.firm button{padding:0 7px;border-radius:999px;font-size:13px;line-height:20px}
 .photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .log{font-size:13px;display:flex;flex-direction:column;gap:3px;border-left:2px solid var(--line);padding-left:10px}
 .log b{font-weight:600}
@@ -118,9 +127,10 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px}
 <main class="wrap" id="main"></main>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===================== Əsas siyahılar =====================
-const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Çeşidləmə","Satış","Mağazalar rəhbəri","Rəhbərlik"];
+const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Çeşidləmə","Satış","Mağazalar rəhbəri","Rəhbərlik","Admin"];
 const WAREHOUSES = ["Anbar","Anbar (İnqilab)"];
 const STORES = ["Mağaza 1","Mağaza 2","Mağaza 3"]; // nümunə adlar
 const LOCS = WAREHOUSES.concat(STORES);
@@ -197,25 +207,27 @@ function seed(){
   ];
   const log = [];
   orders.forEach(o=>o.history.forEach(h=>log.push({...h,ref:"Sifariş #"+o.id})));
-  return { v:2, products:P, stock, orders, moves, log, seq:300 };
+  return { v:2, products:P, firms:FIRMS.slice(), stock, orders, moves, log, seq:300 };
 }
 
 // ===================== Yaddaş =====================
 const KEY = "almond-anbar-demo-v2";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
+if (!S.firms) S.firms = FIRMS.slice();
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
-let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[] };
+let draft = { type:"Gündəlik", wh:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
 
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
 const pfirm = id => prod(id) ? prod(id).firm : "";
 const num = v => parseFloat(String(v).replace(",",".")) || 0;
-const pidByName = n => { const p = S.products.find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
-const datalist = () => '<datalist id="plist">'+S.products.map(p=>'<option value="'+esc(p.name)+'">'+esc(p.firm||"")+'</option>').join("")+'</datalist>';
+const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
+const live = () => S.products.filter(p=>!p.deleted);
+const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc(p.firm||"")+'</option>').join("")+'</datalist>';
 const nextId = () => ++S.seq;
 function addLog(o, act, note){
   const h = { by:role, act, note:note||"", at:new Date().toISOString() };
@@ -265,7 +277,7 @@ function vPanel(){
     tile("Bu gün / gecikən gəliş", dueToday.length, dueToday.length?"bad":"", "cal") +
     tile("Müddəti keçən", lt.length, lt.length?"bad":"", "orders:late") +
     tile("Yolda olan", S.orders.filter(o=>o.status==="yolda").length, "", "orders:yolda") +
-    tile("Kataloqda məhsul", S.products.length, "", "catalog");
+    tile("Kataloqda məhsul", live().length, "", "catalog");
   let html = '<div class="banner">Bu demo versiyadır. Yuxarıdan <b>“Kim kimi baxırsınız”</b> seçimini dəyişərək hər şöbənin ekranını görə bilərsiniz. Hazırda: <b>'+esc(role)+'</b>.</div>';
   html += '<div class="tiles">'+tiles+'</div>';
   if (dueToday.length) html += '<div class="card late"><h3>⚠ Gəliş tarixi çatıb</h3>'+dueToday.map(o=>'<div class="row"><span class="mono">#'+o.id+'</span><span class="grow">'+esc(itemsShort(o))+'</span><span class="pill p-bad">'+fmtD(o.eta)+'</span><span class="meta">'+esc(o.wh)+'</span></div>').join("")+'</div>';
@@ -303,9 +315,10 @@ function orderCard(o){
     (o.note?'<div>'+esc(o.note)+'</div>':"")+
     '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     (o.supplier?'<div class="meta">Təchizatçı: '+esc(o.supplier)+'</div>':"")+
-    photos + (m ? actions(o) : "") + comments +
+    photos + fileList(o.files||[],o.id) + (m ? actions(o) : "") + comments +
     '<div class="row"><input class="grow" id="c-'+o.id+'" placeholder="Şərh yazın"><button class="sm" data-act="comment" data-id="'+o.id+'">Şərh</button>'+
     '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📷 Şəkil<input type="file" accept="image/*" data-photo="'+o.id+'" hidden></label>'+
+    '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📎 Fayl<input type="file" data-file="'+o.id+'" hidden></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
     hist + '</div>';
 }
@@ -314,6 +327,37 @@ function guessFirm(o){
   const c = {}; o.items.forEach(i=>{ const f=pfirm(i.pid); if (f) c[f]=(c[f]||0)+1; });
   return Object.keys(c).sort((a,b)=>c[b]-c[a])[0] || "";
 }
+// ----- Fayllar (Excel, PDF və s.) -----
+const MAXF = 1.5*1024*1024;
+function readFile(f){
+  if (f.size > MAXF){ toast(f.name+": demo versiyada 1,5 MB-dan böyük fayl olmaz"); return Promise.resolve(null); }
+  return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res({name:f.name,size:f.size,data:r.result,by:role,at:new Date().toISOString()}); r.readAsDataURL(f); });
+}
+const isSheet = n => /\.(xlsx|xlsm|xls|csv)$/i.test(n);
+const fsize = b => b>1048576 ? (b/1048576).toFixed(1)+" MB" : Math.max(1,Math.round(b/1024))+" KB";
+function fileList(files, key){
+  if (!files.length) return "";
+  return '<div class="files">'+files.map((f,i)=>'<div class="file"><span class="fic">'+(isSheet(f.name)?"XLS":(f.name.split(".").pop()||"").slice(0,4).toUpperCase())+'</span><span class="grow"><b>'+esc(f.name)+'</b><span class="meta"> · '+fsize(f.size)+(f.by?' · '+esc(f.by):"")+'</span></span>'+
+    (isSheet(f.name)?'<button class="sm" data-view="'+key+':'+i+'">Bax</button>':"")+
+    '<a class="sm btnlink" href="'+f.data+'" download="'+esc(f.name)+'">Yüklə</a>'+
+    (key==="d"?'<button class="sm" data-fdel="'+i+'" aria-label="Sil">×</button>':"")+
+    '</div><div class="sheet" id="sv-'+key+'-'+i+'" hidden></div>').join("")+'</div>';
+}
+function viewSheet(key, i){
+  const box = $("sv-"+key+"-"+i);
+  if (!box.hidden){ box.hidden = true; return; }
+  const f = (key==="d" ? draft.files : S.orders.find(o=>o.id===Number(key)).files)[i];
+  if (!window.XLSX){ box.innerHTML='<div class="hint">Excel oxuyucu yüklənmədi. İnternet bağlantısını yoxlayın.</div>'; box.hidden=false; return; }
+  try {
+    const wb = XLSX.read(f.data.split(",")[1], {type:"base64"});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false}).slice(0,60);
+    box.innerHTML = '<div class="meta">Vərəq: '+esc(wb.SheetNames[0])+(wb.SheetNames.length>1?' (cəmi '+wb.SheetNames.length+' vərəq, birincisi göstərilir)':"")+'</div><div class="tbl"><table>'+
+      rows.map(r=>'<tr>'+Array.from(r,c=>'<td>'+esc(c??"")+'</td>').join("")+'</tr>').join("")+'</table></div>';
+  } catch(e){ box.innerHTML='<div class="hint">Bu faylı oxumaq olmadı.</div>'; }
+  box.hidden = false;
+}
+
 // Şöbəyə görə düymələr — zəncirin "ağıllı" hissəsi
 function actions(o){
   const h = holder(o);
@@ -321,7 +365,7 @@ function actions(o){
   let b = '<div class="box">';
   if (actor==="Satınalma" && o.status==="acik"){
     b += '<h3>Satınalma: təchizatçıya sifariş</h3>'+
-      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><datalist id="flist">'+FIRMS.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><input class="grow" type="date" id="eta-'+o.id+'" value="'+plusDays(1)+'"></div>'+
+      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><input class="grow" type="date" id="eta-'+o.id+'" value="'+plusDays(1)+'"></div>'+
       '<div class="hint">Tarix kalendara düşəcək. Sifariş avtomatik <b>'+esc(o.chain[o.step+1]||"—")+'</b> şöbəsinə keçəcək.</div>'+
       '<div class="row"><button class="pri" data-act="buy" data-id="'+o.id+'">Sifariş verildi → ötür</button><button data-act="fwd" data-id="'+o.id+'">Yalnız ötür</button></div>';
   } else if (WAREHOUSES.includes(actor) && o.status==="yolda"){
@@ -375,6 +419,7 @@ function vNew(){
     '<div class="hint">Şöbələri sıra ilə seçin. Sifariş bu ardıcıllıqla keçəcək.</div><div class="checks" id="nChain">'+chainChecks+'</div></div>'+
     '<textarea id="nNote" placeholder="Qeyd: niyə lazımdır, nə qədər təcilidir...">'+esc(draft.note)+'</textarea>'+
     '<div class="row"><label style="cursor:pointer" class="hint">📷 Şəkil əlavə et <input type="file" accept="image/*" id="nPhoto" multiple hidden></label><div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div></div>'+
+    '<div class="row"><label style="cursor:pointer" class="hint">📎 Fayl əlavə et (Excel, PDF, Word...) <input type="file" id="nFile" multiple hidden></label></div>'+fileList(draft.files,"d")+
     '<div class="row"><button class="pri" id="send">Sifarişi göndər</button><span class="hint" id="nErr"></span></div></div>';
 }
 function bindNew(){
@@ -384,6 +429,7 @@ function bindNew(){
   $("nNote").oninput = e => draft.note = e.target.value;
   $("addItem").onclick = () => { draft.items.push({pid:"",qty:""}); render(); };
   $("autoChain").onclick = () => { draft.chain = defaultChain(); render(); };
+  $("nFile").onchange = async e => { for (const f of e.target.files){ const x = await readFile(f); if (x) draft.files.push(x); } render(); };
   $("nPhoto").onchange = async e => { for (const f of e.target.files) draft.photos.push(await shrink(f)); render(); };
   $("send").onclick = sendOrder;
 }
@@ -395,10 +441,10 @@ function sendOrder(){
   if (!draft.chain.length) return $("nErr").textContent = "Zəncir üçün ən azı bir şöbə seçin və ya “Avtomatik zəncir qur” düyməsini basın.";
   const now = new Date().toISOString();
   const o = { id:nextId(), type:draft.type, from:role, wh:draft.wh, created:now, items, chain:draft.chain.slice(), step:0,
-    status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), comments:[], history:[] };
+    status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
-  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[] };
+  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
   tab = "orders"; filter = "all"; render(); toast("Sifariş #"+o.id+" göndərildi → "+o.chain[0]);
 }
 function shrink(file){
@@ -486,16 +532,25 @@ function vMoves(){
 
 // ----- Kataloq -----
 function vCatalog(){
-  const can = ["Rəhbərlik","Satınalma","Texnoloq"].includes(role);
-  const fopts = '<option value="">Bütün firmalar</option>'+FIRMS.map(f=>'<option value="'+esc(f)+'">'+esc(f)+' ('+S.products.filter(p=>p.firm===f).length+')</option>').join("")+'<option value="-">Firmasız (Satınalma özü alır)</option>';
-  const firmSel = p => '<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px"><option value="">—</option>'+FIRMS.map(f=>'<option'+(p.firm===f?" selected":"")+'>'+esc(f)+'</option>').join("")+'</select>';
-  return '<h2>Məhsul kataloqu</h2>'+
-    '<div class="hint">Siyahı Excel-dəki sifariş vərəqələrindən götürülüb (01.10.2025 – 18.10.2026). Firma həmin məhsulun ən çox sifariş olunduğu təchizatçıdır.</div>'+
-    (can?'<div class="card"><h3>Yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><input class="grow" id="pF" list="flist2" placeholder="Firma (istəyə görə)"><datalist id="flist2">'+FIRMS.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><button class="pri" id="pAdd">Əlavə et</button></div></div>'
-      :'<div class="hint">Kataloqa yeni məhsulu və firmanı Rəhbərlik, Satınalma və Texnoloq dəyişə bilər.</div>')+
-    '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..."><select id="cF" style="width:auto;max-width:100%">'+fopts+'</select><span class="hint" id="cN">'+S.products.length+' məhsul</span></div>'+
-    '<div class="card tbl"><table><thead><tr><th>#</th><th>Məhsul</th><th>Firma</th></tr></thead><tbody id="cBody">'+
-    S.products.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td>'+esc(p.name)+'</td><td>'+(can?firmSel(p):esc(p.firm||"—"))+'</td></tr>').join("")+'</tbody></table></div>';
+  const admin = role==="Admin";
+  const P = live();
+  const fopts = '<option value="">Bütün firmalar</option>'+S.firms.map(f=>'<option value="'+esc(f)+'">'+esc(f)+' ('+P.filter(p=>p.firm===f).length+')</option>').join("")+'<option value="-">Firmasız (Satınalma özü alır)</option>';
+  const firmOpts = sel => '<option value="">— firmasız —</option>'+S.firms.map(f=>'<option'+(sel===f?" selected":"")+'>'+esc(f)+'</option>').join("");
+  let html = '<h2>Məhsul kataloqu</h2>';
+  if (admin){
+    html += '<div class="card mine"><h3>Admin · yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><select class="grow" id="pF">'+firmOpts("")+'</select><button class="pri" id="pAdd">Məhsul əlavə et</button></div></div>'+
+      '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
+      '<div class="firms">'+S.firms.map(f=>'<span class="firm">'+esc(f)+' <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
+      '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
+  } else {
+    html += '<div class="hint">Kataloqu yalnız <b>Admin</b> dəyişə bilər: məhsul və firma əlavə etmək, silmək. Siz yalnız baxa bilərsiniz.</div>';
+  }
+  html += '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..."><select id="cF" style="width:auto;max-width:100%">'+fopts+'</select><span class="hint" id="cN">'+P.length+' məhsul</span></div>'+
+    '<div class="card tbl"><table><thead><tr><th>#</th><th>Məhsul</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
+    P.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td>'+esc(p.name)+'</td><td>'+
+      (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
+      (admin?'<td><button class="sm badb" data-pdel="'+p.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>';
+  return html;
 }
 
 // ----- Tarixçə -----
@@ -509,7 +564,7 @@ $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-del],#pAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
@@ -517,6 +572,11 @@ $("main").addEventListener("click", e => {
   if (t.dataset.day){ calSel = calSel===t.dataset.day ? null : t.dataset.day; render(); return; }
   if (t.dataset.del){ draft.items.splice(Number(t.dataset.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
   if (t.dataset.mv) return moveAct(t.dataset.mv, Number(t.dataset.id));
+  if (t.dataset.view){ const [k,i]=t.dataset.view.split(":"); viewSheet(k,Number(i)); return; }
+  if (t.dataset.fdel){ draft.files.splice(Number(t.dataset.fdel),1); render(); return; }
+  if (t.dataset.pdel) return sure(t, ()=>delProduct(Number(t.dataset.pdel)));
+  if (t.dataset.fmdel) return sure(t, ()=>delFirm(t.dataset.fmdel));
+  if (t.id==="fAdd") return addFirm();
   if (t.id==="pAdd") return addProduct();
   if (t.id==="reset"){ if (t.dataset.sure){ S=seed(); save(); render(); toast("Demo ilkin vəziyyətə qaytarıldı"); } else { t.dataset.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
   orderAct(t.dataset.act, Number(t.dataset.id));
@@ -525,8 +585,9 @@ $("main").addEventListener("change", async e => {
   const el = e.target;
   if (el.dataset.ii!=null){ setItem(el); return; }
   if (el.id==="cF"){ filterRows($("cQ")); return; }
-  if (el.dataset.firm){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
+  if (el.dataset.firm && role==="Admin"){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
   if (el.dataset.chain){ const d=el.dataset.chain; draft.chain = el.checked ? draft.chain.concat([d]) : draft.chain.filter(x=>x!==d); render(); return; }
+  if (el.dataset.file){ const o=S.orders.find(x=>x.id===Number(el.dataset.file)); o.files=o.files||[]; for (const f of el.files){ const x=await readFile(f); if (x){ o.files.push(x); addLog(o,"Fayl əlavə edildi",x.name); } } save(); render(); return; }
   if (el.dataset.photo){ const o=S.orders.find(x=>x.id===Number(el.dataset.photo)); for (const f of el.files) o.photos.push(await shrink(f)); addLog(o,"Şəkil əlavə edildi",""); save(); render(); }
 });
 function setItem(el){
@@ -599,16 +660,46 @@ function moveAct(act, id){
   save(); render();
 }
 
+// ----- Admin: kataloq əməliyyatları -----
+function sure(btn, fn){
+  if (btn.dataset.sure) return fn();
+  btn.dataset.sure = 1; btn.textContent = "Əminsiniz?";
+  setTimeout(()=>{ if (btn.isConnected){ delete btn.dataset.sure; btn.textContent = btn.dataset.pdel ? "Sil" : "×"; } }, 4000);
+}
+const now = () => new Date().toISOString();
 function addProduct(){
+  if (role!=="Admin") return;
   const name=$("pN").value.trim(); if(!name) return toast("Məhsulun adını yazın");
   if (pidByName(name)) return toast("Bu məhsul artıq kataloqdadır");
-  const p={id:Math.max(...S.products.map(x=>x.id))+1,name,firm:$("pF").value.trim()};
-  S.products.push(p); S.log.push({by:role,act:"Kataloqa məhsul əlavə edildi",note:name+(p.firm?" · "+p.firm:""),at:new Date().toISOString()});
+  const p={id:Math.max(...S.products.map(x=>x.id))+1,name,firm:$("pF").value};
+  S.products.push(p); S.log.push({by:role,act:"Kataloqa məhsul əlavə edildi",note:name+(p.firm?" · "+p.firm:""),at:now()});
   save(); render(); toast(name+" əlavə olundu");
+}
+// Silinən məhsul köhnə sifarişlərdə adı ilə qalır, sadəcə yeni sifarişdə seçilmir
+function delProduct(id){
+  if (role!=="Admin") return;
+  const p=prod(id); p.deleted=true;
+  S.log.push({by:role,act:"Məhsul kataloqdan silindi",note:p.name,at:now()});
+  save(); render(); toast(p.name+" silindi");
+}
+function addFirm(){
+  if (role!=="Admin") return;
+  const f=$("fN").value.trim(); if(!f) return toast("Firmanın adını yazın");
+  if (S.firms.some(x=>x.toLowerCase()===f.toLowerCase())) return toast("Bu firma artıq var");
+  S.firms.push(f); S.firms.sort((a,b)=>a.localeCompare(b,"az"));
+  S.log.push({by:role,act:"Firma əlavə edildi",note:f,at:now()});
+  save(); render(); toast(f+" əlavə olundu");
+}
+function delFirm(f){
+  if (role!=="Admin") return;
+  S.firms = S.firms.filter(x=>x!==f);
+  S.products.forEach(p=>{ if (p.firm===f) p.firm=""; });
+  S.log.push({by:role,act:"Firma silindi",note:f,at:now()});
+  save(); render(); toast(f+" silindi");
 }
 
 // Müddət keçdikcə görünüşü yenilə
-setInterval(()=>{ if (tab!=="new") render(); }, 60000);
+setInterval(()=>{ if (!["new","catalog","stock","moves"].includes(tab)) render(); }, 60000);
 renderRole(); render();
 </script>
 </body>
