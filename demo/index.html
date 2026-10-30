@@ -97,6 +97,19 @@ tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.o
 .pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
 .pname:hover{border-color:var(--line)}
 .pname:focus{background:var(--bg);border-color:var(--accent)}
+.thumb{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);padding:0;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--sunk);flex:0 0 auto;cursor:pointer}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb.sm{width:30px;height:30px;border-radius:6px}
+.thumb.empty{border-style:dashed;color:var(--muted);font-size:16px}
+span.thumb.empty{cursor:default}
+.pn{display:flex;gap:8px;align-items:center}
+.zoom{position:fixed;inset:0;z-index:30;background:rgba(20,10,4,.82);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.zoom[hidden]{display:none}
+.zoom-in{background:var(--surface);border-radius:14px;padding:10px;max-width:min(900px,100%);max-height:100%;display:flex;flex-direction:column;gap:8px}
+.zoom-in img{max-width:100%;max-height:72vh;object-fit:contain;border-radius:8px;cursor:zoom-out}
+.zoom-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.zoom-bar b{flex:1 1 140px}
+.zoom-bar .btnlink{padding:7px 12px;font-size:15px}
 .firms{display:flex;flex-wrap:wrap;gap:6px}
 .firm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--bg)}
 .firm button{padding:0 7px;border-radius:999px;font-size:13px;line-height:20px}
@@ -132,6 +145,7 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px}
 </header>
 <main class="wrap" id="main"></main>
 <div class="toast" id="toast" hidden></div>
+<div class="zoom" id="zoom" hidden><div class="zoom-in"><img id="zoomImg" alt=""><div class="zoom-bar"><b id="zoomName"></b><span id="zoomAdmin"></span><button id="zoomClose">Bağla</button></div></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -347,7 +361,7 @@ function arrivals(){
     return '<div class="card'+(bad?" late":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'</h3><span class="meta">Gəliş '+fmtD(o.eta)+'</span></div>'+
       '<div class="row">'+(bad?'<span class="pill p-bad">'+bad+' gəlmədi</span>':"")+(warn?'<span class="pill p-warn">'+warn+' az gəldi</span>':"")+'<span class="pill p-ok">'+st.filter(x=>x[1]==="p-ok").length+' tam gəldi</span>'+(o.followup?'<span class="pill p-bad">→ #'+o.followup+'</span>':"")+'</div>'+
       '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th><th>Vəziyyət</th></tr></thead><tbody>'+
-      o.items.map((i,k)=>'<tr class="'+rowCls(st[k])+'"><td>'+esc(pname(i.pid))+'</td><td class="num">'+esc(i.qty)+'</td><td class="num">'+(i.got!=null?i.got:"—")+'</td><td><span class="pill '+st[k][1]+'">'+st[k][0]+'</span></td></tr>').join("")+
+      o.items.map((i,k)=>'<tr class="'+rowCls(st[k])+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num">'+(i.got!=null?i.got:"—")+'</td><td><span class="pill '+st[k][1]+'">'+st[k][0]+'</span></td></tr>').join("")+
       '</tbody></table></div></div>';
   }).join("");
 }
@@ -366,7 +380,7 @@ function orderCard(o){
   const showState = o.eta && o.status!=="acik" && !o.missing;
   const rows = o.items.map((i,k)=>{
     const st = showState ? itemState(o,i) : null;
-    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td>'+esc(pname(i.pid))+(pfirm(i.pid)?'<div class="meta">'+esc(pfirm(i.pid))+'</div>':"")+'</td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
+    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(pfirm(i.pid)?'<div class="meta">'+esc(pfirm(i.pid))+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
   }).join("");
   let pills = '<span class="pill '+stc+'">'+(o.status==="yolda"?"Gözlənilir":stl)+'</span><span class="pill p-mute">'+esc(o.type)+'</span>';
   if (o.missing) pills = '<span class="pill p-bad">GƏLMƏYƏN MALLAR · #'+o.parent+'</span>' + pills;
@@ -440,7 +454,7 @@ function actions(o){
   } else if (WAREHOUSES.includes(actor) && o.status==="yolda"){
     const d = daysTo(o.eta);
     b += '<h3>Mal qəbulu — '+esc(o.wh)+'</h3><div class="hint">'+(d>0?"Gəliş tarixi: "+fmtD(o.eta)+". ":"")+'Mal gəldikcə gələn miqdarı yazıb “Gələnləri yadda saxla” basın. Günün sonunda gəlməyənlər <b>avtomatik qırmızı olur və Satınalmaya düşür</b>. İstəsəniz bunu “Qəbulu bitir” ilə indi edə bilərsiniz.</div>'+
-      o.items.map((i,k)=>{ const st=itemState(o,i); return '<div class="row rrow '+rowCls(st)+'"><span class="grow">'+esc(pname(i.pid))+' <span class="meta">(sifariş '+esc(i.qty)+')</span></span><span class="pill '+st[1]+'">'+st[0]+'</span><input type="number" min="0" step="any" style="width:90px" data-got="'+o.id+'-'+k+'" data-q="'+esc(i.qty)+'" id="got-'+o.id+'-'+k+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+o.id+'-'+k+'" data-q="'+num(i.qty)+'">Tam</button></div>'; }).join("")+
+      o.items.map((i,k)=>{ const st=itemState(o,i); return '<div class="row rrow '+rowCls(st)+'"><span class="grow pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+' <span class="meta">(sifariş '+esc(i.qty)+')</span></span></span><span class="pill '+st[1]+'">'+st[0]+'</span><input type="number" min="0" step="any" style="width:90px" data-got="'+o.id+'-'+k+'" data-q="'+esc(i.qty)+'" id="got-'+o.id+'-'+k+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+o.id+'-'+k+'" data-q="'+num(i.qty)+'">Tam</button></div>'; }).join("")+
       '<input id="rn-'+o.id+'" placeholder="Qeyd (zədə, temperatur, qablaşdırma...)">'+
       '<div class="row"><button class="okb" data-act="save-got" data-id="'+o.id+'">Gələnləri yadda saxla</button><button class="badb" data-act="receive" data-id="'+o.id+'">Qəbulu bitir · gəlməyənləri Satınalmaya göndər</button></div>';
   } else if (QC.includes(actor) && o.status==="qebul"){
@@ -518,11 +532,11 @@ function sendOrder(){
   draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[] };
   tab = "orders"; filter = "all"; render(); toast("Sifariş #"+o.id+" göndərildi → "+o.chain[0]);
 }
-function shrink(file){
+function shrink(file, max){
   return new Promise(res=>{
     const r = new FileReader();
     r.onload = () => { const img = new Image(); img.onload = () => {
-      const k = Math.min(1, 640/Math.max(img.width,img.height)); const c = document.createElement("canvas");
+      const k = Math.min(1, (max||640)/Math.max(img.width,img.height)); const c = document.createElement("canvas");
       c.width = img.width*k; c.height = img.height*k; c.getContext("2d").drawImage(img,0,0,c.width,c.height);
       res(c.toDataURL("image/jpeg",.7)); }; img.src = r.result; };
     r.readAsDataURL(file);
@@ -601,6 +615,39 @@ function vMoves(){
     whs.map(moveSection).join("");
 }
 
+// ----- Məhsul şəkli -----
+// Kataloqda hər məhsulun balaca şəkli; basanda böyük açılır. Şəkli yalnız Admin əlavə edir.
+function thumb(pid, small){
+  const p = prod(pid); if (!p) return "";
+  if (p.photo) return '<button class="thumb'+(small?" sm":"")+'" data-zoom="'+p.id+'" aria-label="'+esc(p.name)+' şəkli"><img src="'+p.photo+'" alt=""></button>';
+  if (small) return "";
+  if (role==="Admin") return '<label class="thumb empty" title="Şəkil əlavə et">📷<input type="file" accept="image/*" data-pphoto="'+p.id+'" hidden></label>';
+  return '<span class="thumb empty" aria-hidden="true"></span>';
+}
+function openZoom(pid){
+  const p = prod(pid);
+  $("zoomImg").src = p.photo; $("zoomName").textContent = p.name;
+  $("zoomAdmin").innerHTML = role==="Admin" ? '<label class="btnlink" style="cursor:pointer">Şəkli dəyiş<input type="file" accept="image/*" data-pphoto="'+p.id+'" hidden></label> <button class="badb" data-photodel="'+p.id+'">Şəkli sil</button>' : "";
+  $("zoom").hidden = false;
+}
+const closeZoom = () => { $("zoom").hidden = true; };
+async function setPhoto(el){
+  const f = el.files[0]; if (!f || role!=="Admin") return;
+  const p = prod(el.dataset.pphoto);
+  p.photo = await shrink(f, 900);
+  S.log.push({by:role,act:"Məhsul şəkli əlavə edildi",note:p.name,at:now()});
+  save(); toast(p.name+": şəkil əlavə olundu");
+  const cell = $("ph-"+p.id); if (cell) cell.innerHTML = thumb(p.id);
+  if (!$("zoom").hidden) openZoom(p.id);
+}
+$("zoom").addEventListener("click", e => {
+  if (e.target.id==="zoom" || e.target.id==="zoomClose" || e.target.id==="zoomImg") return closeZoom();
+  const d = e.target.closest("[data-photodel]");
+  if (d) sure(d, ()=>{ const p=prod(d.dataset.photodel); delete p.photo; S.log.push({by:role,act:"Məhsul şəkli silindi",note:p.name,at:now()}); save(); closeZoom(); const cell=$("ph-"+p.id); if (cell) cell.innerHTML=thumb(p.id); toast("Şəkil silindi"); });
+});
+$("zoom").addEventListener("change", e => { if (e.target.dataset.pphoto) setPhoto(e.target); });
+document.addEventListener("keydown", e => { if (e.key==="Escape" && !$("zoom").hidden) closeZoom(); });
+
 // ----- Kataloq -----
 function vCatalog(){
   const admin = role==="Admin";
@@ -610,7 +657,7 @@ function vCatalog(){
   let html = '<h2>Məhsul kataloqu</h2>';
   if (admin){
     html += '<div class="card mine"><h3>Admin · yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><select class="grow" id="pF">'+firmOpts("")+'</select><button class="pri" id="pAdd">Məhsul əlavə et</button></div></div>'+
-      '<div class="hint">Məhsulun adını dəyişmək üçün aşağıdakı siyahıda adın üstünə basın, düzəldin və Enter basın.</div>'+
+      '<div class="hint">Şəkil əlavə etmək üçün məhsulun yanındakı 📷 xanasına basın. Məhsulun adını dəyişmək üçün aşağıdakı siyahıda adın üstünə basın, düzəldin və Enter basın.</div>'+
       '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
       '<div class="firms">'+S.firms.map(f=>'<span class="firm">'+esc(f)+' <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
       '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
@@ -618,8 +665,8 @@ function vCatalog(){
     html += '<div class="hint">Kataloqu yalnız <b>Admin</b> dəyişə bilər: məhsul və firma əlavə etmək, silmək. Siz yalnız baxa bilərsiniz.</div>';
   }
   html += '<div class="row"><input class="grow" id="cQ" placeholder="Məhsul axtar..."><select id="cF" style="width:auto;max-width:100%">'+fopts+'</select><span class="hint" id="cN">'+P.length+' məhsul</span></div>'+
-    '<div class="card tbl"><table><thead><tr><th>#</th><th>Məhsul</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
-    P.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı">':esc(p.name))+'</td><td>'+
+    '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
+    P.map(p=>'<tr data-s="'+esc(p.name.toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı">':esc(p.name))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
       (admin?'<td><button class="sm badb" data-pdel="'+p.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>';
   return html;
@@ -636,13 +683,14 @@ $("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-full],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
+  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-mv],[data-mvdel],[data-full],[data-zoom],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#reset");
   if (!t) return;
   if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
   if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
   if (t.dataset.cal){ calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+Number(t.dataset.cal),1); calSel=null; render(); return; }
   if (t.dataset.day){ calSel = calSel===t.dataset.day ? null : t.dataset.day; render(); return; }
   if (t.dataset.del){ draft.items.splice(Number(t.dataset.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
+  if (t.dataset.zoom){ openZoom(t.dataset.zoom); return; }
   if (t.dataset.full){ const el=$("got-"+t.dataset.full); el.value = t.dataset.q; paintGot(el); saveGot(el); return; }
   if (t.dataset.mv) return addMove(t.dataset.wh, t.dataset.k);
   if (t.dataset.mvdel) return sure(t, ()=>{ S.moves = S.moves.filter(m=>m.id!==Number(t.dataset.mvdel)); save(); render(); toast("Silindi"); });
@@ -658,6 +706,7 @@ $("main").addEventListener("click", e => {
 $("main").addEventListener("change", async e => {
   const el = e.target;
   if (el.dataset.got){ saveGot(el); return; }
+  if (el.dataset.pphoto){ setPhoto(el); return; }
   if (el.dataset.ii!=null){ setItem(el); return; }
   if (el.id==="cF"){ filterRows($("cQ")); return; }
   if (el.dataset.pname && role==="Admin"){ renameProduct(el); return; }
