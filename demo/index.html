@@ -9,139 +9,202 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=Noto+Sans+Mono:wght@500&display=swap">
 <style>
-/* Layout: sticky header with role switcher + tab bar; single 900px column of work cards; summary tiles first */
+/* Layout: brown brand band (role + 5 tabs) → one 860px column. Every order is a card with a coloured left stripe
+   that says its stage: orange Satınalmada → blue Gözlənilir → green Tam gəldi / red Natamam. Same colours everywhere. */
 :root{
-  --bg:#F4E9D8; --surface:#FFFBF4; --sunk:#EADBC4; --line:#DCC7A6;
-  --fg:#33190A; --muted:#7A5C43; --accent:#6B3413; --accent-fg:#FFF8EE;
-  --ok:#2F7A3E; --ok-bg:#DDEFD9; --warn:#9A5B00; --warn-bg:#FBE9C8; --bad:#B42318; --bad-bg:#FBDAD5; --info:#2B5D8A; --info-bg:#DCE8F3;
+  --bg:#F6F1EA; --surface:#FFFFFF; --sunk:#F1E8DC; --line:#E6D9C7;
+  --fg:#2B1A10; --muted:#7D6553; --brand:#5C2E0E; --brand-2:#7A4220; --brand-fg:#FFF6EA; --accent:#5C2E0E; --accent-fg:#FFF6EA;
+  --buy:#E8590C; --buy-bg:#FFE8D6; --wait:#1C7ED6; --wait-bg:#DBEDFF; --ok:#2B8A3E; --ok-bg:#D3F9D8;
+  --bad:#E03131; --bad-bg:#FFE3E3; --warn:#B7791F; --warn-bg:#FFF1BF; --qc:#7048E8; --qc-bg:#E5DBFF; --arch:#868E96; --arch-bg:#EEF0F2;
+  --info:#1C7ED6; --info-bg:#DBEDFF;
   --display:"Noto Serif",Georgia,serif; --body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"Noto Sans Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1D140E; --surface:#281C14; --sunk:#33251B; --line:#4A3628;
-  --fg:#F3E5D0; --muted:#C2A385; --accent:#E0A46C; --accent-fg:#26160B;
-  --ok:#8BD49A; --ok-bg:#1F3A25; --warn:#F2C26B; --warn-bg:#3D2E12; --bad:#FF9C8F; --bad-bg:#45201B; --info:#9CC6EE; --info-bg:#1C2F42; color-scheme:dark}}
+  --bg:#17110C; --surface:#211912; --sunk:#2B2118; --line:#3D2F23;
+  --fg:#F4E8D8; --muted:#BFA48A; --brand:#3A1D09; --brand-2:#4E2A12; --brand-fg:#FFF1DE; --accent:#E3A66C; --accent-fg:#22140A;
+  --buy:#FF8A3D; --buy-bg:#3D2312; --wait:#5AB0FF; --wait-bg:#132B42; --ok:#5FD37A; --ok-bg:#16331D;
+  --bad:#FF7070; --bad-bg:#44191A; --warn:#F5C451; --warn-bg:#3A2E10; --qc:#A991FF; --qc-bg:#2A2147; --arch:#A0A7AE; --arch-bg:#2A2D30;
+  --info:#5AB0FF; --info-bg:#132B42; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1D140E; --surface:#281C14; --sunk:#33251B; --line:#4A3628;
-  --fg:#F3E5D0; --muted:#C2A385; --accent:#E0A46C; --accent-fg:#26160B;
-  --ok:#8BD49A; --ok-bg:#1F3A25; --warn:#F2C26B; --warn-bg:#3D2E12; --bad:#FF9C8F; --bad-bg:#45201B; --info:#9CC6EE; --info-bg:#1C2F42; color-scheme:dark}
+  --bg:#17110C; --surface:#211912; --sunk:#2B2118; --line:#3D2F23;
+  --fg:#F4E8D8; --muted:#BFA48A; --brand:#3A1D09; --brand-2:#4E2A12; --brand-fg:#FFF1DE; --accent:#E3A66C; --accent-fg:#22140A;
+  --buy:#FF8A3D; --buy-bg:#3D2312; --wait:#5AB0FF; --wait-bg:#132B42; --ok:#5FD37A; --ok-bg:#16331D;
+  --bad:#FF7070; --bad-bg:#44191A; --warn:#F5C451; --warn-bg:#3A2E10; --qc:#A991FF; --qc-bg:#2A2147; --arch:#A0A7AE; --arch-bg:#2A2D30;
+  --info:#5AB0FF; --info-bg:#132B42; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
-.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:10px}
-.brand{display:flex;flex-direction:column}
-.brand b{font-family:var(--display);font-size:20px;letter-spacing:.2px}
-.brand span{font-size:12px;color:var(--muted)}
-.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.who label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-.who select{width:auto;min-width:190px;font-weight:600}
-.tabs{display:flex;flex-wrap:wrap;gap:4px;padding-bottom:8px}
-.tabs button{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500;padding:5px 10px;font-size:14px}
-.tabs button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+header{background:var(--brand);color:var(--brand-fg);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 2px 12px rgba(40,15,0,.18)}
 @media (max-width:700px){header{position:static}}
-.tabs .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;text-align:center}
-main.wrap{padding-block:16px 60px;display:flex;flex-direction:column;gap:14px}
-h2{font-family:var(--display);font-size:22px;margin:4px 0 0;text-wrap:balance}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-block:10px 6px}
+.brand{display:flex;align-items:baseline;gap:8px;min-width:0}
+.brand b{font-family:var(--display);font-size:21px;letter-spacing:.2px}
+.brand span{font-size:12px;opacity:.75;white-space:nowrap}
+@media (max-width:480px){.brand span{display:none}}
+.who{display:flex;align-items:center;gap:6px}
+.who select{width:auto;max-width:190px;background:var(--brand-2);color:var(--brand-fg);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 12px;font-weight:600}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding-bottom:8px}
+.tabs button{background:transparent;border:none;color:var(--brand-fg);opacity:.75;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;font-weight:600;position:relative}
+.tabs button i{font-style:normal;font-size:18px;line-height:1.1}
+.tabs button.on{opacity:1;background:rgba(255,255,255,.14)}
+.tabs .n{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px}
+main.wrap{padding-block:14px 48px;display:flex;flex-direction:column;gap:12px}
+h2{font-family:var(--display);font-size:19px;margin:6px 0 0;display:flex;align-items:center;gap:8px;text-wrap:balance}
+h2 .cnt{font-family:var(--mono);font-size:13px;background:var(--sunk);color:var(--muted);border-radius:999px;padding:1px 9px}
 h3{font-size:15px;margin:0}
 input,select,textarea,button{font:inherit;color:inherit}
-input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-textarea{min-height:56px;resize:vertical}
-input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+textarea{min-height:48px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--wait);outline-offset:1px}
+button{background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer}
 button:hover{filter:brightness(.97)}
-button.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
-button.okb{background:var(--ok);color:#fff;border-color:var(--ok)}
+button.pri{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
+button.okb{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600}
 button.badb{background:transparent;color:var(--bad);border-color:var(--bad)}
 button.sm{padding:4px 9px;font-size:13px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.card.mine{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-.card.late{border-color:var(--bad)}
+button.big{width:100%;padding:11px;font-size:16px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.grow{flex:1 1 160px;min-width:0}
-.meta{font-size:12px;color:var(--muted)}
+.grow{flex:1 1 150px;min-width:0}
 .hint{font-size:13px;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted)}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:14px}
+/* stage colours */
 .pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
-.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--info)} .p-mute{background:var(--sunk);color:var(--muted)}
-.chain{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px}
-.chain .s{padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-.chain .s.done{color:var(--ok);border-color:var(--ok)}
-.chain .s.cur{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
-.chain .ar{color:var(--muted)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:left;display:flex;align-items:baseline;gap:8px}
-.tile b{font-family:var(--mono);font-size:22px;line-height:1.1}
-.h2s{font-family:var(--body);font-size:14px;font-weight:500;color:var(--muted)}
-.foot{font-size:12px;color:var(--muted);text-align:center;padding-top:8px}
-details.more>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:13px;padding:4px 0}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--wait-bg);color:var(--wait)} .p-mute{background:var(--sunk);color:var(--muted)}
+.c-buy{background:var(--buy-bg);color:var(--buy)} .c-wait{background:var(--wait-bg);color:var(--wait)} .c-ok{background:var(--ok-bg);color:var(--ok)} .c-bad{background:var(--bad-bg);color:var(--bad)} .c-qc{background:var(--qc-bg);color:var(--qc)} .c-arch{background:var(--arch-bg);color:var(--arch)}
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pipe button{border:none;border-radius:12px;padding:10px 8px;text-align:left;display:flex;flex-direction:column;gap:2px;color:#fff}
+.pipe b{font-family:var(--mono);font-size:24px;line-height:1}
+.pipe span{font-size:12px;font-weight:600;opacity:.95}
+.pipe .buy{background:var(--buy)} .pipe .wait{background:var(--wait)} .pipe .bad{background:var(--bad)} .pipe .ok{background:var(--ok)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pipe button{color:#160d06}}
+:root[data-theme="dark"] .pipe button{color:#160d06}
+/* order card */
+.oc{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--arch);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.oc.s-buy{border-left-color:var(--buy)} .oc.s-wait{border-left-color:var(--wait)} .oc.s-ok{border-left-color:var(--ok)} .oc.s-bad{border-left-color:var(--bad)} .oc.s-qc{border-left-color:var(--qc)}
+.oc.act{box-shadow:0 0 0 2px var(--brand) inset, 0 4px 14px rgba(60,25,5,.08)}
+.oc-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.oid{font-family:var(--mono);font-weight:700}
+.route{font-weight:600;flex:1 1 auto;min-width:0}
+.route i{font-style:normal;color:var(--muted)}
+.oc-t{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.oc-t .pill{margin-left:4px;vertical-align:1px}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--sunk)}
+.bar i{display:block}
+.bar .b-ok{background:var(--ok)} .bar .b-warn{background:var(--warn)} .bar .b-bad{background:var(--bad)} .bar .b-wait{background:var(--line)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.ic{display:inline-flex;align-items:center;gap:5px;font-size:13px;background:var(--sunk);border-radius:8px;padding:3px 8px;max-width:100%}
+.ic b{font-family:var(--mono);font-weight:500;font-size:12px}
+.ic .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:0 0 auto}
+.ic.d-ok{background:var(--ok-bg)} .ic.d-ok .dot{background:var(--ok)}
+.ic.d-warn{background:var(--warn-bg)} .ic.d-warn .dot{background:var(--warn)}
+.ic.d-bad{background:var(--bad-bg)} .ic.d-bad .dot{background:var(--bad)}
+.ic.d-wait .dot{background:var(--wait)}
+.box{background:var(--sunk);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+details.more>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:13px}
 details.more>summary::-webkit-details-marker{display:none}
 details.more[open]>summary{margin-bottom:8px}
 .more-in{display:flex;flex-direction:column;gap:8px}
-.ometa{font-size:13px;color:var(--muted)}
-.timing{display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
-.timing>div{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:center}
-.tl{display:block;width:100%;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
-details.rangebar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
-details.rangebar>summary{cursor:pointer;font-size:14px}
-details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
-.tile span{font-size:12px;color:var(--muted)}
-.tile.bad b{color:var(--bad)} .tile.warn b{color:var(--warn)}
+.chain{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px}
+.chain .s{padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chain .s.done{color:var(--ok);border-color:var(--ok)}
+.chain .s.cur{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.chain .ar{color:var(--muted)}
+.log{font-size:13px;display:flex;flex-direction:column;gap:3px;border-left:2px solid var(--line);padding-left:10px}
+/* receiving + reasons */
+.rrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-radius:9px;padding:6px 8px;background:var(--surface)}
+.rrow{flex-wrap:nowrap}
+.rrow .nm{flex:1 1 auto;min-width:0}
+.rrow .nm .pill{margin-top:3px;font-size:11px;padding:1px 7px}
+.rrow input{width:74px;flex:0 0 auto}
+.rrow button{flex:0 0 auto}
+.dt{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:6px}
+.rrow.okr{background:var(--ok-bg)} .rrow.warnr{background:var(--warn-bg)} .rrow.miss{background:var(--bad-bg)}
+.rsn{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-radius:9px;padding:6px 8px}
+.rsn.miss{background:var(--bad-bg)} .rsn.warnr{background:var(--warn-bg)}
+.rsn input{flex:1 1 200px;min-width:0}
+.rs{color:var(--bad);font-size:12px}
+.fgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--surface)}
+/* tables */
 .tbl{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
 td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
-td.low{color:var(--bad);font-weight:700}
-.box{background:var(--sunk);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+tr.okr td{background:var(--ok-bg)} tr.warnr td{background:var(--warn-bg)} tr.miss td{background:var(--bad-bg)}
+/* filters */
+.seg{display:flex;flex-wrap:wrap;gap:5px}
+.seg button{border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;background:var(--surface)}
+.seg button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.seg button .k{font-family:var(--mono);font-size:12px;opacity:.8;margin-left:3px}
+.seg button.f-buy.on{background:var(--buy);border-color:var(--buy);color:#fff} .seg button.f-wait.on{background:var(--wait);border-color:var(--wait);color:#fff}
+.seg button.f-bad.on{background:var(--bad);border-color:var(--bad);color:#fff} .seg button.f-ok.on{background:var(--ok);border-color:var(--ok);color:#fff}
+details.rangebar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px}
+details.rangebar>summary{cursor:pointer;font-size:14px}
+details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
+/* timeline + week */
+.tl{display:flex;flex-direction:column}
+.tld{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tld:last-child{border-bottom:none}
+.tlday{flex:0 0 64px;display:flex;flex-direction:column;font-family:var(--mono);font-size:14px}
+.tlday span{font-family:var(--body);font-size:11px;color:var(--muted)}
+.tlf{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.chipb{text-align:left;background:var(--wait-bg);border:none;border-radius:9px;padding:4px 9px;font-size:13px;color:var(--fg)}
+.chipb b{color:var(--wait)}
+.week{display:grid;grid-template-columns:auto repeat(7,minmax(0,1fr)) auto;gap:4px;align-items:stretch}
+.week>button.nav{padding:4px 6px}
+.wd{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted)}
+.wd b{font-family:var(--mono);font-size:14px;color:var(--fg)}
+.wd .dots{display:flex;gap:2px;min-height:8px}
+.wd .dots i{width:7px;height:7px;border-radius:50%}
+.wd.sel{background:var(--brand);border-color:var(--brand);color:var(--brand-fg)}
+.wd.sel b{color:var(--brand-fg)}
+.wd.today{box-shadow:0 0 0 2px var(--wait) inset}
+.i-ok{background:var(--ok)} .i-warn{background:var(--warn)} .i-bad{background:var(--bad)} .i-wait{background:var(--wait)}
+/* new order */
+.opts{display:flex;flex-wrap:wrap;gap:5px}
+.opts button{border-radius:999px;padding:5px 12px;font-size:13px;background:var(--surface)}
+.opts button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 104px 34px;gap:6px;align-items:center}
+.it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
+.imp{background:var(--wait-bg);border-radius:9px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
 .checks{display:flex;flex-wrap:wrap;gap:6px}
-.checks label{border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:13px;background:var(--bg)}
-.checks label.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.checks label{border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:13px;background:var(--surface)}
+.checks label.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
 .checks input{display:none}
-tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.okr td{background:var(--ok-bg)}
-.rrow{border-radius:8px;padding:4px 6px}
-.rrow.miss{background:var(--bad-bg)} .rrow.warnr{background:var(--warn-bg)} .rrow.okr{background:var(--ok-bg)}
+/* files, photos, catalog bits (kept from v1) */
 .photos{display:flex;gap:6px;flex-wrap:wrap}
+.photos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .files{display:flex;flex-direction:column;gap:6px}
 .file{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sunk);border-radius:8px;padding:6px 8px;font-size:13px}
 .fic{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--ok-bg);color:var(--ok);border-radius:4px;padding:2px 5px}
-.btnlink{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 9px;font-size:13px;color:var(--fg);text-decoration:none}
+.btnlink{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:13px;color:var(--fg);text-decoration:none;cursor:pointer}
 .sheet{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px}
 .sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
-.pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
-.pname:hover{border-color:var(--line)}
-.imp{background:var(--info-bg);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
-.fgrp{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface)}
-.up{gap:0;padding:4px 12px}
-.upd{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
-.upd:last-child{border-bottom:none}
-.upday{flex:0 0 70px;display:flex;flex-direction:column;font-family:var(--mono)}
-.upday span{font-family:var(--body);font-size:12px;color:var(--muted)}
-.upf{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
-.chipb{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:13px}
-.grp{display:flex;flex-direction:column;gap:6px}
-.gh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
-.gh.bad{color:var(--bad)} .gh.warn{color:var(--warn)} .gh.ok{color:var(--ok)}
-.rsn{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-radius:8px;padding:6px 8px}
-.rsn.miss{background:var(--bad-bg)} .rsn.warnr{background:var(--warn-bg)}
-.rsn input{flex:1 1 220px;min-width:0;background:var(--surface)}
-.small{font-size:13px}
-.rs{color:var(--bad)}
-.addtag{display:inline-block;font-size:11px;font-weight:600;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px}
-.newtag{display:inline-block;font-size:11px;font-weight:600;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px}
-.it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
-.pact{display:flex;gap:6px;margin-top:4px}
-.psz{min-width:110px;font-family:var(--mono);font-size:13px}
-.sz{display:inline-block;font-family:var(--mono);font-size:12px;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px;white-space:nowrap}
-.pname:focus{background:var(--bg);border-color:var(--accent)}
-.rangebar{gap:8px;padding:10px 12px}
-.linkb{background:none;border:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer}
-.thumb{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);padding:0;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--sunk);flex:0 0 auto;cursor:pointer}
+.linkb{background:none;border:none;padding:0;color:var(--wait);text-decoration:underline;cursor:pointer}
+.thumb{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);padding:0;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--sunk);flex:0 0 auto;cursor:pointer}
 .thumb img{width:100%;height:100%;object-fit:cover}
-.thumb.sm{width:30px;height:30px;border-radius:6px}
-.thumb.empty{border-style:dashed;color:var(--muted);font-size:16px}
+.thumb.sm{width:22px;height:22px;border-radius:5px}
+.thumb.empty{border-style:dashed;color:var(--muted);font-size:15px}
 span.thumb.empty{cursor:default}
 .pn{display:flex;gap:8px;align-items:center}
+.sz{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--wait-bg);color:var(--wait);border-radius:4px;padding:0 5px;white-space:nowrap}
+.newtag{display:inline-block;font-size:11px;font-weight:600;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px}
+.addtag{display:inline-block;font-size:11px;font-weight:600;background:var(--wait-bg);color:var(--wait);border-radius:4px;padding:0 5px}
+.pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:150px}
+.pname:hover{border-color:var(--line)}
+.pname:focus{background:var(--bg);border-color:var(--wait)}
+.psz{min-width:100px;font-family:var(--mono);font-size:13px}
+.pact{display:flex;gap:6px;margin-top:4px}
+.firms{display:flex;flex-wrap:wrap;gap:6px}
+.firm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--bg)}
+.firm button{padding:0 7px;border-radius:999px;font-size:13px;line-height:20px}
+.card.mine{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
 .zoom{position:fixed;inset:0;z-index:30;background:rgba(20,10,4,.82);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .zoom[hidden]{display:none}
 .zoom-in{background:var(--surface);border-radius:14px;padding:10px;max-width:min(900px,100%);max-height:100%;display:flex;flex-direction:column;gap:8px}
@@ -149,35 +212,19 @@ span.thumb.empty{cursor:default}
 .zoom-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .zoom-bar b{flex:1 1 140px}
 .zoom-bar .btnlink{padding:7px 12px;font-size:15px}
-.firms{display:flex;flex-wrap:wrap;gap:6px}
-.firm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;background:var(--bg)}
-.firm button{padding:0 7px;border-radius:999px;font-size:13px;line-height:20px}
-.photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
-.log{font-size:13px;display:flex;flex-direction:column;gap:3px;border-left:2px solid var(--line);padding-left:10px}
-.log b{font-weight:600}
-details>summary{cursor:pointer;color:var(--muted);font-size:13px}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.cal .wd{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase}
-.cal .d{background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:58px;padding:4px 6px;font-size:13px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
-.cal .d.x{visibility:hidden}
-.cal .d.today{outline:2px solid var(--accent)}
-.cal .d.has{background:var(--info-bg);border-color:var(--info)}
-.cal .d.due{background:var(--bad-bg);border-color:var(--bad)}
-.cal .d small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal .d.sel{box-shadow:0 0 0 2px var(--fg) inset}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20}
-.banner{background:var(--info-bg);color:var(--info);border-radius:10px;padding:10px 12px;font-size:13px}
-.items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 110px 32px;gap:6px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.foot{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+
 </head>
 <body>
 
 <header>
   <div class="wrap">
     <div class="top">
-      <div class="brand"><b>Almond · Anbar Zənciri</b><span>Demo versiya · məlumatlar yalnız bu brauzerdə saxlanılır</span></div>
-      <div class="who"><label for="role">Kim kimi baxırsınız</label><select id="role"></select></div>
+      <div class="brand"><b>Almond</b><span>Anbar zənciri · demo</span></div>
+      <div class="who"><select id="role" aria-label="Kim kimi baxırsınız"></select></div>
     </div>
     <nav class="tabs" id="tabs"></nav>
   </div>
@@ -191,15 +238,8 @@ details>summary{cursor:pointer;color:var(--muted);font-size:13px}
 // ===================== Əsas siyahılar =====================
 const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Texnoloq","Keyfiyyət","İstehsalat","Çeşidləmə","Satış","Mağazalar rəhbəri","Rəhbərlik","Admin"];
 const WAREHOUSES = ["Anbar","Anbar (İnqilab)"];
-const STORES = ["Mağaza 1","Mağaza 2","Mağaza 3"]; // nümunə adlar
-const LOCS = WAREHOUSES.concat(STORES);
 const QC = ["Keyfiyyət","Texnoloq"];
 const HOUR = 3600000, DAY = 86400000;
-
-const TABS = [
-  ["panel","Panel"],["orders","Sifarişlər"],["new","+ Yeni sifariş"],["arr","Gələn / Gəlməyən"],["cal","Kalendar"],
-  ["catalog","Kataloq"]
-];
 
 // ===================== Kömək funksiyaları =====================
 const $ = id => document.getElementById(id);
@@ -229,11 +269,6 @@ function guessSize(n){
 function seed(){
   const P = CATALOG.map((x,i)=>({id:i+1,name:x[0],firm:x[1],size:guessSize(x[0])}));
   const id = n => (P.find(p=>p.name.toLowerCase()===n.toLowerCase())||P[0]).id;
-  const stock = {};
-  LOCS.forEach(l=>stock[l]={});
-  [["Yumurta",900],["xama 10%",40],["kəsmik",25],["bulğur",30],["Strec",12],["D38 penaplast",300],["toyuq file",18],["cream cheese(pendir)",24],["almond kulok böyük",800],["Dolğu vişnə",15],["Darçın toz",6],["Sulu boya qırmızı",8],["Paraşok",10],["Kakos iri",9]]
-    .forEach(([n,q])=>{ stock["Anbar"][id(n)]=q; stock["Anbar (İnqilab)"][id(n)]=Math.round(q*.3); });
-  STORES.forEach((s,k)=>{ stock[s][id("almond kulok böyük")]=120-k*30; stock[s][id("D38 penaplast")]=40+k*10; });
   const now = Date.now();
   const H = (by,act,note,ago) => ({by,act,note:note||"",at:new Date(now-ago*HOUR).toISOString()});
   const orders = [
@@ -271,19 +306,13 @@ function seed(){
       deadline_h:24, last_move:new Date(now-30*HOUR).toISOString(), note:"24 saatlıq sifariş", photos:[], comments:[],
       history:[H("Anbar","Sifariş yaradıldı","24 saatlıq sifariş",40),H("Satınalma","Sifariş qəbul edildi","gəliş "+fmtD(plusDays(-1)),34),H("Anbar","Gələnlər qeyd edildi","Yumurta, kəsmik, xama 10%, keşniş",20)] }
   ];
-  const moves = [
-    { id:201, wh:"Anbar", to:"İstehsalat", product:"Yumurta 180 ədəd", note:"Səhər növbəsi üçün", by:"Anbar", at:new Date(now-5*HOUR).toISOString() },
-    { id:202, wh:"Anbar", to:"Anbar (İnqilab)", product:"D38 penaplast", note:"50 ədəd", by:"Anbar", at:new Date(now-26*HOUR).toISOString() },
-    { id:203, wh:"Anbar (İnqilab)", to:"Mağaza 2", product:"almond kulok böyük", note:"200 ədəd", by:"Anbar (İnqilab)", at:new Date(now-3*HOUR).toISOString() },
-    { id:204, wh:"Anbar (İnqilab)", to:"Anbar", product:"Kakos iri", note:"3 kq geri qaytarıldı", by:"Anbar (İnqilab)", at:new Date(now-2*DAY).toISOString() }
-  ];
   const log = [];
   orders.forEach(o=>o.history.forEach(h=>log.push({...h,ref:"Sifariş #"+o.id})));
-  return { v:2, products:P, firms:FIRMS.slice(), stock, orders, moves, log, seq:300 };
+  return { v:4, products:P, firms:FIRMS.slice(), orders, log, seq:300 };
 }
 
 // ===================== Yaddaş =====================
-const KEY = "almond-anbar-demo-v3";
+const KEY = "almond-anbar-demo-v4";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
@@ -295,20 +324,16 @@ S.orders.forEach(o=>{
     o.history = o.history.filter(h=>h.act!=="Zəncir tamamlandı");
   }
 });
-// köhnə demo məlumatı: yer dəyişmə artıq hər anbarın öz sadə qeyd siyahısıdır
-S.moves = S.moves.map(m=>m.wh ? m : { id:m.id, wh:m.from, to:m.to, product:(m.items||[]).map(i=>pname(i.pid)+" "+i.qty).join(", "), note:m.note||"", by:m.by, at:m.created });
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
-let RF = "", RT = "", jf = "all", catFirm = "", catQ = "";
-let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
-let draft = { type:"Gündəlik", wh:WAREHOUSES.includes(role)?role:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
+let tab = "home", catFirm = "", catQ = "";
+let draft;
 
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
 const pfirm = id => prod(id) ? prod(id).firm : "";
 const psize = id => prod(id) ? prod(id).size||"" : "";
-const pmeta = id => [psize(id) && "Ölçü: "+psize(id), pfirm(id)].filter(Boolean).join(" · ");
 const num = v => parseFloat(String(v).replace(",",".")) || 0;
 const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
 const live = () => S.products.filter(p=>!p.deleted);
@@ -319,13 +344,10 @@ function addLog(o, act, note, by){
   if (o) { o.history.push(h); h.ref = "Sifariş #"+o.id; }
   S.log.push(h);
 }
-function stockAdd(loc,pid,q){ S.stock[loc][pid] = Math.max(0,(S.stock[loc][pid]||0)+q); }
 
 // ===================== Sifariş vəziyyəti =====================
 const holder = o => o.status==="bagli"||o.status==="redd" ? null : o.chain[o.step];
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
-const late = o => isOpen(o) && (Date.now()-new Date(o.last_move)) > o.deadline_h*HOUR;
-const mine = o => isOpen(o) && (holder(o)===role || (late(o) && role==="Rəhbərlik"));
 const STATUS = {
   acik:["Açıq","p-warn"], yolda:["Yolda","p-info"], qebul:["Anbara qəbul edildi","p-ok"],
   bagli:["Tamamlandı","p-ok"], redd:["Rədd edildi","p-bad"]
@@ -379,159 +401,164 @@ function autoMissing(){
   if (n) save();
 }
 
+// ===================== Mərhələ: hamı üçün eyni rəng dili =====================
+// Satınalmada (narıncı) → Gözlənilir (mavi) → Tam gəldi (yaşıl) / Natamam (qırmızı). Ləğv — boz.
+const isBad = st => st[1]==="p-bad" || st[1]==="p-warn";
+const needsReason = o => !!o.recvDone && o.items.some(i=>isBad(itemState(o,i)) && !i.reason);
+function stage(o){
+  const h = holder(o);
+  if (o.status==="redd") return {k:"arch", t:"Ləğv edildi"};
+  if (o.status==="acik") return {k:"buy", t: h==="Satınalma" ? (o.missing?"Gəlməyənlər · Satınalmada":"Satınalmada") : "Növbə: "+h};
+  if (o.status==="yolda") return {k:"wait", t: o.items.some(i=>i.got!=null) ? "Qəbul olunur" : "Gözlənilir"};
+  if (o.items.some(itemMissing)) return {k:"bad", t: needsReason(o) ? "Natamam · səbəb yoxdur" : "Natamam gəldi"};
+  if (isOpen(o) && h) return {k:"qc", t:"Yoxlamada: "+h};
+  return {k:"ok", t:"Tam gəldi"};
+}
+const STAGES = [["buy","Satınalmada"],["wait","Gözlənilir"],["bad","Natamam"],["ok","Tam gəldi"]];
+const needBy = o => new Date(new Date(o.created).getTime() + o.deadline_h*HOUR);
+const etaAt = o => o.eta ? new Date(o.eta+"T"+(o.etaTime||"23:59")+":00") : null;
+const etaTxt = o => o.eta ? fmtD(o.eta)+(o.etaTime?" · "+o.etaTime:"") : "";
+const shortT = d => pad(d.getDate())+"."+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+const overdue = o => (o.status==="acik"||o.status==="yolda") && Date.now() > needBy(o).getTime();
+const odate = o => o.eta || o.created.slice(0,10);
+const WD = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"];
+const WDS = ["B","B.e","Ç.a","Ç","C.a","C","Ş"];
+const wday = d => WD[new Date(d+"T00:00:00").getDay()];
+function guessFirm(o){
+  const c = {}; o.items.forEach(i=>{ const f=pfirm(i.pid); if (f) c[f]=(c[f]||0)+1; });
+  return Object.keys(c).sort((a,b)=>c[b]-c[a])[0] || "";
+}
+
+// ===================== İş siyahısı: kimdən nə gözlənilir =====================
+function myWork(){
+  return S.orders.filter(o=>{
+    const h = holder(o);
+    if (o.status==="yolda") return h===role && daysTo(o.eta)<=0;          // anbar: bu gün gələcəkləri qəbul et
+    if (isOpen(o) && h===role) return true;                                 // Satınalma: qəbul et; yoxlama və s.
+    if (role==="Satınalma" && needsReason(o)) return true;                  // Satınalma: səbəb yaz
+    return false;
+  }).sort((a,b)=> (a.status==="acik"?0:1)-(b.status==="acik"?0:1) || odate(a).localeCompare(odate(b)) || a.id-b.id);
+}
+
 // ===================== Ümumi görünüş =====================
+const TABS = [["home","🏠","Bu gün"],["orders","📦","Sifarişlər"],["new","➕","Sifariş"],["days","🗓","Gəlişlər"],["catalog","📚","Kataloq"]];
 function renderRole(){
   $("role").innerHTML = DEPTS.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
 }
 function renderTabs(){
-  const n = S.orders.filter(mine).length;
-  $("tabs").innerHTML = TABS.map(([k,l])=>'<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'">'+l+(k==="panel"&&n?'<span class="n">'+n+'</span>':"")+'</button>').join("");
+  const n = myWork().length;
+  $("tabs").innerHTML = TABS.map(([k,ic,l])=>'<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(k==="home"&&n?'<span class="n">'+n+'</span>':"")+'</button>').join("");
 }
 function render(){
   autoMissing();
   renderTabs();
-  const v = { panel:vPanel, orders:vOrders, new:vNew, cal:vCal, arr:vArr, catalog:vCatalog }[tab];
-  $("main").innerHTML = v();
+  $("main").innerHTML = { home:vHome, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog }[tab]();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
 }
 
-// ----- Panel -----
-function vPanel(){
-  const my = S.orders.filter(mine);
-  const lt = S.orders.filter(late);
-  const sp = role==="Satınalma"||role==="Rəhbərlik";
-  const missOpen = S.orders.filter(o=>o.missing&&isOpen(o)).length, noReason = S.orders.filter(needsReason).length;
-  const tiles =
-    tile("Mənim növbəm", my.length, my.length?"warn":"", "orders:mine") +
-    tile("Gözləyən", S.orders.filter(o=>o.status==="yolda").length, "", "orders:yolda") +
-    tile("Gəlməyən mallar", missOpen, missOpen?"bad":"", "orders:miss") +
-    (sp ? tile("Səbəb yazılmayıb", noReason, noReason?"bad":"", "panel") : "") +
-    (role==="Rəhbərlik" ? tile("Müddəti keçən", lt.length, lt.length?"bad":"", "orders:late") : "");
-  let html = '<div class="tiles">'+tiles+'</div>';
-  html += '<h2>Sizin növbənizdə'+(role==="Satınalma"?' <span class="h2s">qəbul gözləyən</span>':"")+'</h2>';
-  html += my.map(orderCard).join("");
-  if (!my.length) html += '<div class="card"><div class="hint">'+esc(role)+' üçün hazırda iş yoxdur.</div></div>';
-  if (sp) html += spWaiting();
+// ----- Bu gün -----
+function pipe(){
+  const c = k => S.orders.filter(o=>stage(o).k===k && (k==="buy"||k==="wait" || daysTo(odate(o))>=-7)).length;
+  return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="orders:'+k+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
+}
+function vHome(){
+  const work = myWork();
+  let html = pipe();
+  html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>';
+  html += work.length ? work.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Hazırda '+esc(role)+' üçün iş yoxdur</div>';
+  if (role==="Satınalma"){
+    const w = S.orders.filter(o=>o.status==="yolda").sort((a,b)=>etaAt(a)-etaAt(b));
+    html += '<h2>Qəbul etdikləriniz · gözlənilir <span class="cnt">'+w.length+'</span></h2>' + (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">Gözlənilən sifariş yoxdur</div>');
+  } else if (role==="Rəhbərlik"){
+    const late = S.orders.filter(overdue), nr = S.orders.filter(needsReason);
+    if (late.length) html += '<h2>Vaxtı keçənlər <span class="cnt">'+late.length+'</span></h2>' + late.map(o=>orderCard(o)).join("");
+    if (nr.length) html += '<h2>Səbəb yazılmayıb <span class="cnt">'+nr.length+'</span></h2>' + nr.map(o=>orderCard(o)).join("");
+  } else {
+    const ids = new Set(work.map(o=>o.id));
+    const mineSent = S.orders.filter(o=>o.from===role && !ids.has(o.id) && (isOpen(o) || daysTo(odate(o))>=-1)).sort((a,b)=>odate(a).localeCompare(odate(b)));
+    if (mineSent.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mineSent.length+'</span></h2>' + mineSent.map(o=>orderCard(o)).join("");
+  }
   html += upcoming();
-  html += '<div class="foot">Demo versiya · “Kim kimi baxırsınız” ilə hər şöbənin ekranına baxın · <button class="linkb" id="reset">Demonu sıfırla</button></div>';
+  html += '<div class="foot">Demo · məlumatlar bu brauzerdə saxlanılır · <button class="linkb" id="reset">Demonu sıfırla</button></div>';
   return html;
 }
-// ----- Satınalma: qəbul etdiyi sifarişlər "Gözləyən"də qalır -----
-// Anbar mal qəbulunu qeyd etdikcə hər sifariş burada üç qrupa bölünür: gəlmədi, yarımçıq gəldi, tam gəldi.
-// Gəlməyən və yarımçıq gələn hər malın qabağında Satınalma səbəbi yazır. Hər şey tam gəlibsə
-// və ya bütün çatışmayan mallara səbəb yazılıbsa, sifariş bu siyahıdan çıxır.
-const isBad = st => st[1]==="p-bad" || st[1]==="p-warn";
-const needsReason = o => o.status!=="yolda" && o.items.some(i=>isBad(itemState(o,i)) && !i.reason);
-const spList = () => S.orders.filter(o=>o.eta && o.chain.includes("Satınalma") && o.step>o.chain.indexOf("Satınalma") && o.status!=="redd" && (o.status==="yolda" || needsReason(o)))
-  .sort((a,b)=>a.eta<b.eta?-1:a.eta>b.eta?1:a.id-b.id);
-function spWaiting(){
-  const list = spList();
-  const can = role==="Satınalma";
-  let html = '<h2>Gözləyən · Satınalmanın qəbul etdiyi sifarişlər ('+list.length+')</h2>';
-  if (!list.length) return html + '<div class="card"><div class="hint">Gəlişi gözlənilən sifariş yoxdur.</div></div>';
-  return html + list.map(o=>{
-    const rows = o.items.map((i,k)=>({i,k,st:itemState(o,i)}));
-    const G = { bad:rows.filter(r=>r.st[1]==="p-bad"), warn:rows.filter(r=>r.st[1]==="p-warn"), ok:rows.filter(r=>r.st[1]==="p-ok"), wait:rows.filter(r=>!["p-bad","p-warn","p-ok"].includes(r.st[1])) };
-    const d = daysTo(o.eta);
-    const state = o.status==="yolda" ? (o.items.some(i=>i.got!=null) ? ["Anbar qəbul edir","p-info"] : [d>0?"Gəliş "+fmtD(o.eta):d===0?"Bu gün gəlməlidir":"Gecikir","p-info"]) : ["Qəbul bitdi · səbəb gözləyir","p-warn"];
-    const reasonRow = r => '<div class="rsn '+rowCls(r.st)+'"><div class="pn grow">'+thumb(r.i.pid,1)+'<span><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">sifariş '+esc(r.i.qty)+(r.i.got?' · gəldi '+fmtN(r.i.got)+' · əskik '+fmtN(num(r.i.qty)-r.i.got):"")+'</span></span></div>'+
-      (can ? '<input data-reason="'+o.id+'-'+r.k+'" value="'+esc(r.i.reason||"")+'" placeholder="Səbəb: niyə '+(r.st[1]==="p-bad"?"gəlmədi":"az gəldi")+'?">'
-           : '<div class="meta">'+(r.i.reason?'Səbəb: '+esc(r.i.reason):'Səbəb yazılmayıb')+'</div>')+'</div>';
-    const names = rs => rs.map(r=>esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span>').join(" · ");
-    return '<div class="card'+(G.bad.length?" late":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.from)+' → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'</h3><span class="pill '+state[1]+'">'+state[0]+'</span></div>'+
-      '<div class="row">'+(G.bad.length?'<span class="pill p-bad">'+G.bad.length+' gəlmədi</span>':"")+(G.warn.length?'<span class="pill p-warn">'+G.warn.length+' yarımçıq</span>':"")+(G.ok.length?'<span class="pill p-ok">'+G.ok.length+' tam gəldi</span>':"")+(G.wait.length?'<span class="pill p-info">'+G.wait.length+' gözlənilir</span>':"")+'<span class="meta">Gəliş '+etaTxt(o)+' · '+o.deadline_h+' saatlıq</span></div>'+
-      (G.bad.length?'<div class="grp"><div class="gh bad">🔴 Gəlməyən mallar</div>'+G.bad.map(reasonRow).join("")+'</div>':"")+
-      (G.warn.length?'<div class="grp"><div class="gh warn">🟡 Yarımçıq gələn mallar</div>'+G.warn.map(reasonRow).join("")+'</div>':"")+
-      (G.ok.length?'<div class="grp"><div class="gh ok">🟢 Tam gələn mallar</div><div class="small">'+names(G.ok)+'</div></div>':"")+
-      (G.wait.length?'<div class="grp"><div class="gh">🔵 Hələ qeyd olunmayıb</div><div class="small">'+names(G.wait)+'</div></div>':"")+
-      '</div>';
-  }).join("");
-}
-function saveReason(el){
-  const [oid,k] = el.dataset.reason.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k], v = el.value.trim();
-  if (v === (i.reason||"")) return;
-  i.reason = v; i.reasonBy = role;
-  addLog(o, "Səbəb yazıldı", pname(i.pid)+": "+(v||"—"));
-  save(); toast("Səbəb yadda saxlandı");
-}
-// Yaxın 7 gün: hansı firma hansı gün gələcək
+// Yaxın 7 gün: hansı firma hansı gün, saat neçədə gələcək
 function upcoming(){
-  const list = S.orders.filter(o=>o.status==="yolda" && o.eta && daysTo(o.eta)>=0 && daysTo(o.eta)<=7).sort((a,b)=>a.eta<b.eta?-1:a.eta>b.eta?1:a.id-b.id);
+  const list = S.orders.filter(o=>o.status==="yolda" && o.eta && daysTo(o.eta)>=0 && daysTo(o.eta)<=7).sort((a,b)=>etaAt(a)-etaAt(b));
   if (!list.length) return "";
   const by = {}; list.forEach(o=>(by[o.eta]=by[o.eta]||[]).push(o));
-  return '<h2>Yaxın günlərdə gələcəklər</h2><div class="card up">'+Object.keys(by).sort().map(d=>
-    '<div class="upd"><div class="upday"><b>'+fmtD(d).slice(0,5)+'</b><span>'+(d===today()?"bu gün":daysTo(d)===1?"sabah":wday(d))+'</span></div><div class="upf">'+
-    by[d].map(o=>'<button class="chipb" data-goorder="'+o.id+'"><b>'+esc(o.supplier||"Firmasız")+'</b> <span class="meta">'+(o.etaTime?o.etaTime+' · ':"")+'#'+o.id+' · '+o.items.length+' mal · '+esc(o.wh)+'</span></button>').join("")+'</div></div>').join("")+'</div>';
+  return '<h2>Yaxın günlərdə gələcəklər</h2><div class="card tl">'+Object.keys(by).sort().map(d=>
+    '<div class="tld"><div class="tlday"><b>'+fmtD(d).slice(0,5)+'</b><span>'+(d===today()?"bu gün":daysTo(d)===1?"sabah":wday(d))+'</span></div><div class="tlf">'+
+    by[d].map(o=>'<button class="chipb" data-goorder="'+o.id+'">'+(o.etaTime?'<span class="mono">'+o.etaTime+'</span> ':"")+'<b>'+esc(o.supplier||"Firmasız")+'</b> <span class="meta">→ '+esc(o.wh)+' · '+o.items.length+' mal</span></button>').join("")+'</div></div>').join("")+'</div>';
 }
-function tile(label,n,cls,go){ return '<button class="tile '+cls+'" data-go="'+go+'"><b>'+n+'</b><span>'+label+'</span></button>'; }
-function itemsShort(o){ return o.items.map(i=>pname(i.pid)+" "+i.qty).join(", "); }
 
-// ----- Sifariş kartı -----
-// Sifarişin vaxtı: göndərən neçə saatlıq istəyib, Satınalma nə vaxt gətirəcəyini deyib
-const needBy = o => new Date(new Date(o.created).getTime() + o.deadline_h*HOUR);
-const etaAt = o => o.eta ? new Date(o.eta+"T"+(o.etaTime||"23:59")+":00") : null;
-const etaTxt = o => o.eta ? fmtD(o.eta)+(o.etaTime?" · "+o.etaTime:"") : "";
-function timing(o){
-  const nb = needBy(o), ea = etaAt(o);
-  let sp;
-  if (o.eta && o.status!=="acik"){
-    const diffH = Math.round((ea - nb)/HOUR);
-    sp = '<b>'+etaTxt(o)+'</b> gətirəcək'+(o.supplier?' <span class="meta">('+esc(o.supplier)+')</span>':"")+
-      (o.etaTime && diffH>0 ? ' <span class="pill p-bad">tələbdən '+diffH+' saat gec</span>' : o.etaTime ? ' <span class="pill p-ok">vaxtında</span>' : "");
-  } else sp = '<span class="meta">hələ qəbul etməyib, gəliş vaxtı yazılmayıb</span>';
-  return '<div class="timing"><div><span class="tl">'+esc(o.from)+'</span><b>'+o.deadline_h+' saatlıq</b> sifariş · '+fmtT(nb)+'-dək lazımdır</div>'+
-    '<div><span class="tl">Satınalma</span>'+sp+'</div></div>';
-}
+// ----- Sifariş kartı (hər yerdə eyni) -----
 const openMore = new Set();
+function itemCat(st){ return st[1]==="p-ok"?"ok":st[1]==="p-warn"?"warn":st[1]==="p-bad"?"bad":"wait"; }
 function orderCard(o){
-  const h = holder(o), lt = late(o), m = mine(o);
-  const [stl, stc] = STATUS[o.status];
+  const st = stage(o), h = holder(o), my = isOpen(o) && h===role && !(o.status==="yolda" && daysTo(o.eta)>0);
+  const receiving = my && WAREHOUSES.includes(h) && o.status==="yolda";
+  const accepted = !!o.eta && o.status!=="acik";
+  // vaxt: göndərən neçə saatlıq istəyib, Satınalma nə vaxt gətirəcək
+  const nb = needBy(o);
+  let promise = '<span>🚚 <span class="meta">Satınalma hələ vaxt verməyib</span></span>';
+  if (accepted){
+    const late = o.etaTime ? Math.round((etaAt(o)-nb)/HOUR) : 0;
+    promise = '<span>🚚 <b>'+etaTxt(o)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+(o.etaTime?(late>0?' <span class="pill p-bad">'+late+' saat gec</span>':' <span class="pill p-ok">vaxtında</span>'):"")+'</span>';
+  }
+  const need = '<span>⏱ <b>'+o.deadline_h+' saatlıq</b> · '+shortT(nb)+'-dək'+(overdue(o)?' <span class="pill p-bad">vaxtı keçib</span>':"")+'</span>';
+  // mallar: rəngli nöqtə ilə qısa siyahı + irəliləyiş zolağı
+  const states = o.items.map(i=>accepted ? itemState(o,i) : ["","p-mute"]);
+  const cnt = {ok:0,warn:0,bad:0,wait:0}; states.forEach(s=>cnt[itemCat(s)]++);
+  const bar = accepted ? '<div class="bar" title="'+cnt.ok+' tam · '+cnt.warn+' az · '+cnt.bad+' gəlmədi · '+cnt.wait+' gözlənilir">'+
+    ["ok","warn","bad","wait"].map(k=>cnt[k]?'<i class="b-'+k+'" style="flex:'+cnt[k]+'"></i>':"").join("")+'</div>' : "";
+  const reasonMode = role==="Satınalma" && accepted;
+  const badRows = reasonMode ? o.items.map((i,k)=>({i,k,s:states[k]})).filter(r=>isBad(r.s)) : [];
+  const chips = receiving ? "" : '<div class="chips">'+o.items.map((i,k)=>{
+    if (reasonMode && isBad(states[k])) return "";
+    const c = accepted ? itemCat(states[k]) : "";
+    return '<span class="ic'+(c?" d-"+c:"")+'" title="'+esc(states[k][0])+'">'+(c?'<span class="dot"></span>':"")+thumb(i.pid,1)+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <b>'+esc(i.qty)+(i.got!=null&&itemMissing(i)?' → '+fmtN(i.got):"")+'</b>'+(i.added?' <span class="addtag">+</span>':"")+'</span>';
+  }).join("")+'</div>';
+  const reasons = !reasonMode ? o.items.filter(i=>i.reason).map(i=>'<div class="rs">'+esc(pname(i.pid))+': '+esc(i.reason)+'</div>').join("") : "";
+  const rsn = badRows.map(r=>'<div class="rsn '+rowCls(r.s)+'"><div class="pn grow">'+thumb(r.i.pid,1)+'<span><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">'+esc(r.i.qty)+' · '+esc(r.s[0])+'</span></span></div>'+
+    '<input data-reason="'+o.id+'-'+r.k+'" value="'+esc(r.i.reason||"")+'" placeholder="Səbəb: niyə '+(r.s[1]==="p-bad"?"gəlmədi":"az gəldi")+'?"></div>').join("");
+  const extra = [o.type, o.group?"#"+o.group+" · hissə "+o.part:"", o.missing?"#"+o.parent+" sifarişinin gəlməyənləri":"", o.followup?"gəlməyənlər → #"+o.followup:""].filter(Boolean).join(" · ");
+  return '<article class="oc s-'+st.k+(my?" act":"")+'">'+
+    '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
+    '<div class="oc-t">'+need+promise+'</div>'+
+    (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
+    bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") + chips + rsn + reasons +
+    (my ? actions(o) : "") + addBox(o) + more(o) + '</article>';
+}
+function more(o){
   const chain = [o.from].concat(o.chain).map((d,i)=>{
     const idx=i-1; let c="s";
     if (i===0 || idx<o.step) c+=" done"; else if (idx===o.step && isOpen(o)) c+=" cur";
     return '<span class="'+c+'">'+esc(d)+'</span>';
   }).join('<span class="ar">→</span>');
-  const receiving = m && WAREHOUSES.includes(h) && o.status==="yolda";   // qəbul formasında mallar onsuz da sadalanır
-  const showState = o.eta && o.status!=="acik" && !o.missing;
-  const rows = o.items.map((i,k)=>{
-    const st = showState ? itemState(o,i) : null;
-    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+(i.added?' <span class="addtag">+ əlavə</span>':"")+(i.reason?'<div class="meta rs">Səbəb: '+esc(i.reason)+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
-  }).join("");
-  // bir status nişanı + yalnız diqqət tələb edənlər
-  let main;
-  if (lt) main = ['GECİKİR · Rəhbərlik · '+age(Date.now()-new Date(o.last_move)),"p-bad"];
-  else if (o.status==="yolda"){ const d=daysTo(o.eta); main = ['Gözlənilir · '+(d>0?fmtD(o.eta).slice(0,5):d===0?"bu gün":(-d)+" gün gecikir")+(o.etaTime?" "+o.etaTime:""), d<0?"p-bad":"p-info"]; }
-  else if (h) main = ['Növbə: '+esc(h)+' · '+age(Date.now()-new Date(o.last_move)),"p-warn"];
-  else main = [stl,stc];
-  let pills = '<span class="pill '+main[1]+'">'+main[0]+'</span>';
-  if (o.missing) pills = '<span class="pill p-bad">GƏLMƏYƏN MALLAR · #'+o.parent+'</span>' + pills;
-  if (o.addedAt && isOpen(o) && o.status==="acik") pills += '<span class="pill p-warn">Əlavə edildi · '+fmtT(o.addedAt).slice(11)+'</span>';
-  if (o.followup) pills += '<span class="pill p-bad">'+o.items.filter(itemMissing).length+' mal gəlmədi → #'+o.followup+'</span>';
-  const meta = [o.type, o.group?"#"+o.group+" sifarişinin hissəsi "+o.part:"", fmtT(o.created)].filter(Boolean).map(esc).join(" · ");
-  const photos = o.photos.length ? '<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>' : "";
-  const comments = o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+'</div>').join("");
   const nf = o.photos.length + (o.files||[]).length;
-  const more = '<details class="more" data-more="'+o.id+'"'+(openMore.has(o.id)?" open":"")+'><summary>▸ Ətraflı · zəncir, şərh'+(o.comments.length?" ("+o.comments.length+")":"")+', fayl'+(nf?" ("+nf+")":"")+', tarixçə</summary><div class="more-in">'+
-    '<div class="chain">'+chain+'</div>'+ photos + fileList(o.files||[],o.id) + comments +
+  return '<details class="more" data-more="'+o.id+'"'+(openMore.has(o.id)?" open":"")+'><summary>▸ Ətraflı'+(o.comments.length?' · 💬 '+o.comments.length:"")+(nf?' · 📎 '+nf:"")+' · '+fmtT(o.created)+'</summary><div class="more-in">'+
+    '<div class="chain">'+chain+'</div>'+
+    (o.photos.length?'<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
+    o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+'</div>').join("") +
     '<div class="row"><input class="grow" id="c-'+o.id+'" placeholder="Şərh yazın"><button class="sm" data-act="comment" data-id="'+o.id+'">Şərh</button>'+
-    '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📷 Şəkil<input type="file" accept="image/*" data-photo="'+o.id+'" hidden></label>'+
-    '<label class="sm" style="cursor:pointer;color:var(--muted);font-size:13px">📎 Fayl<input type="file" data-file="'+o.id+'" hidden></label>'+
+    '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" hidden></label>'+
+    '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" hidden></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
     '<div class="log">'+o.history.map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div></details>';
-  return '<div class="card'+(m?" mine":"")+(lt||(o.missing&&isOpen(o))?" late":"")+'">'+
-    '<div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.from)+' → '+esc(o.wh)+'</h3><div class="row">'+pills+'</div></div>'+
-    '<div class="ometa">'+meta+'</div>'+ timing(o) +
-    (o.note?'<div>'+esc(o.note)+'</div>':"")+
-    (receiving ? "" : '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th>'+(showState?'<th>Vəziyyət</th>':"")+'</tr></thead><tbody>'+rows+'</tbody></table></div>')+
-    (m ? actions(o) : "") + addBox(o) + more + '</div>';
 }
 document.addEventListener("toggle", e => { const d=e.target; if (d.dataset && d.dataset.more){ const id=Number(d.dataset.more); d.open ? openMore.add(id) : openMore.delete(id); } }, true);
 
-function guessFirm(o){
-  const c = {}; o.items.forEach(i=>{ const f=pfirm(i.pid); if (f) c[f]=(c[f]||0)+1; });
-  return Object.keys(c).sort((a,b)=>c[b]-c[a])[0] || "";
+// ----- Səbəb (Satınalma) -----
+function saveReason(el){
+  const [oid,k] = el.dataset.reason.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k], v = el.value.trim();
+  if (v === (i.reason||"")) return;
+  i.reason = v; i.reasonBy = role;
+  addLog(o, "Səbəb yazıldı", pname(i.pid)+": "+(v||"—"));
+  save(); renderTabs(); toast("Səbəb yadda saxlandı");
 }
+
 // ----- Fayllar (Excel, PDF və s.) -----
 const MAXF = 1.5*1024*1024;
 function readFile(f){
@@ -614,9 +641,9 @@ function firmGroups(o){
 }
 function firmDates(o){
   const G = firmGroups(o);
-  return '<div class="hint">Bu sifarişdə <b>'+G.length+' firmanın</b> malı var. Hər firma üçün gəliş tarixini və saatını yazın: sifariş firmalar üzrə bölünəcək və hər biri öz günündə gözləniləcək.</div>'+
+  return '<div class="hint"><b>'+G.length+' firma</b> — hər birinə gəliş günü və saatı. Sifariş firmalar üzrə bölünəcək.</div>'+
     G.map((g,k)=>'<div class="fgrp"><div class="pn"><b>'+(g.firm?esc(g.firm):"Firmasız")+'</b><span class="meta">'+g.idx.length+' mal: '+esc(g.idx.slice(0,4).map(i=>pname(o.items[i].pid)).join(", "))+(g.idx.length>4?"…":"")+'</span></div>'+
-      '<div class="row"><input class="grow" id="gsup-'+o.id+'-'+k+'" list="flist" placeholder="Təchizatçı" value="'+esc(g.firm)+'"><input class="grow" type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'"><input type="time" id="getat-'+o.id+'-'+k+'" value="'+(o.etaTime||"")+'" style="width:auto" aria-label="Gəliş saatı"></div></div>').join("");
+      '<input type="hidden" id="gsup-'+o.id+'-'+k+'" value="'+esc(g.firm)+'"><div class="dt"><input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"><input type="time" id="getat-'+o.id+'-'+k+'" value="'+(o.etaTime||"")+'" aria-label="Gəliş saatı"></div></div>').join("");
 }
 function splitAccept(o){
   const G = firmGroups(o), parts = [];
@@ -642,97 +669,93 @@ function splitAccept(o){
   return list;
 }
 
-// Şöbəyə görə düymələr — zəncirin "ağıllı" hissəsi
+// Şöbəyə görə düymələr — kartın içində yalnız indi lazım olan addım
 function actions(o){
   const h = holder(o);
-  const actor = late(o) && role==="Rəhbərlik" ? "Rəhbərlik" : h;
   let b = '<div class="box">';
-  if (actor==="Satınalma" && o.status==="acik"){
-    b += '<h3>'+(o.missing?"Satınalma: bu mallar niyə gəlmədi?":"Satınalma: sifarişi qəbul et")+'</h3>'+
-      (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb, maşın gecikdi)" value="'+esc(parentReasons(o))+'">':"")+
+  if (h==="Satınalma" && o.status==="acik"){
+    b += '<div class="lbl">'+(o.missing?"Bu mallar niyə gəlmədi? Yenidən nə vaxt gələcək?":"Qəbul et: nə vaxt gətirəcəksiniz?")+'</div>'+
+      (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb)" value="'+esc(parentReasons(o))+'">':"")+
       '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       (firmGroups(o).length>1 ? firmDates(o) :
-      '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><input class="grow" type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'"><input type="time" id="etat-'+o.id+'" value="'+(o.etaTime||"")+'" style="width:auto" aria-label="Gəliş saatı"></div>'+
-      '<div class="hint">Gəliş tarixi və <b>saatı</b> mütləqdir. Sifariş <b>'+esc(o.wh)+'</b> anbarının “Gözləyən” siyahısına həmin tarixlə düşəcək və kalendarda görünəcək.</div>')+
-      '<div class="row"><button class="pri" data-act="buy" data-id="'+o.id+'">Qəbul etdim → gözləyənə göndər</button><button data-act="fwd" data-id="'+o.id+'">Yalnız ötür</button></div>';
-  } else if (WAREHOUSES.includes(actor) && o.status==="yolda"){
-    const d = daysTo(o.eta);
-    b += '<h3>Mal qəbulu — '+esc(o.wh)+'</h3><div class="hint">Gələn miqdarı yazın. Günün sonunda gəlməyənlər avtomatik Satınalmaya düşür.</div>'+
-      o.items.map((i,k)=>{ const st=itemState(o,i); return '<div class="row rrow '+rowCls(st)+'"><span class="grow pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="meta">(sifariş '+esc(i.qty)+')</span></span></span><span class="pill '+st[1]+'">'+st[0]+'</span><input type="number" min="0" step="any" style="width:90px" data-got="'+o.id+'-'+k+'" data-q="'+esc(i.qty)+'" id="got-'+o.id+'-'+k+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+o.id+'-'+k+'" data-q="'+num(i.qty)+'">Tam</button></div>'; }).join("")+
-      '<input id="rn-'+o.id+'" placeholder="Qeyd (zədə, temperatur, qablaşdırma...)">'+
-      '<div class="row"><button class="okb" data-act="save-got" data-id="'+o.id+'">Gələnləri yadda saxla</button><button class="badb" data-act="receive" data-id="'+o.id+'">Qəbulu bitir · gəlməyənləri Satınalmaya göndər</button></div>';
-  } else if (QC.includes(actor) && o.status==="qebul"){
-    b += '<h3>'+esc(actor)+': keyfiyyət yoxlaması</h3>'+
-      '<input id="qn-'+o.id+'" placeholder="Rəy (məs. temperatur 4°C, son istifadə tarixi uyğundur)">'+
-      '<div class="row"><button class="okb" data-act="approve" data-id="'+o.id+'">Təsdiq et → ötür</button><button class="badb" data-act="reject" data-id="'+o.id+'">Rədd et (geri qaytarılsın)</button></div>';
+      '<input id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı" value="'+esc(guessFirm(o))+'"><div class="dt"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"><input type="time" id="etat-'+o.id+'" value="'+(o.etaTime||"")+'" aria-label="Gəliş saatı"></div>')+
+      '<button class="pri big" data-act="buy" data-id="'+o.id+'">✓ Qəbul et</button>';
+  } else if (WAREHOUSES.includes(h) && o.status==="yolda"){
+    b += '<div class="lbl">Mal qəbulu · gələn miqdarı yazın</div>'+
+      o.items.map((i,k)=>{ const st=itemState(o,i); return '<div class="rrow '+rowCls(st)+'"><span class="nm pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="meta">'+esc(i.qty)+'</span><br><span class="pill '+st[1]+'">'+st[0]+'</span></span></span><input type="number" min="0" step="any" data-got="'+o.id+'-'+k+'" data-q="'+esc(i.qty)+'" id="got-'+o.id+'-'+k+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+o.id+'-'+k+'" data-q="'+num(i.qty)+'">Tam</button></div>'; }).join("")+
+      '<input id="rn-'+o.id+'" placeholder="Qeyd (zədə, temperatur...)">'+
+      '<div class="row"><button class="okb grow" data-act="save-got" data-id="'+o.id+'">Yadda saxla</button><button class="badb grow" data-act="receive" data-id="'+o.id+'">Qəbulu bitir</button></div>'+
+      '<div class="hint">Gün sonunda gəlməyənlər özü Satınalmaya qayıdır.</div>';
+  } else if (QC.includes(h) && o.status==="qebul"){
+    b += '<div class="lbl">'+esc(h)+' · keyfiyyət yoxlaması</div><input id="qn-'+o.id+'" placeholder="Rəy (temperatur, son istifadə tarixi...)">'+
+      '<div class="row"><button class="okb grow" data-act="approve" data-id="'+o.id+'">Təsdiq et</button><button class="badb grow" data-act="reject" data-id="'+o.id+'">Rədd et</button></div>';
+  } else if (role==="Satınalma" && needsReason(o)){
+    b += '<div class="hint">Yuxarıda qırmızı və sarı malların qabağına səbəb yazın.</div>';
   } else {
     const nx = o.chain[o.step+1];
-    b += '<h3>'+esc(actor)+'</h3><input id="fn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
-      '<div class="row"><button class="pri" data-act="fwd" data-id="'+o.id+'">'+(nx?"Tamamla → "+esc(nx):"Tamamla və bağla")+'</button></div>';
+    b += '<input id="fn-'+o.id+'" placeholder="Qeyd (istəyə görə)"><button class="pri" data-act="fwd" data-id="'+o.id+'">'+(nx?"Tamamla → "+esc(nx):"Tamamla")+'</button>';
   }
   return b + '</div>';
 }
 
-// ----- Tarix seçimi (Sifarişlər və Gələn/Gəlməyən üçün ortaq) -----
-const WD = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"];
-const wday = d => WD[new Date(d+"T00:00:00").getDay()];
-const inRange = d => (!RF || d>=RF) && (!RT || d<=RT);
-let rangeOpen = false;
+// ----- Tarix aralığı (Sifarişlər) -----
+let RF = "", RT = "", rangeOpen = false;
 document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("rangebar")) rangeOpen = e.target.open; }, true);
+const inRange = d => (!RF || d>=RF) && (!RT || d<=RT);
 function rangeBar(){
-  const q = [["today","Bu gün"],["yday","Dünən"],["tmr","Sabah"],["week","Son 7 gün"],["month","Bu ay"],["all","Bütün tarixlər"]];
-  const label = !RF && !RT ? "Bütün tarixlər" : RF===RT ? fmtD(RF)+(RF===today()?" (bu gün)":"") : (RF?fmtD(RF):"…")+" – "+(RT?fmtD(RT):"…");
+  const q = [["today","Bu gün"],["tmr","Sabah"],["week","Son 7 gün"],["month","Bu ay"],["all","Hamısı"]];
+  const label = !RF && !RT ? "bütün tarixlər" : RF===RT ? fmtD(RF)+(RF===today()?" (bu gün)":"") : (RF?fmtD(RF):"…")+" – "+(RT?fmtD(RT):"…");
   return '<details class="rangebar"'+(rangeOpen?" open":"")+'><summary>📅 Tarix: <b>'+label+'</b></summary>'+
-    '<div class="row">'+q.map(([k,l])=>'<button class="sm" data-range="'+k+'">'+l+'</button>').join("")+'</div>'+
-    '<div class="row"><div class="grow"><div class="hint">Tarixdən</div><input type="date" id="rFrom" value="'+RF+'"></div><div class="grow"><div class="hint">Tarixədək</div><input type="date" id="rTo" value="'+RT+'"></div></div></details>';
+    '<div class="seg">'+q.map(([k,l])=>'<button data-range="'+k+'">'+l+'</button>').join("")+'</div>'+
+    '<div class="row"><div class="grow"><div class="lbl">Tarixdən</div><input type="date" id="rFrom" value="'+RF+'"></div><div class="grow"><div class="lbl">Tarixədək</div><input type="date" id="rTo" value="'+RT+'"></div></div></details>';
 }
 function setRange(k){
   const t = today();
-  if (k==="today"){ RF=RT=t; } else if (k==="yday"){ RF=RT=plusDays(-1); } else if (k==="tmr"){ RF=RT=plusDays(1); }
+  if (k==="today"){ RF=RT=t; } else if (k==="tmr"){ RF=RT=plusDays(1); }
   else if (k==="week"){ RF=plusDays(-6); RT=t; } else if (k==="month"){ RF=t.slice(0,8)+"01"; RT=t; } else { RF=RT=""; }
 }
-const odate = o => o.eta || o.created.slice(0,10);
 
-// ----- Gələn / Gəlməyən: tarix üzrə hər mal -----
-function vArr(){
-  const rows = [];
-  S.orders.forEach(o=>{ if (!o.eta || o.status==="acik") return; o.items.forEach(i=>rows.push({o,i,st:itemState(o,i)})); });
-  const cat = st => st[1]==="p-ok" ? "ok" : st[1]==="p-warn" ? "warn" : st[1]==="p-bad" ? "bad" : "wait";
-  const inR = rows.filter(r=>inRange(r.o.eta));
-  const cnt = k => inR.filter(r=>cat(r.st)===k).length;
-  const F = [["all","Hamısı",inR.length,""],["bad","Gəlmədi",cnt("bad"),"p-bad"],["warn","Az gəldi",cnt("warn"),"p-warn"],["ok","Tam gəldi",cnt("ok"),"p-ok"],["wait","Gözlənilir",cnt("wait"),"p-info"]];
-  const list = inR.filter(r=>jf==="all"||cat(r.st)===jf).sort((a,b)=>a.o.eta<b.o.eta?-1:a.o.eta>b.o.eta?1:a.o.id-b.o.id);
-  const by = {}; list.forEach(r=>(by[r.o.eta]=by[r.o.eta]||[]).push(r));
-  let html = '<h2>Gələn və gəlməyən mallar</h2>'+rangeBar()+
-    '<div class="row">'+F.map(([k,l,n,c])=>'<button class="sm '+(jf===k?"pri":"")+'" data-jf="'+k+'">'+l+' <span class="pill '+(c||"p-mute")+'">'+n+'</span></button>').join("")+'</div>';
-  const days = Object.keys(by).sort();
-  if (!days.length) return html + '<div class="card"><div class="hint">Seçilən tarixlərdə '+(jf==="all"?"":"bu vəziyyətdə ")+'mal yoxdur.</div></div>';
-  html += days.map(d=>{
-    const rs = by[d], c = k => rs.filter(r=>cat(r.st)===k).length;
-    return '<div class="card'+(c("bad")?" late":"")+'"><div class="row" style="justify-content:space-between"><h3>'+fmtD(d)+' · '+wday(d)+(d===today()?' · bu gün':"")+'</h3><div class="row">'+
-      (c("bad")?'<span class="pill p-bad">'+c("bad")+' gəlmədi</span>':"")+(c("warn")?'<span class="pill p-warn">'+c("warn")+' az</span>':"")+(c("ok")?'<span class="pill p-ok">'+c("ok")+' tam</span>':"")+(c("wait")?'<span class="pill p-info">'+c("wait")+' gözlənilir</span>':"")+'</div></div>'+
-      '<div class="tbl"><table><thead><tr><th>Məhsul</th><th>№</th><th class="num">Sifariş</th><th class="num">Gələn</th><th>Vəziyyət</th></tr></thead><tbody>'+
-      rs.map(r=>'<tr class="'+rowCls(r.st)+'"><td><div class="pn">'+thumb(r.i.pid,1)+'<span>'+esc(pname(r.i.pid))+(pmeta(r.i.pid)?'<div class="meta">'+esc(pmeta(r.i.pid))+'</div>':"")+'</span></div></td>'+
-        '<td><button class="linkb mono" data-goorder="'+r.o.id+'">#'+r.o.id+'</button><div class="meta">'+esc(r.o.wh)+'</div></td>'+
-        '<td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.st[1]+'">'+r.st[0]+'</span>'+(r.i.reason?'<div class="meta rs">'+esc(r.i.reason)+'</div>':"")+'</td></tr>').join("")+
-      '</tbody></table></div></div>';
-  }).join("");
-  return html;
+// ----- Sifarişlər: bir axtarış, mərhələ düymələri, tarix -----
+let filter = "all", oq = "";
+function vOrders(){
+  const base = S.orders.filter(o=>inRange(odate(o)));
+  const cnt = k => base.filter(o=>k==="all"||k==="mine"?true:stage(o).k===k).length;
+  const F = [["all","Hamısı"]].concat(STAGES).concat([["mine","Mənim"]]);
+  const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
+  const list = base.filter(o=> filter==="all" ? true : filter==="mine" ? (o.from===role || holder(o)===role) : stage(o).k===filter).filter(hit)
+    .sort((a,b)=> filter==="ok"||filter==="bad" ? odate(b).localeCompare(odate(a))||b.id-a.id : odate(a).localeCompare(odate(b))||a.id-b.id);
+  return '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
+    '<div class="seg">'+F.map(([k,l])=>'<button class="f-'+k+(filter===k?" on":"")+'" data-filter="'+k+'">'+l+(k!=="mine"?'<span class="k">'+cnt(k)+'</span>':"")+'</button>').join("")+'</div>'+
+    rangeBar() + (list.length ? list.map(o=>orderCard(o)).join("") : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
 }
 
-// ----- Sifarişlər -----
-function vOrders(){
-  const F = [["mine","Mənim növbəm"],["all","Açıq"],["yolda","Gözləyən"],["miss","Gəlməyən"],["arch","Arxiv"]].concat(role==="Rəhbərlik"?[["late","Gecikən"]]:[]);
-  const list = S.orders.filter(o=>{
-    if (filter==="mine") return mine(o);
-    if (filter==="late") return late(o);
-    if (filter==="arch") return !isOpen(o);
-    if (filter==="all") return isOpen(o);
-    if (filter==="miss") return !!o.missing;
-    return o.status===filter;
-  }).filter(o=>inRange(odate(o))).sort((a,b)=> odate(a)<odate(b)?-1 : odate(a)>odate(b)?1 : a.id-b.id);
-  return '<div class="row">'+F.map(([k,l])=>'<button class="sm '+(filter===k?"pri":"")+'" data-filter="'+k+'">'+l+'</button>').join("")+'</div>'+rangeBar()+
-    (list.length ? list.map(orderCard).join("") : '<div class="card"><div class="hint">Bu bölmədə sifariş yoxdur.</div></div>');
+// ----- Gəlişlər: həftə zolağı → seçilən günün hər malı -----
+let dSel = today(), jf = "all";
+function monday(d){ const x = new Date(d+"T00:00:00"); x.setDate(x.getDate()-((x.getDay()+6)%7)); return dstr(x); }
+function addD(d,n){ const x = new Date(d+"T00:00:00"); x.setDate(x.getDate()+n); return dstr(x); }
+function vDays(){
+  const withEta = S.orders.filter(o=>o.eta && o.status!=="acik" && o.status!=="redd");
+  const mon = monday(dSel), days = [...Array(7)].map((_,i)=>addD(mon,i));
+  const cell = d => {
+    const os = withEta.filter(o=>o.eta===d), sts = os.flatMap(o=>o.items.map(i=>itemCat(itemState(o,i))));
+    const dots = ["bad","warn","wait","ok"].filter(k=>sts.includes(k)).map(k=>'<i class="i-'+k+'"></i>').join("");
+    return '<button class="wd'+(d===dSel?" sel":"")+(d===today()?" today":"")+'" data-dsel="'+d+'">'+WDS[new Date(d+"T00:00:00").getDay()]+'<b>'+d.slice(8)+'</b><span class="dots">'+dots+'</span><span>'+(os.length||"")+'</span></button>';
+  };
+  const day = withEta.filter(o=>o.eta===dSel).sort((a,b)=>etaAt(a)-etaAt(b));
+  const rows = day.flatMap(o=>o.items.map((i,k)=>({o,i,st:itemState(o,i)})));
+  const c = k => rows.filter(r=>itemCat(r.st)===k).length;
+  const F = [["all","Hamısı",rows.length,""],["bad","Gəlmədi",c("bad"),"c-bad"],["warn","Az gəldi",c("warn"),"p-warn"],["ok","Tam",c("ok"),"c-ok"],["wait","Gözlənilir",c("wait"),"c-wait"]];
+  let html = '<div class="week"><button class="nav" data-dweek="-7" aria-label="Əvvəlki həftə">‹</button>'+days.map(cell).join("")+'<button class="nav" data-dweek="7" aria-label="Növbəti həftə">›</button></div>'+
+    '<div class="row"><h2 class="grow">'+fmtD(dSel)+' · '+wday(dSel)+(dSel===today()?" · bu gün":"")+'</h2><input type="date" id="dPick" value="'+dSel+'" style="width:auto"></div>'+
+    '<div class="seg">'+F.map(([k,l,n,cl])=>'<button class="'+(jf===k?"on":"")+'" data-jf="'+k+'">'+l+' <span class="k">'+n+'</span></button>').join("")+'</div>';
+  const vis = day.filter(o=>jf==="all" || o.items.some(i=>itemCat(itemState(o,i))===jf));
+  if (!vis.length) return html + '<div class="empty">Bu gün üçün '+(jf==="all"?"":"bu vəziyyətdə ")+'gəliş yoxdur</div>';
+  return html + vis.map(o=>{
+    const st = stage(o);
+    const its = o.items.map(i=>({i,s:itemState(o,i)})).filter(r=>jf==="all"||itemCat(r.s)===jf);
+    return '<div class="oc s-'+st.k+'"><div class="oc-h"><span class="mono">'+(o.etaTime||"--:--")+'</span><span class="route">'+esc(o.supplier||"Firmasız")+' <i>→</i> '+esc(o.wh)+'</span><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
+      '<div class="tbl"><table><tbody>'+its.map(r=>'<tr class="'+rowCls(r.s)+'"><td><div class="pn">'+thumb(r.i.pid,1)+'<span>'+esc(pname(r.i.pid))+(r.i.reason?'<div class="rs">'+esc(r.i.reason)+'</div>':"")+'</span></div></td><td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.s[1]+'">'+r.s[0]+'</span></td></tr>').join("")+'</tbody></table></div></div>';
+  }).join("");
 }
 
 // ----- Excel-dən sifariş -----
@@ -864,46 +887,42 @@ async function addDraftPhotos(list){
   if (tab==="new") render();
 }
 
-// ----- Yeni sifariş -----
-function defaultChain(){
-  const c = ["Satınalma", draft.wh, "Keyfiyyət"];
-  if (["İstehsalat","Texnoloq","Çeşidləmə"].includes(role)) c.push("Texnoloq");
-  if (!c.includes(role) && role!=="Rəhbərlik") c.push(role);
-  return c.filter((d,i)=>c.indexOf(d)===i);
-}
+// ----- Yeni sifariş: anbar, neçə saatlıq, mallar, göndər -----
+// Zəncir avtomatikdir: Satınalma → anbar. İstəyən "Zəncirə şöbə əlavə et" ilə Keyfiyyət, Texnoloq və s. qoşur.
+const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsulun adını yazın..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="məs. 15 kq" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
-  const chainChecks = DEPTS.filter(d=>d!==role).map(d=>{ const i=draft.chain.indexOf(d); return '<label class="'+(i>=0?"on":"")+'"><input type="checkbox" data-chain="'+esc(d)+'"'+(i>=0?" checked":"")+'>'+(i>=0?(i+1)+". ":"")+esc(d)+'</label>'; }).join("");
-  return '<h2>Yeni sifariş</h2><div class="card">'+
-    '<div class="meta">Göndərən: <b>'+esc(role)+'</b></div>'+
-    '<div class="row"><div class="grow"><div class="hint">Növ</div><select id="nType"><option'+(draft.type==="Gündəlik"?" selected":"")+'>Gündəlik</option><option'+(draft.type==="Həftəlik"?" selected":"")+'>Həftəlik</option></select></div>'+
-    '<div class="grow"><div class="hint">Hansı anbara gəlsin</div><select id="nWh">'+WAREHOUSES.map(w=>'<option'+(draft.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></div>'+
-    '<div class="grow"><div class="hint">Sifariş neçə saatlıqdır</div><select id="nDl">'+[2,4,8,12,24,48,72].map(h=>'<option value="'+h+'"'+(draft.deadline==h?" selected":"")+'>'+h+' saatlıq</option>').join("")+'</select></div></div>'+
-    '<div class="items-edit box"><div class="row" style="justify-content:space-between"><h3>Məhsullar'+(draft.items.filter(i=>i.pid||i.pname).length?' ('+draft.items.filter(i=>i.pid||i.pname).length+')':"")+'</h3><div class="row"><label class="btnlink" style="cursor:pointer">📥 Excel-dən doldur<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>'+(canOcr?'<label class="btnlink" style="cursor:pointer">📷 Şəkildən doldur<input type="file" id="nOcr" accept="image/*" multiple hidden></label>':"")+'</div></div>'+importInfo()+items+'<div><button class="sm" id="addItem">+ Məhsul əlavə et</button></div></div>'+
-    '<div class="box"><div class="row" style="justify-content:space-between"><h3>Zəncir</h3><button class="sm" id="autoChain">Avtomatik zəncir qur</button></div>'+
-    '<div class="hint">Şöbələri sıra ilə seçin. Sifariş bu ardıcıllıqla keçəcək.</div><div class="checks" id="nChain">'+chainChecks+'</div></div>'+
-    '<textarea id="nNote" placeholder="Qeyd: niyə lazımdır, nə qədər təcilidir...">'+esc(draft.note)+'</textarea>'+
-    '<div class="row"><label style="cursor:pointer" class="hint">📷 Şəkil əlavə et'+(canOcr?' (sifariş siyahısının şəklidirsə, məhsullar avtomatik yazılır)':"")+' <input type="file" accept="image/*" id="nPhoto" multiple hidden></label><div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div></div>'+
-    '<div class="row"><label style="cursor:pointer" class="hint">📎 Fayl əlavə et (Excel, PDF, Word...). Excel faylının məhsulları avtomatik yuxarıya yazılır. <input type="file" id="nFile" multiple hidden></label></div>'+fileList(draft.files,"d")+
-    '<div class="row"><button class="pri" id="send">Sifarişi göndər</button><span class="hint" id="nErr"></span></div></div>';
+  const filled = draft.items.filter(i=>i.pid||i.pname).length;
+  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="15 kq" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const extra = DEPTS.filter(d=>!["Satınalma","Admin",role].concat(WAREHOUSES).includes(d));
+  const chainTxt = ["Satınalma"].concat(draft.chain.filter(d=>d!=="Satınalma")).reduce((a,d,i)=>i===0?[d,draft.wh]:a.concat([d]),[]).join(" → ");
+  return '<div class="card">'+
+    '<div><div class="lbl">Hansı anbara</div><div class="opts">'+WAREHOUSES.map(w=>'<button class="'+(draft.wh===w?"on":"")+'" data-nwh="'+esc(w)+'">'+esc(w)+'</button>').join("")+'</div></div>'+
+    '<div><div class="lbl">Neçə saatlıq sifariş</div><div class="opts">'+HOURS.map(h=>'<button class="'+(draft.deadline==h?"on":"")+'" data-nh="'+h+'">'+h+'</button>').join("")+'</div></div>'+
+    '<div><div class="lbl">Növ</div><div class="opts">'+["Gündəlik","Həftəlik"].map(t=>'<button class="'+(draft.type===t?"on":"")+'" data-nt="'+t+'">'+t+'</button>').join("")+'</div></div>'+
+    '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
+      '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>'+
+      '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple hidden></label></div></div>'+
+      importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
+    '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
+    '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple hidden></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
+    '<details class="more"><summary>▸ Zəncir: <b>'+esc(chainTxt)+'</b> (şöbə əlavə et)</summary><div class="checks">'+
+      extra.map(d=>{ const i=draft.chain.indexOf(d); return '<label class="'+(i>=0?"on":"")+'"><input type="checkbox" data-chain="'+esc(d)+'"'+(i>=0?" checked":"")+'>'+esc(d)+'</label>'; }).join("")+'</div></details>'+
+    '<button class="pri big" id="send">Satınalmaya göndər</button><div class="hint" id="nErr"></div>'+
+    (canOcr?'<div class="hint">📷 Sifariş siyahısının şəklini əlavə etsəniz, mallar avtomatik yazılacaq.</div>':"")+
+    '</div>';
 }
 function bindNew(){
-  $("nType").onchange = e => draft.type = e.target.value;
-  $("nWh").onchange = e => { draft.wh = e.target.value; };
-  $("nDl").onchange = e => draft.deadline = Number(e.target.value);
   $("nNote").oninput = e => draft.note = e.target.value;
   $("addItem").onclick = () => { draft.items.push({pid:"",qty:""}); render(); };
-  $("autoChain").onclick = () => { draft.chain = defaultChain(); render(); };
   $("nFile").onchange = e => addDraftFiles(e.target.files);
   $("nXls").onchange = e => addDraftFiles(e.target.files);
-  if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   $("nPhoto").onchange = e => addDraftPhotos(e.target.files);
-  if ($("nOcr")) $("nOcr").onchange = e => addDraftPhotos(e.target.files);
+  if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   $("send").onclick = sendOrder;
 }
 function sendOrder(){
   const bad = draft.items.find(i=>!i.pid && !i.imp && (i.pname||"").trim());
-  if (bad) return $("nErr").textContent = "“"+bad.pname+"” kataloqda yoxdur. Siyahıdan seçin və ya əvvəl Kataloqa əlavə edin.";
+  if (bad) return $("nErr").textContent = "“"+bad.pname+"” kataloqda yoxdur. Siyahıdan seçin və ya Admin kataloqa əlavə etsin.";
   draft.items.forEach(i=>{ if (!i.pid && i.imp && (i.pname||"").trim()){
     const ex = pidByName(i.pname);
     if (ex) i.pid = ex;
@@ -911,16 +930,18 @@ function sendOrder(){
       S.log.push({by:role,act:"Kataloqa Excel-dən məhsul əlavə edildi",note:p.name,at:new Date().toISOString()}); }
   } });
   const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>({pid:Number(i.pid),qty:String(i.qty).trim()}));
-  if (!items.length) return $("nErr").textContent = "Ən azı bir məhsul və miqdar yazın.";
-  if (!draft.chain.length) return $("nErr").textContent = "Zəncir üçün ən azı bir şöbə seçin və ya “Avtomatik zəncir qur” düyməsini basın.";
+  if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
   const now = new Date().toISOString();
-  const o = { id:nextId(), type:draft.type, from:role, wh:draft.wh, created:now, items, chain:ensureWh(draft.chain.slice(), draft.wh), step:0,
+  const chain = ensureWh(["Satınalma"].concat(draft.chain.filter(d=>d!=="Satınalma")), draft.wh);
+  const o = { id:nextId(), type:draft.type, from:role, wh:draft.wh, created:now, items, chain, step:0,
     status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
-  draft = { type:"Gündəlik", wh:draft.wh, items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null };
-  tab = "orders"; filter = "all"; render(); toast("Sifariş #"+o.id+" göndərildi → "+o.chain[0]);
+  draft = newDraft();
+  tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi");
 }
+function newDraft(){ return { type:"Gündəlik", wh:WAREHOUSES.includes(role)?role:"Anbar", items:[{pid:"",qty:""}], chain:[], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null }; }
+
 function shrink(file, max){
   return new Promise(res=>{
     const r = new FileReader();
@@ -930,30 +951,6 @@ function shrink(file, max){
       res(c.toDataURL("image/jpeg",.7)); }; img.src = r.result; };
     r.readAsDataURL(file);
   });
-}
-
-// ----- Kalendar -----
-function vCal(){
-  const y=calMonth.getFullYear(), m=calMonth.getMonth();
-  const off=(new Date(y,m,1).getDay()+6)%7, n=new Date(y,m+1,0).getDate();
-  const items = S.orders.filter(o=>o.eta && (o.status==="yolda"||o.status==="acik"));
-  const by = {}; items.forEach(o=>(by[o.eta]=by[o.eta]||[]).push(o));
-  const months=["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
-  let cells = ["B.e","Ç.a","Çər","C.a","Cüm","Şən","Baz"].map(w=>'<div class="wd">'+w+'</div>').join("");
-  for (let i=0;i<off;i++) cells+='<div class="d x"></div>';
-  for (let d=1; d<=n; d++){
-    const k=y+"-"+pad(m+1)+"-"+pad(d), has=by[k];
-    const c=["d"]; if (k===today()) c.push("today"); if (has) c.push(k<=today()?"due":"has"); if (k===calSel) c.push("sel");
-    cells+='<div class="'+c.join(" ")+'" data-day="'+k+'"><b>'+d+'</b>'+(has?'<small>'+esc([...new Set(has.map(o=>o.supplier||"Firmasız"))].join(", "))+'</small>':"")+'</div>';
-  }
-  const mk=y+"-"+pad(m+1);
-  const list = items.filter(o=>calSel ? o.eta===calSel : o.eta.startsWith(mk)).sort((a,b)=>a.eta<b.eta?-1:1);
-  return '<div class="row" style="justify-content:space-between"><button data-cal="-1" aria-label="Əvvəlki ay">‹</button><h2>'+months[m]+' '+y+'</h2><button data-cal="1" aria-label="Növbəti ay">›</button></div>'+
-    '<div class="cal">'+cells+'</div><div class="hint">Mavi: gəliş gözlənilir. Qırmızı: tarix çatıb, mal hələ qəbul edilməyib. Günə basın, həmin günün siyahısı açılacaq.</div>'+
-    '<h2>'+(calSel?fmtD(calSel)+" tarixində gələcəklər":"Bu ay gələcəklər")+'</h2>'+
-    (list.length ? '<div class="card tbl"><table><thead><tr><th>Tarix</th><th>#</th><th>Məhsullar</th><th>Anbar</th><th>Təchizatçı</th></tr></thead><tbody>'+
-      list.map(o=>'<tr><td class="mono">'+fmtD(o.eta)+'</td><td class="mono">'+o.id+'</td><td>'+esc(itemsShort(o))+'</td><td>'+esc(o.wh)+'</td><td>'+esc(o.supplier||"")+'</td></tr>').join("")+'</tbody></table></div>'
-      : '<div class="card"><div class="hint">Bu dövr üçün gözlənilən mal yoxdur.</div></div>');
 }
 
 function filterRows(el){
@@ -1027,43 +1024,48 @@ function vCatalog(){
 }
 
 // ===================== Hadisələr =====================
-$("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+"-role",role);}catch(x){} draft.chain=[]; if (WAREHOUSES.includes(role)) draft.wh=role; render(); toast(role+" ekranı"); };
+$("role").onchange = e => { role = e.target.value; try{localStorage.setItem(KEY+"-role",role);}catch(x){} draft = newDraft(); render(); toast(role+" ekranı"); };
 $("tabs").onclick = e => { const b=e.target.closest("[data-tab]"); if (b){ tab=b.dataset.tab; render(); window.scrollTo(0,0);} };
 
 $("main").addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-go],[data-filter],[data-cal],[data-day],[data-full],[data-zoom],[data-range],[data-jf],[data-addopen],[data-addrow],[data-addmore],[data-addsend],[data-addcancel],[data-goorder],[data-unfirm],[data-catfirm],[data-del],[data-view],[data-fdel],[data-pdel],[data-fmdel],#pAdd,#fAdd,#ffAdd,#reset");
+  const t = e.target.closest("button,[data-dsel]");
   if (!t) return;
-  if (t.dataset.go){ const [tb,f]=t.dataset.go.split(":"); tab=tb; if (f) filter=f; render(); return; }
-  if (t.dataset.filter){ filter=t.dataset.filter; render(); return; }
-  if (t.dataset.cal){ calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+Number(t.dataset.cal),1); calSel=null; render(); return; }
-  if (t.dataset.day){ calSel = calSel===t.dataset.day ? null : t.dataset.day; render(); return; }
-  if (t.dataset.del){ draft.items.splice(Number(t.dataset.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
-  if (t.dataset.catfirm){ catFirm=t.dataset.catfirm; catQ=""; render(); $("cF").scrollIntoView({block:"start"}); return; }
-  if (t.dataset.unfirm) return unFirm(Number(t.dataset.unfirm));
+  const d = t.dataset;
+  if (d.go){ const [tb,f]=d.go.split(":"); tab=tb; if (f){ filter=f; RF=RT=""; } render(); return; }
+  if (d.filter){ filter=d.filter; render(); return; }
+  if (d.range){ setRange(d.range); rangeOpen=false; render(); return; }
+  if (d.dsel){ dSel=d.dsel; render(); return; }
+  if (d.dweek){ dSel=addD(dSel,Number(d.dweek)); render(); return; }
+  if (d.jf){ jf=d.jf; render(); return; }
+  if (d.goorder){ const o=S.orders.find(x=>x.id===Number(d.goorder)); tab="orders"; filter="all"; oq="#"+o.id; RF=RT=""; openMore.add(o.id); render(); return; }
+  if (d.nwh){ draft.wh=d.nwh; render(); return; }
+  if (d.nh){ draft.deadline=Number(d.nh); render(); return; }
+  if (d.nt){ draft.type=d.nt; render(); return; }
+  if (d.del){ draft.items.splice(Number(d.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
+  if (d.catfirm){ catFirm=d.catfirm; catQ=""; render(); $("cF").scrollIntoView({block:"start"}); return; }
+  if (d.unfirm) return unFirm(Number(d.unfirm));
   if (t.id==="ffAdd") return addToFirm();
-  if (t.dataset.addopen){ addDraft[t.dataset.addopen] = [{n:"",q:""}]; render(); return; }
-  if (t.dataset.addmore){ addDraft[t.dataset.addmore].push({n:"",q:""}); render(); return; }
-  if (t.dataset.addrow){ const [id,k]=t.dataset.addrow.split("-"); addDraft[id].splice(Number(k),1); if (!addDraft[id].length) addDraft[id].push({n:"",q:""}); render(); return; }
-  if (t.dataset.addcancel){ delete addDraft[t.dataset.addcancel]; render(); return; }
-  if (t.dataset.addsend) return addSend(Number(t.dataset.addsend));
-  if (t.dataset.range){ setRange(t.dataset.range); rangeOpen=false; render(); return; }
-  if (t.dataset.jf){ jf=t.dataset.jf; render(); return; }
-  if (t.dataset.goorder){ const o=S.orders.find(x=>x.id===Number(t.dataset.goorder)); tab="orders"; filter=isOpen(o)?"all":"arch"; RF=RT=odate(o); render(); return; }
-  if (t.dataset.zoom){ openZoom(t.dataset.zoom); return; }
-  if (t.dataset.full){ const el=$("got-"+t.dataset.full); el.value = t.dataset.q; paintGot(el); saveGot(el); return; }
-  if (t.dataset.view){ const [k,i]=t.dataset.view.split(":"); viewSheet(k,Number(i)); return; }
-  if (t.dataset.fdel){ draft.files.splice(Number(t.dataset.fdel),1); render(); return; }
-  if (t.dataset.pdel) return sure(t, ()=>delProduct(Number(t.dataset.pdel)));
-  if (t.dataset.fmdel) return sure(t, ()=>delFirm(t.dataset.fmdel));
+  if (d.addopen){ addDraft[d.addopen] = [{n:"",q:""}]; render(); return; }
+  if (d.addmore){ addDraft[d.addmore].push({n:"",q:""}); render(); return; }
+  if (d.addrow){ const [id,k]=d.addrow.split("-"); addDraft[id].splice(Number(k),1); if (!addDraft[id].length) addDraft[id].push({n:"",q:""}); render(); return; }
+  if (d.addcancel){ delete addDraft[d.addcancel]; render(); return; }
+  if (d.addsend) return addSend(Number(d.addsend));
+  if (d.zoom){ openZoom(d.zoom); return; }
+  if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
+  if (d.view){ const [k,i]=d.view.split(":"); viewSheet(k,Number(i)); return; }
+  if (d.fdel){ draft.files.splice(Number(d.fdel),1); render(); return; }
+  if (d.pdel) return sure(t, ()=>delProduct(Number(d.pdel)));
+  if (d.fmdel) return sure(t, ()=>delFirm(d.fmdel));
   if (t.id==="fAdd") return addFirm();
   if (t.id==="pAdd") return addProduct();
-  if (t.id==="reset"){ if (t.dataset.sure){ S=seed(); save(); render(); toast("Demo ilkin vəziyyətə qaytarıldı"); } else { t.dataset.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
-  orderAct(t.dataset.act, Number(t.dataset.id));
+  if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Demo ilkin vəziyyətə qaytarıldı"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
+  if (d.act) orderAct(d.act, Number(d.id));
 });
 $("main").addEventListener("change", async e => {
   const el = e.target;
   if (el.id==="rFrom"){ RF=el.value; render(); return; }
   if (el.id==="rTo"){ RT=el.value; render(); return; }
+  if (el.id==="dPick"){ if (el.value){ dSel=el.value; render(); } return; }
   if (el.dataset.got){ saveGot(el); return; }
   if (el.dataset.reason){ saveReason(el); return; }
   if (el.dataset.pphoto){ setPhoto(el); return; }
@@ -1076,29 +1078,35 @@ $("main").addEventListener("change", async e => {
   if (el.dataset.file){ const o=S.orders.find(x=>x.id===Number(el.dataset.file)); o.files=o.files||[]; for (const f of el.files){ const x=await readFile(f); if (x){ o.files.push(x); addLog(o,"Fayl əlavə edildi",x.name); } } save(); render(); return; }
   if (el.dataset.photo){ const o=S.orders.find(x=>x.id===Number(el.dataset.photo)); for (const f of el.files) o.photos.push(await shrink(f)); addLog(o,"Şəkil əlavə edildi",""); save(); render(); }
 });
+$("main").addEventListener("input", e => {
+  const el=e.target;
+  if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; }
+  if (el.dataset.got) paintGot(el);
+  if (el.dataset.ii!=null) setItem(el);
+  if (el.id==="cQ"){ catQ=el.value; filterRows(el); }
+  if (el.id==="oQ"){ oq=el.value; clearTimeout(window.__oq); window.__oq=setTimeout(()=>{ render(); const q=$("oQ"); q.focus(); q.setSelectionRange(q.value.length,q.value.length); },250); }
+});
 function setItem(el){
   const it = draft.items[Number(el.dataset.ii)];
   if (el.dataset.f==="pname"){ it.pname = el.value; it.pid = pidByName(el.value); } else it.qty = el.value;
 }
+// Yazan kimi rəng: tam — yaşıl, az — sarı, 0 — qırmızı
 function paintGot(el){
+  if (el.value==="") return;
   const row = el.closest(".rrow"), pill = row.querySelector(".pill");
-  if (el.value===""){ return; }
   const st = gotState(el.dataset.q, Math.max(0,num(el.value)));
-  row.className = "row rrow "+rowCls(st); pill.className = "pill "+st[1]; pill.textContent = st[0];
-  const tr = $("tr-"+el.dataset.got);
-  if (tr){ tr.className = rowCls(st); const tp = tr.querySelector(".pill"); if (tp){ tp.className = "pill "+st[1]; tp.textContent = st[0]; } tr.children[2].textContent = fmtN(Math.max(0,num(el.value))); }
+  row.className = "rrow "+rowCls(st); pill.className = "pill "+st[1]; pill.textContent = st[0];
 }
-// Hər məhsul xanadan çıxan kimi yadda saxlanılır — Satınalma dərhal görür
+// Xanadan çıxan kimi yadda saxlanılır — Satınalma dərhal görür
 function saveGot(el){
   if (el.value==="") return;
   const [oid,k] = el.dataset.got.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k];
   const val = Math.max(0,num(el.value));
   if (val===i.got) return;
-  stockAdd(o.wh,i.pid,val-(i.got||0)); i.got = val;
+  i.got = val;
   addLog(o,"Qeyd edildi",pname(i.pid)+": "+i.qty+" sifariş, "+val+" gəldi ("+gotState(i.qty,val)[0]+")");
   save(); renderTabs();
 }
-$("main").addEventListener("input", e => { const el=e.target; if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; } if (el.dataset.got) paintGot(el); if (el.dataset.ii!=null) setItem(el); if (el.id==="cQ"){ catQ=el.value; filterRows(el); } });
 
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
@@ -1113,36 +1121,31 @@ function orderAct(act, id){
       const list = splitAccept(o); if (!list) return;
       save(); render(); return toast(list.length+" firmaya bölündü: "+list.map(x=>fmtD(x.eta)).filter((d,i,a)=>a.indexOf(d)===i).join(", "));
     }
-    o.chain = ensureWh(o.chain, o.wh);
     const tm=v("etat"); if (!tm) return toast("Gəliş saatını yazın");
+    o.chain = ensureWh(o.chain, o.wh);
     o.eta=eta; o.etaTime=tm; o.acceptedAt=new Date().toISOString(); o.supplier=v("sup").trim(); o.status="yolda";
     if (o.missing) o.comments.push({by:role,text:"Səbəb: "+v("why").trim(),at:new Date().toISOString()});
     advance(o,"Sifariş qəbul edildi",[o.supplier, "gəliş "+etaTxt(o), o.missing?"səbəb: "+v("why").trim():""].filter(Boolean).join(" · "));
-    toast(o.chain[o.step]+" gözləyən siyahısına düşdü · "+etaTxt(o));
+    toast(o.wh+" gözləyir · "+etaTxt(o));
   }
   else if (act==="save-got" || act==="receive"){
     const got=[];
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (!el || el.value==="") return;
-      const val=Math.max(0,num(el.value)); stockAdd(o.wh,i.pid,val-(i.got||0)); if (val!==i.got) got.push(pname(i.pid)+" "+val); i.got=val; });
+      const val=Math.max(0,num(el.value)); if (val!==i.got) got.push(pname(i.pid)+" "+val); i.got=val; });
     if (act==="save-got"){
       if (got.length) addLog(o,"Gələnlər qeyd edildi",got.join(", "));
-      if (o.items.every(i=>!itemMissing(i))){ finishReceive(o, role, v("rn")); toast("Hamısı gəldi, qəbul bitdi"); }
+      if (o.items.every(i=>!itemMissing(i))){ finishReceive(o, role, v("rn")); toast("Hamısı gəldi ✓"); }
       else toast(got.length ? "Yadda saxlandı · "+o.items.filter(itemMissing).length+" mal hələ gəlməyib" : "Gələn miqdarı yazın");
     } else {
       const n = finishReceive(o, role, v("rn"));
-      toast(n ? n+" gəlməyən mal Satınalmaya göndərildi" : "Hamısı gəldi, qəbul bitdi");
+      toast(n ? n+" gəlməyən mal Satınalmaya göndərildi" : "Hamısı gəldi ✓");
     }
   }
-  else if (act==="approve"){
-    advance(o,(holder(o)||role)+" təsdiqlədi",v("qn"));
-    toast("Təsdiqləndi");
-  }
+  else if (act==="approve"){ advance(o,(holder(o)||role)+" təsdiqlədi",v("qn")); toast("Təsdiqləndi"); }
   else if (act==="reject"){
     const note=v("qn"); if (!note) return toast("Rədd səbəbini yazın");
-    o.items.forEach(i=>stockAdd(o.wh,i.pid,-(i.got||0)));
     o.status="redd"; o.last_move=new Date().toISOString();
-    addLog(o,"Rədd edildi, mal qaytarılır",note);
-    toast("Rədd edildi, qalıqdan çıxıldı");
+    addLog(o,"Rədd edildi, mal qaytarılır",note); toast("Rədd edildi");
   }
   else if (act==="fwd"){ advance(o,"Ötürüldü"+(o.chain[o.step+1]?" → "+o.chain[o.step+1]:""),v("fn")); }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
@@ -1214,8 +1217,9 @@ function delFirm(f){
   save(); render(); toast(f+" silindi");
 }
 
-// Müddət keçdikcə görünüşü yenilə
-setInterval(()=>{ const f=document.activeElement; if (!["new","catalog","arr","orders"].includes(tab) && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea"))) render(); }, 60000);
+// Saat keçdikcə vaxt nişanlarını yenilə (yazı yazılarkən yox)
+setInterval(()=>{ const f=document.activeElement; if (tab!=="new" && tab!=="catalog" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))) render(); }, 60000);
+draft = newDraft();
 renderRole(); render();
 </script>
 </body>
