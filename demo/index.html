@@ -98,6 +98,14 @@ tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.o
 .pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
 .pname:hover{border-color:var(--line)}
 .imp{background:var(--info-bg);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.gh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.gh.bad{color:var(--bad)} .gh.warn{color:var(--warn)} .gh.ok{color:var(--ok)}
+.rsn{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-radius:8px;padding:6px 8px}
+.rsn.miss{background:var(--bad-bg)} .rsn.warnr{background:var(--warn-bg)}
+.rsn input{flex:1 1 220px;min-width:0;background:var(--surface)}
+.small{font-size:13px}
+.rs{color:var(--bad)}
 .addtag{display:inline-block;font-size:11px;font-weight:600;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px}
 .newtag{display:inline-block;font-size:11px;font-weight:600;background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:1px 6px}
 .it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
@@ -363,28 +371,54 @@ function vPanel(){
     tile("Müddəti keçən", lt.length, lt.length?"bad":"", "orders:late") +
     tile("Gözləyən (gəlişi gözlənilən)", S.orders.filter(o=>o.status==="yolda").length, "", "orders:yolda") +
     tile("Gəlməyən mallar · açıq", S.orders.filter(o=>o.missing&&isOpen(o)).length, S.orders.some(o=>o.missing&&isOpen(o))?"bad":"", "orders:miss") +
+    (role==="Satınalma"||role==="Rəhbərlik" ? tile("Səbəb yazılmayıb", S.orders.filter(needsReason).length, S.orders.some(needsReason)?"bad":"", "panel") : "") +
     tile("Kataloqda məhsul", live().length, "", "catalog");
   let html = '<div class="banner">Bu demo versiyadır. Yuxarıdan <b>“Kim kimi baxırsınız”</b> seçimini dəyişərək hər şöbənin ekranını görə bilərsiniz. Hazırda: <b>'+esc(role)+'</b>. <button class="sm badb" id="reset">Demonu sıfırla</button></div>';
   html += '<div class="tiles">'+tiles+'</div>';
   if (dueToday.length) html += '<div class="card late"><h3>⚠ Gəliş tarixi çatıb</h3>'+dueToday.map(o=>'<div class="row"><span class="mono">#'+o.id+'</span><span class="grow">'+esc(itemsShort(o))+'</span><span class="pill p-bad">'+fmtD(o.eta)+'</span><span class="meta">'+esc(o.wh)+'</span></div>').join("")+'</div>';
-  if (role==="Satınalma" || role==="Rəhbərlik") html += arrivals();
-  html += '<h2>Sizin növbənizdə</h2>';
+  html += '<h2>Sizin növbənizdə'+(role==="Satınalma"?" · qəbul gözləyən sifarişlər":"")+'</h2>';
   html += my.map(orderCard).join("");
   if (!my.length) html += '<div class="card"><div class="hint">'+esc(role)+' üçün hazırda gözləyən iş yoxdur.</div></div>';
+  if (role==="Satınalma" || role==="Rəhbərlik") html += spWaiting();
   return html;
 }
-// Satınalma üçün: bu gün anbara nə gəldi, nə az gəldi, nə gəlmədi
-function arrivals(){
-  const list = S.orders.filter(o=>!o.missing && o.eta && o.status!=="acik" && (o.status==="yolda" ? daysTo(o.eta)<=0 : daysTo(o.eta)>=-1));
-  if (!list.length) return "";
-  return '<h2>Anbara gələnlər · qəbul vəziyyəti</h2>'+list.map(o=>{
-    const st = o.items.map(i=>itemState(o,i)), bad = st.filter(x=>x[1]==="p-bad").length, warn = st.filter(x=>x[1]==="p-warn").length;
-    return '<div class="card'+(bad?" late":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'</h3><span class="meta">Gəliş '+fmtD(o.eta)+'</span></div>'+
-      '<div class="row">'+(bad?'<span class="pill p-bad">'+bad+' gəlmədi</span>':"")+(warn?'<span class="pill p-warn">'+warn+' az gəldi</span>':"")+'<span class="pill p-ok">'+st.filter(x=>x[1]==="p-ok").length+' tam gəldi</span>'+(o.followup?'<span class="pill p-bad">→ #'+o.followup+'</span>':"")+'</div>'+
-      '<div class="tbl"><table><thead><tr><th>Məhsul</th><th class="num">Sifariş</th><th class="num">Gələn</th><th>Vəziyyət</th></tr></thead><tbody>'+
-      o.items.map((i,k)=>'<tr class="'+rowCls(st[k])+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num">'+(i.got!=null?i.got:"—")+'</td><td><span class="pill '+st[k][1]+'">'+st[k][0]+'</span></td></tr>').join("")+
-      '</tbody></table></div></div>';
+// ----- Satınalma: qəbul etdiyi sifarişlər "Gözləyən"də qalır -----
+// Anbar mal qəbulunu qeyd etdikcə hər sifariş burada üç qrupa bölünür: gəlmədi, yarımçıq gəldi, tam gəldi.
+// Gəlməyən və yarımçıq gələn hər malın qabağında Satınalma səbəbi yazır. Hər şey tam gəlibsə
+// və ya bütün çatışmayan mallara səbəb yazılıbsa, sifariş bu siyahıdan çıxır.
+const isBad = st => st[1]==="p-bad" || st[1]==="p-warn";
+const needsReason = o => o.status!=="yolda" && o.items.some(i=>isBad(itemState(o,i)) && !i.reason);
+const spList = () => S.orders.filter(o=>o.eta && o.chain.includes("Satınalma") && o.step>o.chain.indexOf("Satınalma") && o.status!=="redd" && (o.status==="yolda" || needsReason(o)))
+  .sort((a,b)=>a.eta<b.eta?-1:a.eta>b.eta?1:a.id-b.id);
+function spWaiting(){
+  const list = spList();
+  const can = role==="Satınalma";
+  let html = '<h2>Gözləyən · Satınalmanın qəbul etdiyi sifarişlər ('+list.length+')</h2>';
+  if (!list.length) return html + '<div class="card"><div class="hint">Gəlişi gözlənilən sifariş yoxdur.</div></div>';
+  return html + list.map(o=>{
+    const rows = o.items.map((i,k)=>({i,k,st:itemState(o,i)}));
+    const G = { bad:rows.filter(r=>r.st[1]==="p-bad"), warn:rows.filter(r=>r.st[1]==="p-warn"), ok:rows.filter(r=>r.st[1]==="p-ok"), wait:rows.filter(r=>!["p-bad","p-warn","p-ok"].includes(r.st[1])) };
+    const d = daysTo(o.eta);
+    const state = o.status==="yolda" ? (o.items.some(i=>i.got!=null) ? ["Anbar qəbul edir","p-info"] : [d>0?"Gəliş "+fmtD(o.eta):d===0?"Bu gün gəlməlidir":"Gecikir","p-info"]) : ["Qəbul bitdi · səbəb gözləyir","p-warn"];
+    const reasonRow = r => '<div class="rsn '+rowCls(r.st)+'"><div class="pn grow">'+thumb(r.i.pid,1)+'<span><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">sifariş '+esc(r.i.qty)+(r.i.got?' · gəldi '+fmtN(r.i.got)+' · əskik '+fmtN(num(r.i.qty)-r.i.got):"")+'</span></span></div>'+
+      (can ? '<input data-reason="'+o.id+'-'+r.k+'" value="'+esc(r.i.reason||"")+'" placeholder="Səbəb: niyə '+(r.st[1]==="p-bad"?"gəlmədi":"az gəldi")+'?">'
+           : '<div class="meta">'+(r.i.reason?'Səbəb: '+esc(r.i.reason):'Səbəb yazılmayıb')+'</div>')+'</div>';
+    const names = rs => rs.map(r=>esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span>').join(" · ");
+    return '<div class="card'+(G.bad.length?" late":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">#'+o.id+'</span> · '+esc(o.from)+' → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'</h3><span class="pill '+state[1]+'">'+state[0]+'</span></div>'+
+      '<div class="row">'+(G.bad.length?'<span class="pill p-bad">'+G.bad.length+' gəlmədi</span>':"")+(G.warn.length?'<span class="pill p-warn">'+G.warn.length+' yarımçıq</span>':"")+(G.ok.length?'<span class="pill p-ok">'+G.ok.length+' tam gəldi</span>':"")+(G.wait.length?'<span class="pill p-info">'+G.wait.length+' gözlənilir</span>':"")+'<span class="meta">Gəliş '+fmtD(o.eta)+'</span></div>'+
+      (G.bad.length?'<div class="grp"><div class="gh bad">🔴 Gəlməyən mallar</div>'+G.bad.map(reasonRow).join("")+'</div>':"")+
+      (G.warn.length?'<div class="grp"><div class="gh warn">🟡 Yarımçıq gələn mallar</div>'+G.warn.map(reasonRow).join("")+'</div>':"")+
+      (G.ok.length?'<div class="grp"><div class="gh ok">🟢 Tam gələn mallar</div><div class="small">'+names(G.ok)+'</div></div>':"")+
+      (G.wait.length?'<div class="grp"><div class="gh">🔵 Hələ qeyd olunmayıb</div><div class="small">'+names(G.wait)+'</div></div>':"")+
+      '</div>';
   }).join("");
+}
+function saveReason(el){
+  const [oid,k] = el.dataset.reason.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k], v = el.value.trim();
+  if (v === (i.reason||"")) return;
+  i.reason = v; i.reasonBy = role;
+  addLog(o, "Səbəb yazıldı", pname(i.pid)+": "+(v||"—"));
+  save(); toast("Səbəb yadda saxlandı");
 }
 function tile(label,n,cls,go){ return '<button class="tile '+cls+'" data-go="'+go+'"><b>'+n+'</b><span>'+label+'</span></button>'; }
 function itemsShort(o){ return o.items.map(i=>pname(i.pid)+" "+i.qty).join(", "); }
@@ -401,7 +435,7 @@ function orderCard(o){
   const showState = o.eta && o.status!=="acik" && !o.missing;
   const rows = o.items.map((i,k)=>{
     const st = showState ? itemState(o,i) : null;
-    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(i.added?' <span class="addtag">+ əlavə</span>':"")+(pmeta(i.pid)?'<div class="meta">'+esc(pmeta(i.pid))+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
+    return '<tr id="tr-'+o.id+'-'+k+'" class="'+(st?rowCls(st):"")+'"><td><div class="pn">'+thumb(i.pid,1)+'<span>'+esc(pname(i.pid))+(i.added?' <span class="addtag">+ əlavə</span>':"")+(pmeta(i.pid)?'<div class="meta">'+esc(pmeta(i.pid))+'</div>':"")+(i.reason?'<div class="meta rs">Səbəb: '+esc(i.reason)+'</div>':"")+'</span></div></td><td class="num">'+esc(i.qty)+'</td><td class="num'+(i.got!=null&&itemMissing(i)?" low":"")+'">'+(i.got!=null?i.got:"—")+'</td>'+(showState?'<td><span class="pill '+st[1]+'">'+st[0]+'</span></td>':"")+'</tr>';
   }).join("");
   let pills = '<span class="pill '+stc+'">'+(o.status==="yolda"?"Gözlənilir":stl)+'</span><span class="pill p-mute">'+esc(o.type)+'</span>';
   if (o.addedAt && isOpen(o) && o.status==="acik") pills = '<span class="pill p-warn">SİFARİŞƏ ƏLAVƏ EDİLDİ · '+fmtT(o.addedAt).slice(11)+'</span>' + pills;
@@ -477,6 +511,10 @@ function addBox(o){
     '<div class="hint">'+(o.status==="yolda"?"Satınalma bu sifarişi artıq qəbul edib. Göndərəndə sifariş yeni mallarla birlikdə yenidən Satınalmaya qayıdacaq.":"Sifariş hələ Satınalmadadır, yeni mallar dərhal ona görünəcək.")+'</div>'+
     '<div class="row"><button class="pri" data-addsend="'+o.id+'">Əlavəni göndər</button><button data-addcancel="'+o.id+'">Ləğv et</button></div></div>';
 }
+function parentReasons(f){
+  const par = S.orders.find(x=>x.id===f.parent); if (!par) return "";
+  return par.items.filter(i=>i.reason).map(i=>pname(i.pid)+": "+i.reason).join("; ");
+}
 function addSend(id){
   const o = S.orders.find(x=>x.id===id), d = addDraft[id] || [];
   if (!canAdd(o)) { delete addDraft[id]; render(); return toast("Bu sifarişə artıq əlavə etmək olmaz"); }
@@ -505,7 +543,7 @@ function actions(o){
   let b = '<div class="box">';
   if (actor==="Satınalma" && o.status==="acik"){
     b += '<h3>'+(o.missing?"Satınalma: bu mallar niyə gəlmədi?":"Satınalma: sifarişi qəbul et")+'</h3>'+
-      (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb, maşın gecikdi)">':"")+
+      (o.missing?'<input id="why-'+o.id+'" placeholder="Səbəb (məs. təchizatçıda qurtarıb, maşın gecikdi)" value="'+esc(parentReasons(o))+'">':"")+
       '<div class="row"><input class="grow" id="sup-'+o.id+'" list="flist" placeholder="Təchizatçı (firma)" value="'+esc(guessFirm(o))+'"><datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><input class="grow" type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'"></div>'+
       '<div class="hint">Gəliş tarixi (adətən sabah). Sifariş <b>'+esc(o.chain[o.step+1]||"—")+'</b> şöbəsinin “Gözləyən” siyahısına həmin tarixlə düşəcək və kalendarda görünəcək.</div>'+
       '<div class="row"><button class="pri" data-act="buy" data-id="'+o.id+'">Qəbul etdim → gözləyənə göndər</button><button data-act="fwd" data-id="'+o.id+'">Yalnız ötür</button></div>';
@@ -564,7 +602,7 @@ function vArr(){
       '<div class="tbl"><table><thead><tr><th>Məhsul</th><th>№</th><th class="num">Sifariş</th><th class="num">Gələn</th><th>Vəziyyət</th></tr></thead><tbody>'+
       rs.map(r=>'<tr class="'+rowCls(r.st)+'"><td><div class="pn">'+thumb(r.i.pid,1)+'<span>'+esc(pname(r.i.pid))+(pmeta(r.i.pid)?'<div class="meta">'+esc(pmeta(r.i.pid))+'</div>':"")+'</span></div></td>'+
         '<td><button class="linkb mono" data-goorder="'+r.o.id+'">#'+r.o.id+'</button><div class="meta">'+esc(r.o.wh)+'</div></td>'+
-        '<td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.st[1]+'">'+r.st[0]+'</span></td></tr>').join("")+
+        '<td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.st[1]+'">'+r.st[0]+'</span>'+(r.i.reason?'<div class="meta rs">'+esc(r.i.reason)+'</div>':"")+'</td></tr>').join("")+
       '</tbody></table></div></div>';
   }).join("");
   return html;
@@ -915,6 +953,7 @@ $("main").addEventListener("change", async e => {
   if (el.id==="rFrom"){ RF=el.value; render(); return; }
   if (el.id==="rTo"){ RT=el.value; render(); return; }
   if (el.dataset.got){ saveGot(el); return; }
+  if (el.dataset.reason){ saveReason(el); return; }
   if (el.dataset.pphoto){ setPhoto(el); return; }
   if (el.dataset.ii!=null){ setItem(el); return; }
   if (el.id==="cF"){ catFirm=el.value; render(); return; }
@@ -1056,7 +1095,7 @@ function delFirm(f){
 }
 
 // Müddət keçdikcə görünüşü yenilə
-setInterval(()=>{ if (!["new","catalog","arr","orders"].includes(tab) && !Object.keys(addDraft).length) render(); }, 60000);
+setInterval(()=>{ const f=document.activeElement; if (!["new","catalog","arr","orders"].includes(tab) && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea"))) render(); }, 60000);
 renderRole(); render();
 </script>
 </body>
