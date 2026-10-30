@@ -202,8 +202,8 @@ function seed(){
       history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",72),H("Satınalma","Təchizatçıya sifariş verildi","Loyal Packing",48)] }
   ];
   const moves = [
-    { id:201, from:"Anbar", to:"Mağaza 2", items:[{pid:id("almond kulok böyük"),qty:200},{pid:id("D38 penaplast"),qty:50}], status:"istek", by:"Mağazalar rəhbəri", created:new Date(now-2*HOUR).toISOString(), note:"Şənbə günü üçün" },
-    { id:202, from:"Anbar", to:"Anbar (İnqilab)", items:[{pid:id("Yumurta"),qty:180}], status:"yolda", by:"Anbar", created:new Date(now-5*HOUR).toISOString(), note:"" }
+    { id:201, from:"Anbar", to:"Anbar (İnqilab)", items:[{pid:id("Yumurta"),qty:"180"},{pid:id("D38 penaplast"),qty:"50"}], status:"gozle", by:"Anbar", created:new Date(now-5*HOUR).toISOString(), note:"Səhər maşınla göndərildi" },
+    { id:202, from:"Anbar (İnqilab)", to:"Anbar", items:[{pid:id("Kakos iri"),qty:"3 kq"}], status:"islendi", by:"Anbar (İnqilab)", created:new Date(now-2*DAY).toISOString(), note:"", done_by:"Anbar", done_at:new Date(now-40*HOUR).toISOString() }
   ];
   const log = [];
   orders.forEach(o=>o.history.forEach(h=>log.push({...h,ref:"Sifariş #"+o.id})));
@@ -215,6 +215,8 @@ const KEY = "almond-anbar-demo-v2";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
+// köhnə demo məlumatı: yer dəyişmə artıq yalnız iki anbar arasında qeyddir
+S.moves = S.moves.filter(m=>WAREHOUSES.includes(m.from)&&WAREHOUSES.includes(m.to)).map(m=>(m.status==="gozle"||m.status==="islendi") ? m : {...m,status:m.status==="qebul"?"islendi":"gozle"});
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let tab = "panel", filter = "mine", calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1), calSel = null;
@@ -499,35 +501,33 @@ function filterRows(el){
   if ($("cN") && el.id==="cQ") $("cN").textContent = n+" məhsul";
 }
 
-// ----- Yer dəyişmə (anbar ↔ anbar ↔ mağaza) -----
-const MV = { istek:["Sorğu · anbar göndərməlidir","p-warn"], yolda:["Yolda · qəbul gözlənilir","p-info"], qebul:["Qəbul edildi","p-ok"] };
-const recvDept = loc => STORES.includes(loc) ? "Mağazalar rəhbəri" : loc;
-function moveMine(mv){
-  if (mv.status==="istek") return role===mv.from;
-  if (mv.status==="yolda") return role===recvDept(mv.to);
-  return false;
-}
+// ----- Yer dəyişmə: yalnız Anbar ↔ Anbar (İnqilab), qeyd kimi -----
+// Əsl yer dəyişmə 1C-də aparılır. Burada sadəcə "1C-yə hələ vurulmayıb" xatırlatması saxlanılır, qalığa toxunmur.
+const MV = { gozle:["1C-yə vurulmayıb","p-warn"], islendi:["1C-də işləndi","p-ok"] };
+function moveMine(mv){ return mv.status==="gozle" && (role===mv.from || role===mv.to); }
 function moveCard(mv){
   const [l,c] = MV[mv.status];
-  let act = "";
-  if (moveMine(mv) && mv.status==="istek") act = '<div class="box"><div class="hint">Göndərilən miqdar qalıqdan çıxılacaq.</div><button class="pri" data-mv="send" data-id="'+mv.id+'">Göndərdim</button></div>';
-  if (moveMine(mv) && mv.status==="yolda") act = '<div class="box"><h3>Təhvil alma</h3>'+mv.items.map((i,k)=>'<div class="row"><span class="grow">'+esc(pname(i.pid))+' <span class="meta">(göndərilib '+i.qty+')</span></span><input type="number" min="0" step="any" style="width:110px" id="mg-'+mv.id+'-'+k+'" value="'+i.qty+'"></div>').join("")+'<button class="okb" data-mv="recv" data-id="'+mv.id+'">Təhvil aldım</button></div>';
-  return '<div class="card'+(moveMine(mv)?" mine":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">K-'+mv.id+'</span> · '+esc(mv.from)+' → '+esc(mv.to)+'</h3><span class="meta">'+fmtT(mv.created)+' · '+esc(mv.by)+'</span></div>'+
-    '<div class="row"><span class="pill '+c+'">'+l+'</span></div>'+
-    '<div>'+mv.items.map(i=>esc(pname(i.pid))+': <span class="mono">'+i.qty+(i.got!=null&&i.got!==i.qty?' → '+i.got:"")+'</span>').join(" · ")+'</div>'+
-    (mv.note?'<div class="hint">'+esc(mv.note)+'</div>':"")+act+'</div>';
+  const can = mv.status==="gozle" && (WAREHOUSES.includes(role) || role==="Rəhbərlik");
+  return '<div class="card'+(moveMine(mv)?" mine":"")+'"><div class="row" style="justify-content:space-between"><h3><span class="mono">YD-'+mv.id+'</span> · '+esc(mv.from)+' → '+esc(mv.to)+'</h3><span class="meta">'+fmtT(mv.created)+' · '+esc(mv.by)+'</span></div>'+
+    '<div class="row"><span class="pill '+c+'">'+l+'</span>'+(mv.done_by?'<span class="meta">'+esc(mv.done_by)+' · '+fmtT(mv.done_at)+'</span>':"")+'</div>'+
+    '<div>'+mv.items.map(i=>esc(pname(i.pid))+': <span class="mono">'+esc(i.qty)+'</span>').join(" · ")+'</div>'+
+    (mv.note?'<div class="hint">'+esc(mv.note)+'</div>':"")+
+    (can?'<div class="row"><button class="okb sm" data-mv="done" data-id="'+mv.id+'">1C-də işləndi</button></div>':"")+'</div>';
 }
 function vMoves(){
-  const canStore = role==="Mağazalar rəhbəri";
-  const fromOpts = (canStore ? WAREHOUSES : LOCS).map(l=>'<option>'+l+'</option>').join("");
-  const toOpts = LOCS.map(l=>'<option>'+l+'</option>').join("");
-  return '<h2>Yer dəyişmə və mağazalara təhvil</h2>'+
-    '<div class="card"><h3>'+(canStore?"Mağaza üçün mal sorğusu":"Yeni köçürmə")+'</h3>'+
-    '<div class="row"><div class="grow"><div class="hint">Haradan</div><select id="mFrom">'+fromOpts+'</select></div><div class="grow"><div class="hint">Haraya</div><select id="mTo">'+toOpts.replace("<option>Mağaza 1","<option selected>Mağaza 1")+'</select></div></div>'+
-    '<div class="row"><input class="grow" id="mP" list="plist" placeholder="Məhsulun adını yazın...">'+datalist()+'<input type="number" min="1" step="any" id="mQ" placeholder="Say" style="width:110px"></div>'+
-    '<input id="mN" placeholder="Qeyd">'+
-    '<div class="row"><button class="pri" data-mv="new">'+(canStore?"Sorğu göndər":"Göndər")+'</button><span class="hint">'+(canStore?"Sorğu anbara düşəcək, anbar göndərəndə sizə təhvil üçün qayıdacaq.":"Mal göndərildiyi yerin qalığından çıxılır, qəbul edildikdən sonra təyinat yerinə əlavə olunur.")+'</span></div></div>'+
-    S.moves.slice().reverse().map(moveCard).join("");
+  const can = WAREHOUSES.includes(role) || role==="Rəhbərlik";
+  const from = WAREHOUSES.includes(role) ? role : "Anbar";
+  const wait = S.moves.filter(m=>m.status==="gozle"), done = S.moves.filter(m=>m.status==="islendi");
+  return '<h2>Yer dəyişmə · Anbar ↔ Anbar (İnqilab)</h2>'+
+    '<div class="hint">Bu bölmə yalnız qeyd üçündür. Yer dəyişmə 1C-də aparılır. Mal göndəriləndə burada qeyd yazılır və 1C-yə vurulana qədər <b>“1C-yə vurulmayıb”</b> kimi görünür. Qalığa təsir etmir.</div>'+
+    (can?'<div class="card"><h3>Yeni qeyd</h3>'+
+      '<div class="row"><div class="grow"><div class="hint">Haradan → haraya</div><select id="mDir">'+WAREHOUSES.map(w=>{ const t=WAREHOUSES.find(x=>x!==w); return '<option value="'+esc(w)+'"'+(w===from?" selected":"")+'>'+esc(w)+' → '+esc(t)+'</option>'; }).join("")+'</select></div></div>'+
+      '<div class="row"><input class="grow" id="mP" list="plist" placeholder="Məhsulun adını yazın...">'+datalist()+'<input id="mQ" placeholder="məs. 15 kq" style="width:120px"></div>'+
+      '<input id="mN" placeholder="Qeyd (istəyə görə)">'+
+      '<div class="row"><button class="pri" data-mv="new">Qeydi yaz</button></div></div>'
+      :'<div class="hint">Qeydi yalnız Anbar, Anbar (İnqilab) və Rəhbərlik yaza bilər.</div>')+
+    '<h2>1C-yə vurulmayıb ('+wait.length+')</h2>'+(wait.length?wait.slice().reverse().map(moveCard).join(""):'<div class="card"><div class="hint">Hamısı 1C-də işlənib.</div></div>')+
+    (done.length?'<details><summary>1C-də işlənənlər ('+done.length+')</summary><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'+done.slice().reverse().map(moveCard).join("")+'</div></details>':"");
 }
 
 // ----- Kataloq -----
@@ -631,31 +631,17 @@ function orderAct(act, id){
 
 function moveAct(act, id){
   if (act==="new"){
-    const from=$("mFrom").value, to=$("mTo").value, pid=pidByName($("mP").value), q=num($("mQ").value);
+    const from=$("mDir").value, to=WAREHOUSES.find(x=>x!==from), pid=pidByName($("mP").value), q=$("mQ").value.trim();
     if (!pid) return toast("Məhsulu siyahıdan seçin");
-    if (from===to) return toast("Haradan və haraya eyni ola bilməz");
-    if (!(q>0)) return toast("Miqdarı yazın");
-    const isReq = role==="Mağazalar rəhbəri";
-    if (!isReq && (S.stock[from][pid]||0) < q) return toast(from+" qalığında kifayət qədər "+pname(pid)+" yoxdur");
-    const mv={id:nextId(),from,to,items:[{pid,qty:q}],status:isReq?"istek":"yolda",by:role,created:new Date().toISOString(),note:$("mN").value.trim()};
-    if (!isReq) stockAdd(from,pid,-q);
-    S.moves.push(mv); S.log.push({by:role,act:isReq?"Mal sorğusu":"Köçürmə göndərildi",note:from+" → "+to+": "+pname(pid)+" "+q,at:mv.created,ref:"K-"+mv.id});
-    toast(isReq?"Sorğu "+from+" şöbəsinə getdi":"Göndərildi");
-  } else {
+    if (!q) return toast("Miqdarı yazın");
+    const mv={id:nextId(),from,to,items:[{pid,qty:q}],status:"gozle",by:role,created:new Date().toISOString(),note:$("mN").value.trim()};
+    S.moves.push(mv); S.log.push({by:role,act:"Yer dəyişmə qeydi",note:from+" → "+to+": "+pname(pid)+" "+q,at:mv.created,ref:"YD-"+mv.id});
+    toast("Qeyd yazıldı");
+  } else if (act==="done"){
     const mv=S.moves.find(x=>x.id===id);
-    if (act==="send"){
-      const short = mv.items.find(i=>(S.stock[mv.from][i.pid]||0)<i.qty);
-      if (short) return toast(mv.from+" qalığında kifayət qədər "+pname(short.pid)+" yoxdur");
-      mv.items.forEach(i=>stockAdd(mv.from,i.pid,-i.qty)); mv.status="yolda";
-      S.log.push({by:role,act:"Köçürmə göndərildi",note:mv.from+" → "+mv.to,at:new Date().toISOString(),ref:"K-"+mv.id});
-    }
-    if (act==="recv"){
-      const diffs=[];
-      mv.items.forEach((i,k)=>{ i.got=Math.max(0,Number($("mg-"+id+"-"+k).value)||0); stockAdd(mv.to,i.pid,i.got); if(i.got!==i.qty) diffs.push(pname(i.pid)+": "+i.qty+" əvəzinə "+i.got); });
-      mv.status="qebul";
-      S.log.push({by:role,act:"Təhvil alındı",note:diffs.join("; "),at:new Date().toISOString(),ref:"K-"+mv.id});
-      toast(diffs.length?"Təhvil alındı · fərq qeyd olundu":"Təhvil alındı");
-    }
+    mv.status="islendi"; mv.done_by=role; mv.done_at=new Date().toISOString();
+    S.log.push({by:role,act:"Yer dəyişmə 1C-də işləndi",note:mv.from+" → "+mv.to,at:mv.done_at,ref:"YD-"+mv.id});
+    toast("1C-də işləndi kimi qeyd olundu");
   }
   save(); render();
 }
