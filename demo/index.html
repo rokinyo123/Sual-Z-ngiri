@@ -267,6 +267,13 @@ let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
 S.products.forEach(p=>{ if (p.size===undefined) p.size = guessSize(p.name); });
+S.orders.forEach(o=>{
+  if (o.items.some(i=>i.got!=null) || o.history.some(h=>/Mal qəbulu bitdi|Mal qəbul edildi/.test(h.act))) o.recvDone = true;
+  else if (o.status==="bagli" && o.eta && o.chain.includes("Satınalma") && !o.chain.slice(o.chain.indexOf("Satınalma")+1).includes(o.wh)){
+    o.chain = ensureWh(o.chain, o.wh); o.step = o.chain.indexOf(o.wh); o.status = "yolda";
+    o.history = o.history.filter(h=>h.act!=="Zəncir tamamlandı");
+  }
+});
 // köhnə demo məlumatı: yer dəyişmə artıq hər anbarın öz sadə qeyd siyahısıdır
 S.moves = S.moves.map(m=>m.wh ? m : { id:m.id, wh:m.from, to:m.to, product:(m.items||[]).map(i=>pname(i.pid)+" "+i.qty).join(", "), note:m.note||"", by:m.by, at:m.created });
 let role = "Anbar";
@@ -320,10 +327,18 @@ function gotState(qty, got){
   return ["Gəlmədi","p-bad"];
 }
 const itemState = (o,i) => i.got!=null ? gotState(i.qty, i.got)
-  : o.status!=="yolda" ? ["Gəlmədi","p-bad"] : daysTo(o.eta)===0 ? ["Bu gün gözlənilir","p-info"] : ["Gözlənilir","p-mute"];
+  : o.recvDone ? ["Gəlmədi","p-bad"] : !o.eta || daysTo(o.eta)>0 ? ["Gözlənilir","p-mute"] : daysTo(o.eta)===0 ? ["Bu gün gözlənilir","p-info"] : ["Gözlənilir","p-mute"];
 const rowCls = st => ({"p-ok":"okr","p-warn":"warnr","p-bad":"miss"})[st[1]] || "";
+// Satınalmadan sonra zəncirdə malı qəbul edəcək anbar mütləq olmalıdır. Yoxdursa, Satınalmanın
+// dərhal arxasına əlavə olunur — yoxsa sifariş qəbul olunan kimi bağlanıb arxivə düşürdü.
+function ensureWh(chain, wh){
+  const si = chain.indexOf("Satınalma");
+  if (si<0 || chain.slice(si+1).includes(wh)) return chain;
+  return chain.slice(0,si+1).concat([wh], chain.slice(si+1));
+}
 function finishReceive(o, by, note){
   const miss = o.items.filter(itemMissing);
+  o.recvDone = true;
   if (miss.length){
     const f = { id:nextId(), type:o.type, from:o.wh, wh:o.wh, created:new Date().toISOString(), parent:o.id, missing:true,
       items: miss.map(i=>({pid:i.pid, qty: i.got ? (num(i.qty)-i.got)+" (qalan, sifariş "+i.qty+")" : i.qty})),
@@ -802,7 +817,7 @@ function sendOrder(){
   if (!items.length) return $("nErr").textContent = "Ən azı bir məhsul və miqdar yazın.";
   if (!draft.chain.length) return $("nErr").textContent = "Zəncir üçün ən azı bir şöbə seçin və ya “Avtomatik zəncir qur” düyməsini basın.";
   const now = new Date().toISOString();
-  const o = { id:nextId(), type:draft.type, from:role, wh:draft.wh, created:now, items, chain:draft.chain.slice(), step:0,
+  const o = { id:nextId(), type:draft.type, from:role, wh:draft.wh, created:now, items, chain:ensureWh(draft.chain.slice(), draft.wh), step:0,
     status:"acik", deadline_h:draft.deadline, last_move:now, note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
@@ -995,6 +1010,7 @@ function orderAct(act, id){
   else if (act==="buy"){
     const eta=v("eta"); if (!eta) return toast("Gəliş tarixini seçin");
     if (o.missing && !v("why").trim()) return toast("Malların niyə gəlmədiyini yazın");
+    o.chain = ensureWh(o.chain, o.wh);
     o.eta=eta; o.supplier=v("sup").trim(); o.status="yolda";
     if (o.missing) o.comments.push({by:role,text:"Səbəb: "+v("why").trim(),at:new Date().toISOString()});
     advance(o,"Sifariş qəbul edildi",[o.supplier, "gəliş "+fmtD(eta), o.missing?"səbəb: "+v("why").trim():""].filter(Boolean).join(" · "));
