@@ -198,6 +198,9 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .files{display:flex;flex-direction:column;gap:6px}
 .file{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sunk);border-radius:8px;padding:6px 8px;font-size:13px}
 .fic{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--ok-bg);color:var(--ok);border-radius:4px;padding:2px 5px}
+/* Fayl seçimi: görünməz input düymənin tam üstündədir — telefonda barmaq birbaşa ona toxunur */
+.btnlink,.thumb{position:relative;overflow:hidden}
+input.fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;padding:0;border:0;font-size:16px}
 .btnlink{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:13px;color:var(--fg);text-decoration:none;cursor:pointer}
 .sheet{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px}
 .sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
@@ -583,8 +586,8 @@ function more(o){
     (o.photos.length?'<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
     o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+'</div>').join("") +
     '<div class="row"><input class="grow" id="c-'+o.id+'" placeholder="Şərh yazın"><button class="sm" data-act="comment" data-id="'+o.id+'">Şərh</button>'+
-    '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" hidden></label>'+
-    '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" hidden></label>'+
+    '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
+    '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" class="fpick"></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
     '<div class="log">'+o.history.map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div></details>';
 }
@@ -947,11 +950,11 @@ function vNew(){
     '<div><div class="lbl">Neçə saatlıq sifariş</div><div class="opts">'+HOURS.map(h=>'<button class="'+(draft.deadline==h?"on":"")+'" data-nh="'+h+'">'+h+'</button>').join("")+'</div></div>'+
     '<div><div class="lbl">Növ</div><div class="opts">'+["Gündəlik","Həftəlik"].map(t=>'<button class="'+(draft.type===t?"on":"")+'" data-nt="'+t+'">'+t+'</button>').join("")+'</div></div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
-      '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv" hidden></label>'+
-      '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple hidden></label></div></div>'+
+      '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
+      '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
       importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
     '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
-    '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple hidden></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
+    '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
     '<details class="more"><summary>▸ Zəncir: <b>'+esc(chainTxt)+'</b> (şöbə əlavə et)</summary><div class="checks">'+
       extra.map(d=>{ const i=draft.chain.indexOf(d); return '<label class="'+(i>=0?"on":"")+'"><input type="checkbox" data-chain="'+esc(d)+'"'+(i>=0?" checked":"")+'>'+esc(d)+'</label>'; }).join("")+'</div></details>'+
     '<button class="pri big" id="send">Satınalmaya göndər</button><div class="hint" id="nErr"></div>'+
@@ -1013,13 +1016,13 @@ function thumb(pid, small){
   const p = prod(pid); if (!p) return "";
   if (p.photo) return '<button class="thumb'+(small?" sm":"")+'" data-zoom="'+p.id+'" aria-label="'+esc(p.name)+' şəkli"><img src="'+p.photo+'" alt=""></button>';
   if (small) return "";
-  if (role==="Admin") return '<label class="thumb empty" title="Şəkil əlavə et">📷<input type="file" accept="image/*" data-pphoto="'+p.id+'" hidden></label>';
+  if (role==="Admin") return '<label class="thumb empty" title="Şəkil əlavə et">📷<input type="file" accept="image/*" data-pphoto="'+p.id+'" class="fpick"></label>';
   return '<span class="thumb empty" aria-hidden="true"></span>';
 }
 function openZoom(pid){
   const p = prod(pid);
   $("zoomImg").src = p.photo; $("zoomName").textContent = p.name;
-  $("zoomAdmin").innerHTML = role==="Admin" ? '<label class="btnlink" style="cursor:pointer">Şəkli dəyiş<input type="file" accept="image/*" data-pphoto="'+p.id+'" hidden></label> <button class="badb" data-photodel="'+p.id+'">Şəkli sil</button>' : "";
+  $("zoomAdmin").innerHTML = role==="Admin" ? '<label class="btnlink" style="cursor:pointer">Şəkli dəyiş<input type="file" accept="image/*" data-pphoto="'+p.id+'" class="fpick"></label> <button class="badb" data-photodel="'+p.id+'">Şəkli sil</button>' : "";
   $("zoom").hidden = false;
 }
 const closeZoom = () => { $("zoom").hidden = true; };
