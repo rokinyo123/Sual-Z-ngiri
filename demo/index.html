@@ -97,6 +97,7 @@ tr.miss td{background:var(--bad-bg)} tr.warnr td{background:var(--warn-bg)} tr.o
 .sheet td{font-size:12px;padding:4px 6px;white-space:nowrap}
 .pname{padding:4px 8px;background:transparent;border-color:transparent;min-width:160px}
 .pname:hover{border-color:var(--line)}
+.pact{display:flex;gap:6px;margin-top:4px}
 .psz{min-width:110px;font-family:var(--mono);font-size:13px}
 .sz{display:inline-block;font-family:var(--mono);font-size:12px;background:var(--info-bg);color:var(--info);border-radius:4px;padding:1px 6px;white-space:nowrap}
 .pname:focus{background:var(--bg);border-color:var(--accent)}
@@ -716,7 +717,7 @@ function vCatalog(){
   let html = '<h2>Məhsul kataloqu</h2>';
   if (admin){
     html += '<div class="card mine"><h3>Admin · yeni məhsul</h3><div class="row"><input class="grow" id="pN" placeholder="Məhsulun adı"><select class="grow" id="pF">'+firmOpts("")+'</select><button class="pri" id="pAdd">Məhsul əlavə et</button></div></div>'+
-      '<div class="hint">Şəkil əlavə etmək üçün məhsulun yanındakı 📷 xanasına basın. Məhsulun adını və ya ölçüsünü dəyişmək üçün siyahıda həmin xanaya basın, düzəldin və Enter basın. Ölçülər addan avtomatik götürülüb, yoxlayın.</div>'+
+      '<div class="hint">Şəkil əlavə etmək üçün məhsulun yanındakı 📷 xanasına basın. Məhsulu silmək üçün adın altındakı “Sil” düyməsini iki dəfə basın. Məhsulun adını və ya ölçüsünü dəyişmək üçün siyahıda həmin xanaya basın, düzəldin və Enter basın. Ölçülər addan avtomatik götürülüb, yoxlayın.</div>'+
       '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
       '<div class="firms">'+S.firms.map(f=>'<span class="firm"><button class="linkb" data-catfirm="'+esc(f)+'">'+esc(f)+'</button> <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
       '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
@@ -730,10 +731,10 @@ function vCatalog(){
     '<div class="hint">Məhsul bu firmadan artıq gəlmirsə, sətirdəki <b>“Firmadan çıxar”</b> düyməsini basın: məhsul kataloqda qalır, sadəcə firmasız olur. Məhsulu kataloqdan tamamilə silmək üçün <b>“Sil”</b> basın.</div></div>';
   else if (byFirm) html += '<div class="hint">Bu firmaya məhsul əlavə etmək və ya çıxarmaq üçün yuxarıdan <b>Admin</b> seçin.</div>';
   html += ''+
-    '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Ölçü</th><th>Firma</th>'+(admin?'<th></th>':"")+'</tr></thead><tbody id="cBody">'+
-    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı">':esc(p.name))+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
+    '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Ölçü</th><th>Firma</th></tr></thead><tbody id="cBody">'+
+    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı"><div class="pact">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div>':esc(p.name))+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
-      (admin?'<td><div class="row" style="flex-wrap:nowrap">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div></td>':"")+'</tr>').join("")+'</tbody></table></div>';
+      '</tr>').join("")+'</tbody></table></div>';
   return html;
 }
 
