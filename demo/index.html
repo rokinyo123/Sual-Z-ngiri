@@ -118,6 +118,10 @@ button.big{width:100%;padding:11px;font-size:16px}
 .spn{font-size:13px;background:var(--wait-bg);border-radius:8px;padding:5px 9px}
 .spn.c{background:var(--sunk)}
 .alert.info{background:var(--wait-bg);border-color:var(--wait)} .alert.info .al-t{color:var(--wait)}
+.tdec{display:flex;flex-direction:column;gap:6px;background:var(--surface);border-radius:9px;padding:8px}
+.tdec .seg3 button{flex:1 1 0;padding:9px 6px;font-size:14px}
+.tdec .seg3 button.okb{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.tdec .seg3 button.badb{background:var(--surface);border-color:var(--bad);color:var(--bad);font-weight:600}
 .alert.note{background:var(--warn-bg);border-color:var(--warn)} .alert.note .al-t{color:var(--fg)}
 .alert.res{background:var(--ok-bg);border-color:var(--ok)} .alert.res .al-t{color:var(--ok)}
 .cell{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:6px;border-top:1px dashed var(--line)}
@@ -404,7 +408,7 @@ function gotState(qty, got){
 // Problemli mal: Keyfiyyət qəbul etmədi, gəlmədi, az gəldi və ya Texnoloq uyğun saymadı
 function problem(o,i){
   if (i.qc==="bad") return "Keyfiyyət: "+(i.qcWhy||"uyğun deyil");
-  if (i.techRes==="bad") return "Texnoloq: "+(i.techNote||"uyğun deyil");
+  if (i.techRes==="bad") return "Texnoloq qəbul etmədi"+(i.techNote?": "+i.techNote:"");
   if (!o.recvDone) return "";
   if (i.qc==="none" || !i.got) return "Gəlmədi";
   if (itemMissing(i)) return "Az gəldi · "+fmtN(num(i.qty)-i.got)+" əskik";
@@ -454,9 +458,17 @@ function alertsHtml(){
     const title = a.title || (fmtD(a.eta)+" gəlməli olan "+a.items.length+" mal gəlmədi");
     const sub = a.sub || ((a.supplier||"Firmasız")+" → "+a.wh+" · #"+a.oid+" · Satınalma cavab verməlidir");
     return '<div class="'+cl+'"><div class="al-t">'+ic+' <b>'+esc(title)+'</b></div><div class="al-m">'+esc(sub)+'</div>'+
-      (a.items.length?'<div class="al-i">'+a.items.map(esc).join(" · ")+'</div>':"")+
-      '<div class="row"><button class="sm" data-goorder="'+a.oid+'">Bax</button><button class="sm" data-seen="'+a.id+'">Oxudum</button></div></div>';
+      ((dec=>(a.items.length && !dec.includes("data-techres")?'<div class="al-i">'+a.items.map(esc).join(" · ")+'</div>':"")+dec)(techDecide(a)))+'</div>';
   }).join("");
+}
+// Texnoloq: mal Anbara qəbul olunandan sonra xəbərdə hər mal üçün "Qəbul olundu / Qəbul olunmadı"
+function techDecide(a){
+  const o = S.orders.find(x=>x.id===a.oid);
+  const its = role==="Texnoloq" && o ? o.items.map((i,k)=>({i,k})).filter(r=>techReady(o,r.i)) : [];
+  if (its.length) return its.map(r=>'<div class="tdec"><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">'+esc(r.i.qty)+'</span>'+
+    '<input id="tn-'+o.id+'-'+r.k+'" placeholder="Rəy (istəyə görə)"><div class="seg3"><button class="okb" data-techres="'+o.id+'-'+r.k+'" data-v="ok">✓ Qəbul olundu</button><button class="badb" data-techres="'+o.id+'-'+r.k+'" data-v="bad">✗ Qəbul olunmadı</button></div></div>').join("");
+  if (role==="Texnoloq" && o && o.items.some(i=>i.tech && !i.techRes)) return '<div class="hint">Mal Anbara qəbul olunandan sonra burada “Qəbul olundu / Qəbul olunmadı” çıxacaq.</div><div class="row"><button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
+  return '<div class="row"><button class="sm" data-goorder="'+a.oid+'">Bax</button><button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
 }
 const notified = new Set();
 function pushNotify(){
@@ -643,8 +655,8 @@ function itemRow(o,i,k,st){
   if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
     if (!o.recvDone && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq</span></div>');
     else if (role==="Texnoloq" && !i.techRes){
-      cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Uyğun</button><button data-techres="'+key+'" data-v="bad">✗ Uyğun deyil</button><button class="sm" data-techno="'+key+'">Mənə aid deyil</button></div></div>');
-    } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ uyğun deyil</span>':'<span class="pill p-qc">yoxlayır…</span>')+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
+      cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Qəbul olundu</button><button data-techres="'+key+'" data-v="bad">✗ Qəbul olunmadı</button><button class="sm" data-techno="'+key+'">Mənə aid deyil</button></div></div>');
+    } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ qəbul olundu</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ qəbul olunmadı</span>':'<span class="pill p-qc">yoxlayır…</span>')+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
   }
   // Satınalmanın cavabı
   const pr = problem(o,i);
@@ -1182,8 +1194,12 @@ $("main").addEventListener("click", e => {
   // Texnoloq
   if (d.techno){ const [o,i]=itemOf(d.techno); return keep(()=>{ i.tech = false; addLog(o,"Texnoloq: yoxlama lazım deyil",pname(i.pid)); }); }
   if (d.techres){ const [o,i]=itemOf(d.techres); const note=($("tn-"+d.techres)||{}).value||"";
-    if (d.v==="bad" && !note.trim()) return toast("Niyə uyğun olmadığını yazın");
-    return keep(()=>{ i.techRes=d.v; i.techNote=note.trim(); addLog(o,"Texnoloq: "+(d.v==="ok"?"uyğundur":"uyğun deyil"),pname(i.pid)+(note?" · "+note:"")); }); }
+    return keep(()=>{ i.techRes=d.v; i.techNote=note.trim();
+      const txt = pname(i.pid)+(d.v==="ok"?" qəbul olundu":" qəbul olunmadı")+(note.trim()?" · “"+note.trim()+"”":"");
+      addLog(o,"Texnoloq",txt);
+      notify(["Satınalma",o.wh], d.v==="ok"?"res":"late", "Texnoloq · #"+o.id+": "+txt, d.v==="ok"?(o.supplier||o.wh):"Satınalma: nə vaxt gələcək və ya əvəzində nə gələcək — cavab verin", [], o.id);
+      if (!techPending(o)) (S.alerts||[]).forEach(a=>{ if (a.oid===o.id && a.to && a.to.includes("Texnoloq") && !a.seen.includes("Texnoloq")) a.seen.push("Texnoloq"); });
+      toast(d.v==="ok" ? "Qəbul olundu · Satınalma və Anbar gördü" : "Qəbul olunmadı · Satınalmaya getdi"); }); }
   // Satınalma
   if (d.answer) return answerItem(d.answer);
   // Yeni sifariş
@@ -1269,7 +1285,7 @@ function orderAct(act, id){
   else if (act==="arrived"){
     o.status = "anbar"; o.arrivedAt = o.last_move = new Date().toISOString();
     addLog(o,"Mal gəldi","");
-    if (o.noteTo && o.noteTo.length) notify(o.noteTo.filter(r=>r!==o.wh), "arr", "#"+o.id+" gəldi · baxın", [o.spNote, ...o.comments.filter(c=>c.to&&c.to.length).map(c=>c.text)].filter(Boolean).join(" · "), [], o.id);
+    if (o.noteTo && o.noteTo.length) notify(o.noteTo.filter(r=>r!==o.wh && !(r==="Texnoloq" && o.items.some(i=>i.tech))), "arr", "#"+o.id+" gəldi · baxın", [o.spNote, ...o.comments.filter(c=>c.to&&c.to.length).map(c=>c.text)].filter(Boolean).join(" · "), [], o.id);
     if (hasQC(o) && !(o.noteTo||[]).includes("Keyfiyyət")) notify(["Keyfiyyət"], "arr", "#"+o.id+" gəldi · yoxlayın", (o.supplier||"Firmasız")+" → "+o.wh+" · "+o.items.length+" mal", [], o.id);
     toast(hasQC(o) ? "Keyfiyyətə xəbər getdi · gələn miqdarı yazın" : "Gələn miqdarı yazın");
   }
@@ -1285,6 +1301,9 @@ function orderAct(act, id){
     if (hasQC(o) && !o.qcAt) return toast("Keyfiyyət hələ yoxlamayıb");
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
     const n = finishReceive(o, role, v("rn"));
+    const tr = o.items.filter(i=>techReady(o,i));
+    if (tr.length) (S.alerts||[]).forEach(x=>{ if (x.oid===o.id && x.to && x.to.includes("Texnoloq") && !x.seen.includes("Texnoloq")) x.seen.push("Texnoloq"); });
+    if (tr.length) notify(["Texnoloq"], "arr", "#"+o.id+" Anbara qəbul olundu · baxın", (o.supplier||"Firmasız")+" → "+o.wh, tr.map(i=>pname(i.pid)+" "+i.qty), o.id);
     const c = {ok:0,warn:0,bad:0}; o.items.forEach(i=>{ const k=itemCat(itemState(o,i)); if (c[k]!=null) c[k]++; });
     notify(["Satınalma",o.from,"Rəhbərlik"], "res", "#"+o.id+" qəbul olundu", [c.ok?c.ok+" tam":"", c.warn?c.warn+" az":"", c.bad?c.bad+" qəbul olunmadı / gəlmədi":""].filter(Boolean).join(" · ")+(n?" · cavabınız lazımdır":""),
       o.items.filter(i=>problem(o,i)).map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
