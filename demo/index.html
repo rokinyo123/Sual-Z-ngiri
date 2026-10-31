@@ -118,6 +118,7 @@ button.big{width:100%;padding:11px;font-size:16px}
 .spn{font-size:13px;background:var(--wait-bg);border-radius:8px;padding:5px 9px}
 .spn.c{background:var(--sunk)}
 .alert.info{background:var(--wait-bg);border-color:var(--wait)} .alert.info .al-t{color:var(--wait)}
+.alert.note{background:var(--warn-bg);border-color:var(--warn)} .alert.note .al-t{color:var(--fg)}
 .alert.res{background:var(--ok-bg);border-color:var(--ok)} .alert.res .al-t{color:var(--ok)}
 .cell{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:6px;border-top:1px dashed var(--line)}
 .cell.ans{flex-direction:column;align-items:stretch}
@@ -131,8 +132,8 @@ button.big{width:100%;padding:11px;font-size:16px}
 .qwhy button{font-size:12px;padding:4px 9px}
 .whin{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .whin input{width:84px}
-.nwb{border:1px dashed var(--line);cursor:pointer}
-.nwb.on{background:var(--qc);border-color:var(--qc);color:#fff}
+.who{border:1px solid var(--line);cursor:pointer;background:var(--surface)}
+.who.on{background:var(--qc);border-color:var(--qc);color:#fff}
 .tg.on{background:var(--qc);border-color:var(--qc);color:#fff}
 .p-qc,.c-chk{background:var(--qc-bg);color:var(--qc)}
 .oc.s-chk{border-left-color:var(--qc)}
@@ -446,7 +447,7 @@ function notify(to, kind, title, sub, items, oid){
   (S.alerts = S.alerts || []).unshift({ id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] });
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
-const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"] };
+const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
 function alertsHtml(){
   return myAlerts().map(a=>{
     const [ic,cl] = ALK[a.kind||"late"] || ALK.late;
@@ -569,6 +570,13 @@ function upcoming(){
 
 // ----- Sifariş kartı: hər mal bir sətir, hər şöbənin öz xanası -----
 const openMore = new Set();
+// Qeyd və ya şərhin altında şöbələrin adları: kimi seçsən, onun səhifəsində görünür
+const toSel = {};
+function whoChips(key, def){
+  if (!toSel[key]) toSel[key] = new Set(def||[]);
+  return '<div class="lbl">Kim görsün? (mal gələndə yenidən xatırladılacaq)</div><div class="chips">'+DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>'<button class="ic who'+(toSel[key].has(d)?" on":"")+'" data-who="'+esc(key)+'|'+esc(d)+'">'+(toSel[key].has(d)?"✓ ":"")+esc(d)+'</button>').join("")+'</div>';
+}
+const toLine = to => to && to.length ? ' <span class="meta">→ '+to.map(esc).join(", ")+'</span>' : "";
 const QC_WHY = ["Vaxtı keçib","Etiket yoxdur","Azərbaycanca yazı yoxdur","Tarix yazılmayıb"];
 function itemCat(st){ return st[1]==="p-ok"?"ok":st[1]==="p-warn"?"warn":st[1]==="p-bad"?"bad":"wait"; }
 function orderCard(o){
@@ -590,8 +598,8 @@ function orderCard(o){
     '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
     '<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
-    (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+'</div>':"") +
-    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
+    (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
+    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
 }
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
 function itemRow(o,i,k,st){
@@ -636,7 +644,7 @@ function itemRow(o,i,k,st){
       '<input id="an-'+key+'" placeholder="Qeyd (istəyə görə)"><button class="pri" data-answer="'+key+'">Cavab ver → Anbar gözləsin</button></div>');
     else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir</span></div>');
   }
-  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+(i.isNew?' <span class="newtag">🆕 yeni mal</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
+  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
 }
 const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="bad" ? fmtN(num(i.qty)-i.got)+String(i.qty).replace(/^[\d.,\s]+/," ") : i.qty;
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
@@ -662,8 +670,8 @@ function more(o){
   const nf = o.photos.length + (o.files||[]).length;
   return '<details class="more" data-more="'+o.id+'"'+(openMore.has(o.id)?" open":"")+'><summary>▸ Ətraflı'+(o.comments.length?' · 💬 '+o.comments.length:"")+(nf?' · 📎 '+nf:"")+' · '+fmtT(o.created)+'</summary><div class="more-in">'+
     (o.photos.length?'<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
-    o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+'</div>').join("") +
-    '<div class="row"><input class="grow" id="c-'+o.id+'" placeholder="Şərh yazın"><button class="sm" data-act="comment" data-id="'+o.id+'">Şərh</button>'+
+    o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+toLine(c.to)+'</div>').join("") +
+    '<input id="c-'+o.id+'" placeholder="Şərh yazın">'+whoChips("c"+o.id,[])+'<div class="row"><button class="pri" data-act="comment" data-id="'+o.id+'">Şərhi göndər</button>'+
     '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
     '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" class="fpick"></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
@@ -751,9 +759,7 @@ function acceptBox(o){
         '<input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"></div>').join("")
     : '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       '<input id="sup-'+o.id+'" list="flist" placeholder="Firma və ya sürücü" value="'+esc(guessFirm(o))+'"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi">';
-  const nw = hasQC(o) ? '<div class="lbl">Yeni mal varmı? Basın — Keyfiyyət və Texnoloq yoxlayacaq</div><div class="chips">'+
-      o.items.map((i,k)=>'<button class="ic nwb'+(i.isNew?" on":"")+'" data-newm="'+o.id+'-'+k+'">'+(i.isNew?"🆕 ":"")+esc(pname(i.pid))+'</button>').join("")+'</div>' : "";
-  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+nw+'<input id="spn-'+o.id+'" placeholder="Anbara qeyd (məs. bulğur 2 gün gec gələcək)"><button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
+  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh])+'<button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
 }
 function acceptOrder(o){
   const G = firmGroups(o), parts = [];
@@ -772,15 +778,14 @@ function acceptOrder(o){
     const x = k===0 ? o : Object.assign(JSON.parse(JSON.stringify(base)), { id:nextId(), comments:[] });
     x.items = k===0 ? pt.items : JSON.parse(JSON.stringify(pt.items));
     x.eta = pt.eta; x.supplier = pt.sup; x.status = "yolda"; x.acceptedAt = now; x.last_move = now; if (note) x.spNote = note;
-    x.items.forEach(i=>{ if (i.isNew) i.tech = true; });
     if (parts.length>1){ x.group = o.id; x.part = (k+1)+"/"+parts.length; }
     if (k>0) S.orders.unshift(x);
     addLog(x, "Satınalma OK verdi", (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(parts.length>1?" · hissə "+x.part:"")+(note?" · "+note:""));
     return x;
   });
-  const news = list.flatMap(x=>x.items.filter(i=>i.isNew).map(i=>pname(i.pid)+" · "+fmtD(x.eta)+" · #"+x.id));
-  if (news.length) notify(["Keyfiyyət","Texnoloq"], "arr", "Yeni mal gələcək · yoxlamaq lazımdır", o.wh+" · #"+o.id, news, o.id);
-  notify([o.wh,o.from], "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
+  const to = [...(toSel["a"+o.id]||[])]; delete toSel["a"+o.id];
+  if (note && to.length){ list.forEach(x=>{ x.noteTo = to; }); notify(to, "note", "#"+o.id+" · Satınalma: "+note, "Gəliş "+list.map(x=>fmtD(x.eta)).join(", ")+" · mal gələndə baxın", [], o.id); }
+  notify([o.wh,o.from].filter(r=>!to.includes(r)||!note), "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
   toast(list.length>1 ? list.length+" firmaya bölündü · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
 }
@@ -1153,7 +1158,8 @@ $("main").addEventListener("click", e => {
   if (d.qc){ const [o,i]=itemOf(d.qc); return keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; else if (!i.qcWhy) i.qcWhy = QC_WHY[0]; }); }
   if (d.qcwhy){ const [o,i]=itemOf(d.qcwhy); return keep(()=>{ i.qcWhy = d.v; }); }
   // Anbar
-  if (d.newm){ const [o,i]=itemOf(d.newm); return keep(()=>{ i.isNew = !i.isNew; }); }
+  if (d.who){ const [k,r]=d.who.split("|"); const st=toSel[k]; const inp=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); const val=inp?inp.value:"";
+    const y=window.scrollY; st.has(r)?st.delete(r):st.add(r); render(); window.scrollTo(0,y); const i2=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); if (i2) i2.value=val; return; }
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   // Texnoloq
@@ -1233,13 +1239,18 @@ function saveGot(el){
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
   const v = k => ($(k+"-"+id)||{}).value || "";
-  if (act==="comment"){ const t=v("c").trim(); if(!t) return; o.comments.push({by:role,text:t,at:new Date().toISOString()}); addLog(o,"Şərh",t); }
+  if (act==="comment"){ const t=v("c").trim(); if(!t) return toast("Şərhi yazın");
+    const to = [...(toSel["c"+id]||[])]; delete toSel["c"+id];
+    o.comments.push({by:role,text:t,to,at:new Date().toISOString()}); addLog(o,"Şərh",t+(to.length?" → "+to.join(", "):""));
+    if (to.length){ o.noteTo = [...new Set((o.noteTo||[]).concat(to))]; notify(to, "note", "#"+o.id+" · "+role+": "+t, (o.eta?"Gəliş "+fmtD(o.eta)+" · ":"")+"mal gələndə baxın", [], o.id); }
+    toast(to.length ? "Göndərildi → "+to.join(", ") : "Şərh yazıldı"); }
   else if (act==="accept") return acceptOrder(o);
   else if (act==="qcall"){ o.items.forEach(i=>{ if (!i.qc) i.qc="ok"; }); return keep(()=>{}); }
   else if (act==="arrived"){
     o.status = "anbar"; o.arrivedAt = o.last_move = new Date().toISOString();
     addLog(o,"Mal gəldi","");
-    if (hasQC(o)) notify(["Keyfiyyət"], "arr", "#"+o.id+" gəldi · yoxlayın", (o.supplier||"Firmasız")+" → "+o.wh+" · "+o.items.length+" mal", [], o.id);
+    if (o.noteTo && o.noteTo.length) notify(o.noteTo.filter(r=>r!==o.wh), "arr", "#"+o.id+" gəldi · baxın", [o.spNote, ...o.comments.filter(c=>c.to&&c.to.length).map(c=>c.text)].filter(Boolean).join(" · "), [], o.id);
+    if (hasQC(o) && !(o.noteTo||[]).includes("Keyfiyyət")) notify(["Keyfiyyət"], "arr", "#"+o.id+" gəldi · yoxlayın", (o.supplier||"Firmasız")+" → "+o.wh+" · "+o.items.length+" mal", [], o.id);
     toast(hasQC(o) ? "Keyfiyyətə xəbər getdi · gələn miqdarı yazın" : "Gələn miqdarı yazın");
   }
   else if (act==="qcdone"){
