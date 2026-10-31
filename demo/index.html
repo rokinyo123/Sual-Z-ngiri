@@ -446,6 +446,11 @@ function autoMissing(){
     finishReceive(o,"Sistem","Gəliş günü keçdi, heç nə qeyd olunmayıb"); n++;
     notify([o.wh,o.from,"Satınalma","Rəhbərlik"], "late", fmtD(o.eta)+" gəlməli olan "+o.items.length+" mal gəlmədi", (o.supplier||"Firmasız")+" → "+o.wh+" · #"+o.id+" · Satınalma cavab verməlidir", o.items.map(i=>pname(i.pid)+" ("+i.qty+")"), o.id);
   });
+  S.orders.forEach(o=>o.items.forEach(i=>{
+    if (!techReady(o,i) || !i.techDue || daysTo(i.techDue)>=0 || i.techLate) return;
+    i.techLate = true; n++;
+    notify(["Texnoloq","Satınalma",o.wh,"Rəhbərlik"], "late", "Texnoloq cavab vermədi · #"+o.id, pname(i.pid)+" · cavab günü "+fmtD(i.techDue)+" idi", [], o.id);
+  }));
   if (n) save();
 }
 function notify(to, kind, title, sub, items, oid){
@@ -463,11 +468,19 @@ function alertsHtml(){
   }).join("");
 }
 // Texnoloq: mal Anbara qəbul olunandan sonra xəbərdə hər mal üçün "Qəbul olundu / Qəbul olunmadı"
+const dueTxt = i => i.techDue ? (daysTo(i.techDue)<0 ? '<span class="pill p-bad">cavab günü '+fmtD(i.techDue)+' · keçib</span>' : daysTo(i.techDue)===0 ? '<span class="pill p-warn">cavab günü bu gündür</span>' : '<span class="pill p-qc">cavab günü '+fmtD(i.techDue)+'</span>') : "";
+function techBlock(o,i,k){
+  const key = o.id+"-"+k;
+  if (!i.techDue) return '<div class="tdec"><b>'+esc(pname(i.pid))+'</b> <span class="meta">'+esc(i.qty)+'</span>'+
+    '<div class="lbl">Nə vaxt yoxlayıb cavab verəcəksiniz?</div><div class="dt"><input type="date" id="td-'+key+'" value="'+plusDays(2)+'" min="'+today()+'" aria-label="Cavab günü"><button class="pri" data-techdue="'+key+'">Təyin et</button></div>'+
+    '<button class="sm linkb" data-techno="'+key+'">Mənə aid deyil</button></div>';
+  return '<div class="tdec"><b>'+esc(pname(i.pid))+'</b> <span class="meta">'+esc(i.qty)+'</span> '+dueTxt(i)+
+    '<input id="tn-'+key+'" placeholder="Rəy (istəyə görə)"><div class="seg3"><button class="okb" data-techres="'+key+'" data-v="ok">✓ Qəbul olundu</button><button class="badb" data-techres="'+key+'" data-v="bad">✗ Qəbul olunmadı</button></div></div>';
+}
 function techDecide(a){
   const o = S.orders.find(x=>x.id===a.oid);
   const its = role==="Texnoloq" && o ? o.items.map((i,k)=>({i,k})).filter(r=>techReady(o,r.i)) : [];
-  if (its.length) return its.map(r=>'<div class="tdec"><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">'+esc(r.i.qty)+'</span>'+
-    '<input id="tn-'+o.id+'-'+r.k+'" placeholder="Rəy (istəyə görə)"><div class="seg3"><button class="okb" data-techres="'+o.id+'-'+r.k+'" data-v="ok">✓ Qəbul olundu</button><button class="badb" data-techres="'+o.id+'-'+r.k+'" data-v="bad">✗ Qəbul olunmadı</button></div></div>').join("");
+  if (its.length) return its.map(r=>techBlock(o,r.i,r.k)).join("");
   if (role==="Texnoloq" && o && o.items.some(i=>i.tech && !i.techRes)) return '<div class="hint">Mal Anbara qəbul olunandan sonra burada “Qəbul olundu / Qəbul olunmadı” çıxacaq.</div><div class="row"><button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
   return '<div class="row"><button class="sm" data-goorder="'+a.oid+'">Bax</button><button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
 }
@@ -487,7 +500,7 @@ function stage(o){
   if (o.status==="yolda") return dueNow(o) ? {k:"wait", t:"Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"} : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
-  if (techPending(o)) return {k:"chk", t:"Texnoloqda"};
+  if (techPending(o)){ const d = o.items.filter(i=>techReady(o,i)).map(i=>i.techDue).filter(Boolean).sort()[0]; return {k: d && daysTo(d)<0 ? "bad" : "chk", t:"Texnoloqda"+(d?" · cavab "+fmtD(d).slice(0,5)+(daysTo(d)<0?" keçib":""):"")}; }
   if (o.items.some(i=>problem(o,i))) return {k:"bad", t:"Natamam · cavablandı"};
   return {k:"ok", t:"Tam qəbul olundu"};
 }
@@ -646,7 +659,7 @@ function itemRow(o,i,k,st){
   const canWh = role===o.wh && o.status==="anbar";
   if (canWh && i.qc!=="bad" && i.qc!=="none"){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><div class="whin"><input type="number" min="0" step="any" data-got="'+key+'" data-q="'+esc(i.qty)+'" id="got-'+key+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+key+'" data-q="'+num(i.qty)+'">Tam</button>'+
-      (hasQC(o)?'<button class="sm tg'+(i.tech?" on":"")+'" data-tech="'+key+'" title="Texnoloqa göndər">🔬 Texnoloqa</button>':"")+'</div></div>');
+'</div></div>');
   } else if (canWh){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><span class="pill p-bad">qəbul olunmadı</span></div>');
   } else if (i.got!=null || o.recvDone){
@@ -656,8 +669,8 @@ function itemRow(o,i,k,st){
   if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
     if (!o.recvDone && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq</span></div>');
     else if (role==="Texnoloq" && !i.techRes){
-      cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Qəbul olundu</button><button data-techres="'+key+'" data-v="bad">✗ Qəbul olunmadı</button><button class="sm" data-techno="'+key+'">Mənə aid deyil</button></div></div>');
-    } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ qəbul olundu</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ qəbul olunmadı</span>':'<span class="pill p-qc">yoxlayır…</span>')+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
+      cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+techBlock(o,i,k)+'</div>');
+    } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ qəbul olundu</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ qəbul olunmadı</span>':(i.techDue?dueTxt(i):'<span class="pill p-qc">cavab günü təyin edilməyib</span>'))+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
   }
   // Satınalmanın cavabı
   const pr = problem(o,i);
@@ -1194,6 +1207,10 @@ $("main").addEventListener("click", e => {
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   // Texnoloq
+  if (d.techdue){ const [o,i]=itemOf(d.techdue); const v=($("td-"+d.techdue)||{}).value; if (!v) return toast("Günü seçin");
+    return keep(()=>{ i.techDue = v; addLog(o,"Texnoloq cavab günü təyin etdi",pname(i.pid)+" · "+fmtD(v));
+      notify(["Satınalma",o.wh], "ok", "Texnoloq · #"+o.id+": "+pname(i.pid)+" — cavab günü "+fmtD(v), "Texnoloq həmin gün “qəbul olundu / olunmadı” yazacaq", [], o.id);
+      toast("Cavab günü: "+fmtD(v)+" · Satınalma və Anbar gördü"); }); }
   if (d.techno){ const [o,i]=itemOf(d.techno); return keep(()=>{ i.tech = false; addLog(o,"Texnoloq: yoxlama lazım deyil",pname(i.pid)); }); }
   if (d.techres){ const [o,i]=itemOf(d.techres); const note=($("tn-"+d.techres)||{}).value||"";
     return keep(()=>{ i.techRes=d.v; i.techNote=note.trim();
