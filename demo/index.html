@@ -115,6 +115,10 @@ button.big{width:100%;padding:11px;font-size:16px}
 .irow .in{flex-wrap:wrap;gap:6px}
 .irow .q{font-size:13px}
 .irow .st{margin-left:auto;font-size:11px}
+.spn{font-size:13px;background:var(--wait-bg);border-radius:8px;padding:5px 9px}
+.spn.c{background:var(--sunk)}
+.alert.info{background:var(--wait-bg);border-color:var(--wait)} .alert.info .al-t{color:var(--wait)}
+.alert.res{background:var(--ok-bg);border-color:var(--ok)} .alert.res .al-t{color:var(--ok)}
 .cell{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:6px;border-top:1px dashed var(--line)}
 .cell.ans{flex-direction:column;align-items:stretch}
 .cl{flex:0 0 100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
@@ -333,11 +337,11 @@ function seed(){
       items:[{pid:id("bulğur"),qty:"20 kq"},{pid:id("Mayonez"),qty:"2 koli"},{pid:id("Kakos iri"),qty:"5 kq"},{pid:id("D38 penaplast"),qty:"500"}],
       history:[H("Anbar","Sifariş yaradıldı","",3)] }),
     // Bu gün gəlməlidir: Keyfiyyət yoxlayır
-    O({ id:101, from:"Anbar", wh:"Anbar", created:T(30), last_move:T(20), status:"yolda", eta:plusDays(0), supplier:"Şünasif", acceptedAt:T(20),
+    O({ id:101, from:"Anbar", wh:"Anbar", created:T(30), last_move:T(1), status:"anbar", arrivedAt:T(1), spNote:"Yumurta səhər 10-da, qalanı günorta gələcək", eta:plusDays(0), supplier:"Şünasif", acceptedAt:T(20),
       items:[{pid:id("kəsmik"),qty:"20 kq"},{pid:id("xama 10%"),qty:"4 kq"},{pid:id("Yumurta"),qty:"900"},{pid:id("Qabartma tozu"),qty:"5 kq"}],
       history:[H("Anbar","Sifariş yaradıldı","",30),H("Satınalma","Satınalma OK verdi","Şünasif · gəliş "+fmtD(plusDays(0)),20)] }),
     // Keyfiyyət yoxlayıb, Anbar qeyd edir
-    O({ id:103, from:"Anbar", wh:"Anbar", created:T(28), last_move:T(1), status:"anbar", eta:plusDays(0), supplier:"Tayqa (Veliyev Nahid Abbas oglu)", acceptedAt:T(26),
+    O({ id:103, from:"Anbar", wh:"Anbar", created:T(28), last_move:T(1), status:"anbar", arrivedAt:T(2), qcAt:T(1), eta:plusDays(0), supplier:"Tayqa (Veliyev Nahid Abbas oglu)", acceptedAt:T(26),
       items:[{pid:id("Düyü uzun"),qty:"25 kq",qc:"ok"},{pid:id("suxarı unu"),qty:"10 kq",qc:"ok"},{pid:id("Mayonez"),qty:"1 koli",qc:"bad",qcWhy:"Vaxtı keçib"}],
       history:[H("Anbar","Sifariş yaradıldı","",28),H("Satınalma","Satınalma OK verdi","Tayqa",26),H("Keyfiyyət","Keyfiyyət yoxladı","Mayonez: Vaxtı keçib",1)] }),
     // Dünən gəldi: problem var, Satınalma cavab verməlidir; bir mal Texnoloqda
@@ -351,7 +355,7 @@ function seed(){
     // Gələcək: İnqilab 3 gün sonra, Anbar 7 gün sonra
     O({ id:106, from:"Anbar (İnqilab)", wh:"Anbar (İnqilab)", created:T(30), last_move:T(25), status:"yolda", eta:plusDays(3), supplier:"Loyal Packing", acceptedAt:T(25),
       items:[{pid:id("Strec"),qty:"10 koli"}], history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",30),H("Satınalma","Satınalma OK verdi","Loyal Packing",25)] }),
-    O({ id:109, from:"Anbar", wh:"Anbar", created:T(26), last_move:T(24), status:"yolda", eta:plusDays(7), supplier:"İlkin penaplast", acceptedAt:T(24),
+    O({ id:109, from:"Anbar", wh:"Anbar", created:T(26), last_move:T(24), status:"yolda", eta:plusDays(0), supplier:"İlkin penaplast", acceptedAt:T(24),
       items:[{pid:id("D38 penaplast"),qty:"500"},{pid:id("40*80 penaplast"),qty:"200"}], history:[H("Anbar","Sifariş yaradıldı","",26),H("Satınalma","Satınalma OK verdi","İlkin penaplast",24)] }),
     // Dünən gəlməli idi, heç kim heç nə qeyd etməyib → açılanda xəbərdarlıq
     O({ id:107, from:"Anbar", wh:"Anbar", created:T(40), last_move:T(34), status:"yolda", eta:plusDays(-1), supplier:"Hicaz", acceptedAt:T(34),
@@ -363,7 +367,7 @@ function seed(){
 }
 
 // ===================== Yaddaş =====================
-const KEY = "almond-anbar-demo-v5";
+const KEY = "almond-anbar-demo-v6";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
@@ -398,11 +402,12 @@ function addLog(o, act, note, by){
 // status: acik (Satınalmada) · yolda (Gözlənilir) · anbar (Anbar qeyd edir) · bagli · redd
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
 const hasQC = o => o.wh==="Anbar";                                   // Keyfiyyət yalnız əsas Anbarda
-const arrived = o => o.status==="yolda" && o.eta && daysTo(o.eta)<=0;
+const arrived = o => o.status==="anbar";                              // Anbar "Gəldi" basıb
+const dueNow = o => o.status==="yolda" && o.eta && daysTo(o.eta)<=0;   // bu gün (və ya keçmiş) gəlməlidir
 const qcDone = o => o.items.every(i=>i.qc);
 function holder(o){
   if (o.status==="acik") return "Satınalma";
-  if (o.status==="yolda") return hasQC(o) ? "Keyfiyyət" : o.wh;
+  if (o.status==="yolda") return o.wh;
   if (o.status==="anbar") return o.wh;
   return null;
 }
@@ -432,6 +437,7 @@ function itemState(o,i){
   if (i.got!=null) return gotState(i.qty,i.got);
   if (i.qc==="ok") return ["Keyfiyyət ✓","p-info"];
   if (o.status==="acik") return ["Satınalmada","p-mute"];
+  if (o.status==="anbar") return ["Gəldi · yoxlanır","p-info"];
   return daysTo(o.eta)>0 ? ["Gözlənilir","p-mute"] : ["Bu gün gəlməlidir","p-info"];
 }
 const rowCls = st => ({"p-ok":"okr","p-warn":"warnr","p-bad":"miss"})[st[1]] || "";
@@ -449,24 +455,31 @@ function autoMissing(){
     if (o.status!=="yolda" || !o.eta || daysTo(o.eta)>=0 || o.items.some(i=>i.qc||i.got!=null)) return;
     o.items.forEach(i=>{ i.qc = hasQC(o) ? "none" : i.qc; });
     finishReceive(o,"Sistem","Gəliş günü keçdi, heç nə qeyd olunmayıb"); n++;
-    (S.alerts = S.alerts || []).unshift({ id:"a"+o.id, at:new Date().toISOString(), oid:o.id, eta:o.eta, wh:o.wh, from:o.from, supplier:o.supplier||"",
-      items:o.items.map(i=>pname(i.pid)+" ("+i.qty+")"), seen:[] });
+    notify([o.wh,o.from,"Satınalma","Rəhbərlik"], "late", fmtD(o.eta)+" gəlməli olan "+o.items.length+" mal gəlmədi", (o.supplier||"Firmasız")+" → "+o.wh+" · #"+o.id+" · Satınalma cavab verməlidir", o.items.map(i=>pname(i.pid)+" ("+i.qty+")"), o.id);
   });
   if (n) save();
 }
-const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role));
+function notify(to, kind, title, sub, items, oid){
+  (S.alerts = S.alerts || []).unshift({ id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] });
+}
+const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
+const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"] };
 function alertsHtml(){
-  return myAlerts().map(a=>'<div class="alert"><div class="al-t">⚠ <b>'+fmtD(a.eta)+'</b> gəlməli olan <b>'+a.items.length+' mal gəlmədi</b></div>'+
-    '<div class="al-m">'+esc((a.supplier||"Firmasız")+" → "+a.wh)+' · #'+a.oid+' · Satınalma cavab verməlidir</div>'+
-    '<div class="al-i">'+a.items.map(esc).join(" · ")+'</div>'+
-    '<div class="row"><button class="sm" data-goorder="'+a.oid+'">Bax</button><button class="sm" data-seen="'+a.id+'">Oxudum</button></div></div>').join("");
+  return myAlerts().map(a=>{
+    const [ic,cl] = ALK[a.kind||"late"] || ALK.late;
+    const title = a.title || (fmtD(a.eta)+" gəlməli olan "+a.items.length+" mal gəlmədi");
+    const sub = a.sub || ((a.supplier||"Firmasız")+" → "+a.wh+" · #"+a.oid+" · Satınalma cavab verməlidir");
+    return '<div class="'+cl+'"><div class="al-t">'+ic+' <b>'+esc(title)+'</b></div><div class="al-m">'+esc(sub)+'</div>'+
+      (a.items.length?'<div class="al-i">'+a.items.map(esc).join(" · ")+'</div>':"")+
+      '<div class="row"><button class="sm" data-goorder="'+a.oid+'">Bax</button><button class="sm" data-seen="'+a.id+'">Oxudum</button></div></div>';
+  }).join("");
 }
 const notified = new Set();
 function pushNotify(){
   try {
     if (!("Notification" in window) || Notification.permission!=="granted") return;
     myAlerts().forEach(a=>{ if (notified.has(a.id+role)) return; notified.add(a.id+role);
-      new Notification("Almond · mal gəlmədi", { body: fmtD(a.eta)+": "+a.items.length+" mal gəlmədi ("+(a.supplier||a.wh)+")" }); });
+      new Notification("Almond Anbar", { body: a.title || (fmtD(a.eta)+": "+a.items.length+" mal gəlmədi") }); });
   } catch(e){}
 }
 
@@ -474,8 +487,8 @@ function pushNotify(){
 function stage(o){
   if (o.status==="redd") return {k:"arch", t:"Ləğv edildi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
-  if (o.status==="yolda") return arrived(o) && hasQC(o) ? {k:"chk", t:"Keyfiyyət yoxlayır"} : arrived(o) ? {k:"chk", t:"Qəbul gözləyir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
-  if (o.status==="anbar") return {k:"chk", t:o.wh+" qeyd edir"};
+  if (o.status==="yolda") return dueNow(o) ? {k:"wait", t:"Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
+  if (o.status==="anbar") return hasQC(o) && !o.qcAt ? {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"} : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
   if (techPending(o)) return {k:"chk", t:"Texnoloqda"};
   if (o.items.some(i=>problem(o,i))) return {k:"bad", t:"Natamam · cavablandı"};
@@ -499,9 +512,9 @@ function myWork(){
   return S.orders.filter(o=>{
     if (o.status==="redd") return false;
     if (role==="Satınalma") return o.status==="acik" || (o.recvDone && needsAnswer(o));
-    if (role==="Keyfiyyət") return o.status==="yolda" && hasQC(o) && arrived(o);
+    if (role==="Keyfiyyət") return o.status==="anbar" && hasQC(o) && !o.qcAt;
     if (role==="Texnoloq") return techPending(o);
-    if (WAREHOUSES.includes(role)) return o.wh===role && (o.status==="anbar" || (o.status==="yolda" && !hasQC(o) && arrived(o)));
+    if (WAREHOUSES.includes(role)) return o.wh===role && (o.status==="anbar" || dueNow(o));
     return false;
   }).sort((a,b)=> odate(a).localeCompare(odate(b)) || a.id-b.id);
 }
@@ -533,7 +546,7 @@ function render(){
 }
 
 // ----- Bu gün -----
-const WORK_TITLE = { "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Bu gün gələn mallar · yoxlayın", "Texnoloq":"İstehsalatda yoxlanacaq mallar", "Anbar":"Keyfiyyətdən keçən mallar · qeyd edin", "Anbar (İnqilab)":"Bu gün gələn mallar · qeyd edin" };
+const WORK_TITLE = { "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"İstehsalatda yoxlanacaq mallar", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
 function pipe(){
   const c = k => S.orders.filter(o=>stage(o).k===k && (k!=="ok" || daysTo(odate(o))>=-7)).length;
   return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="orders:'+k+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
@@ -593,7 +606,9 @@ function orderCard(o){
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
     '<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
-    bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
+    bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
+    (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+'</div>':"") +
+    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
 }
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
 function itemRow(o,i,k,st){
@@ -601,7 +616,7 @@ function itemRow(o,i,k,st){
   const cells = [];
   // Keyfiyyət
   if (hasQC(o)){
-    if (role==="Keyfiyyət" && o.status==="yolda" && arrived(o)){
+    if (role==="Keyfiyyət" && o.status==="anbar" && !o.qcAt){
       cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><div class="seg3">'+
         '<button class="'+(i.qc==="ok"?"on ok":"")+'" data-qc="'+key+'" data-v="ok">✓ Uyğun</button>'+
         '<button class="'+(i.qc==="bad"?"on bad":"")+'" data-qc="'+key+'" data-v="bad">✗ Uyğun deyil</button>'+
@@ -612,8 +627,8 @@ function itemRow(o,i,k,st){
     } else if (accepted && arrived(o)) cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><span class="meta">yoxlayır…</span></div>');
   }
   // Anbar / İnqilab
-  const canWh = role===o.wh && ((o.status==="anbar") || (o.status==="yolda" && !hasQC(o) && arrived(o)));
-  if (canWh && (i.qc==="ok" || !hasQC(o))){
+  const canWh = role===o.wh && o.status==="anbar";
+  if (canWh && i.qc!=="bad" && i.qc!=="none"){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><div class="whin"><input type="number" min="0" step="any" data-got="'+key+'" data-q="'+esc(i.qty)+'" id="got-'+key+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+key+'" data-q="'+num(i.qty)+'">Tam</button>'+
       (hasQC(o)?'<button class="sm tg'+(i.tech?" on":"")+'" data-tech="'+key+'" title="Texnoloqa göndər">🔬 Texnoloqa</button>':"")+'</div></div>');
   } else if (canWh){
@@ -643,14 +658,19 @@ const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="b
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
 // Kartın altındakı ümumi düymə (şöbənin addımını bitirmək)
 function footActions(o){
-  if (role==="Keyfiyyət" && o.status==="yolda" && hasQC(o) && arrived(o)){
+  if (role==="Keyfiyyət" && o.status==="anbar" && hasQC(o) && !o.qcAt){
     const left = o.items.filter(i=>!i.qc).length;
     return '<div class="box"><button class="okb big" data-act="qcall" data-id="'+o.id+'">✓ Hamısı uyğundur</button>'+
-      '<button class="pri big" data-act="qcdone" data-id="'+o.id+'"'+(left?" disabled":"")+'>'+(left?left+" mal yoxlanmayıb":"Yoxlamanı bitir → Anbar")+'</button></div>';
+      '<button class="pri big" data-act="qcdone" data-id="'+o.id+'"'+(left?" disabled":"")+'>'+(left?left+" mal yoxlanmayıb":"Yoxlamanı bitir")+'</button></div>';
   }
-  const canWh = role===o.wh && (o.status==="anbar" || (o.status==="yolda" && !hasQC(o) && arrived(o)));
-  if (canWh) return '<div class="box"><button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)"><button class="pri big" data-act="receive" data-id="'+o.id+'">Qəbulu bitir</button>'+
-    '<div class="hint">Boş qalan mallar "gəlmədi" sayılacaq və Satınalmaya düşəcək.</div></div>';
+  if (role===o.wh && o.status==="yolda")
+    return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
+  if (role===o.wh && o.status==="anbar"){
+    const wait = hasQC(o) && !o.qcAt;
+    return '<div class="box"><button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
+      '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlamasını gözləyir…":"Bitir → Satınalmaya göndər")+'</button>'+
+      '<div class="hint">Boş qalan mallar "gəlmədi" sayılacaq. Nəticə Satınalmaya gedəcək.</div></div>';
+  }
   if (role==="Satınalma" && o.status==="acik") return acceptBox(o);
   return "";
 }
@@ -748,7 +768,7 @@ function acceptBox(o){
         '<input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"></div>').join("")
     : '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       '<input id="sup-'+o.id+'" list="flist" placeholder="Firma və ya sürücü" value="'+esc(guessFirm(o))+'"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi">';
-  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
+  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Anbara qeyd (məs. bulğur 2 gün gec gələcək)"><button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
 }
 function acceptOrder(o){
   const G = firmGroups(o), parts = [];
@@ -762,16 +782,17 @@ function acceptOrder(o){
     const eta = ($("eta-"+o.id)||{}).value; if (!eta) return toast("Gəliş gününü seçin");
     parts.push({ eta, sup:(($("sup-"+o.id)||{}).value||"").trim(), items:o.items });
   }
-  const base = JSON.parse(JSON.stringify(o)), now = new Date().toISOString();
+  const base = JSON.parse(JSON.stringify(o)), now = new Date().toISOString(), note = (($("spn-"+o.id)||{}).value||"").trim();
   const list = parts.map((pt,k)=>{
     const x = k===0 ? o : Object.assign(JSON.parse(JSON.stringify(base)), { id:nextId(), comments:[] });
     x.items = k===0 ? pt.items : JSON.parse(JSON.stringify(pt.items));
-    x.eta = pt.eta; x.supplier = pt.sup; x.status = "yolda"; x.acceptedAt = now; x.last_move = now;
+    x.eta = pt.eta; x.supplier = pt.sup; x.status = "yolda"; x.acceptedAt = now; x.last_move = now; if (note) x.spNote = note;
     if (parts.length>1){ x.group = o.id; x.part = (k+1)+"/"+parts.length; }
     if (k>0) S.orders.unshift(x);
-    addLog(x, "Satınalma OK verdi", (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(parts.length>1?" · hissə "+x.part:""));
+    addLog(x, "Satınalma OK verdi", (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(parts.length>1?" · hissə "+x.part:"")+(note?" · "+note:""));
     return x;
   });
+  notify([o.wh,o.from], "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
   toast(list.length>1 ? list.length+" firmaya bölündü · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
 }
@@ -1232,17 +1253,27 @@ function orderAct(act, id){
   if (act==="comment"){ const t=v("c").trim(); if(!t) return; o.comments.push({by:role,text:t,at:new Date().toISOString()}); addLog(o,"Şərh",t); }
   else if (act==="accept") return acceptOrder(o);
   else if (act==="qcall"){ o.items.forEach(i=>{ if (!i.qc) i.qc="ok"; }); return keep(()=>{}); }
+  else if (act==="arrived"){
+    o.status = "anbar"; o.arrivedAt = o.last_move = new Date().toISOString();
+    addLog(o,"Mal gəldi","");
+    if (hasQC(o)) notify(["Keyfiyyət"], "arr", "#"+o.id+" gəldi · yoxlayın", (o.supplier||"Firmasız")+" → "+o.wh+" · "+o.items.length+" mal", [], o.id);
+    toast(hasQC(o) ? "Keyfiyyətə xəbər getdi · gələn miqdarı yazın" : "Gələn miqdarı yazın");
+  }
   else if (act==="qcdone"){
     if (!qcDone(o)) return toast("Bütün malları yoxlayın");
-    o.status = "anbar"; o.last_move = new Date().toISOString();
+    o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
-    toast("Anbara ötürüldü");
+    toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
   else if (act==="receive"){
+    if (hasQC(o) && !o.qcAt) return toast("Keyfiyyət hələ yoxlamayıb");
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
     const n = finishReceive(o, role, v("rn"));
+    const c = {ok:0,warn:0,bad:0}; o.items.forEach(i=>{ const k=itemCat(itemState(o,i)); if (c[k]!=null) c[k]++; });
+    notify(["Satınalma",o.from,"Rəhbərlik"], "res", "#"+o.id+" qəbul olundu", [c.ok?c.ok+" tam":"", c.warn?c.warn+" az":"", c.bad?c.bad+" qəbul olunmadı / gəlmədi":""].filter(Boolean).join(" · ")+(n?" · cavabınız lazımdır":""),
+      o.items.filter(i=>problem(o,i)).map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
     toast(n ? n+" mal üçün Satınalma cavab verəcək" : "Hamısı qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
