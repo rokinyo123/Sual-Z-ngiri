@@ -325,49 +325,13 @@ function seed(){
   const id = n => (P.find(p=>p.name.toLowerCase()===n.toLowerCase())||P[0]).id;
   const now = Date.now();
   const H = (by,act,note,ago) => ({by,act,note:note||"",at:new Date(now-ago*HOUR).toISOString()});
-  const T = n => new Date(now-n*HOUR).toISOString();
-  const O = (o) => Object.assign({ type:"Gündəlik", photos:[], files:[], comments:[], deadline_h:24 }, o);
-  const orders = [
-    // Satınalmada: İnqilab bu gün yazıb
-    O({ id:102, from:"Anbar (İnqilab)", wh:"Anbar (İnqilab)", created:T(5), last_move:T(5), status:"acik",
-      items:[{pid:id("Strec"),qty:"6 koli"},{pid:id("Paraşok"),qty:"5"}], note:"Mağazalara qablaşdırma üçün",
-      history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",5)] }),
-    // Satınalmada: Anbarın həftəlik sifarişi, bir neçə firma
-    O({ id:108, type:"Həftəlik", from:"Anbar", wh:"Anbar", created:T(3), last_move:T(3), status:"acik", deadline_h:48,
-      items:[{pid:id("bulğur"),qty:"20 kq"},{pid:id("Mayonez"),qty:"2 koli"},{pid:id("Kakos iri"),qty:"5 kq"},{pid:id("D38 penaplast"),qty:"500"}],
-      history:[H("Anbar","Sifariş yaradıldı","",3)] }),
-    // Bu gün gəlməlidir: Keyfiyyət yoxlayır
-    O({ id:101, from:"Anbar", wh:"Anbar", created:T(30), last_move:T(1), status:"anbar", arrivedAt:T(1), spNote:"Yumurta səhər 10-da, qalanı günorta gələcək", eta:plusDays(0), supplier:"Şünasif", acceptedAt:T(20),
-      items:[{pid:id("kəsmik"),qty:"20 kq"},{pid:id("xama 10%"),qty:"4 kq"},{pid:id("Yumurta"),qty:"900"},{pid:id("Qabartma tozu"),qty:"5 kq"}],
-      history:[H("Anbar","Sifariş yaradıldı","",30),H("Satınalma","Satınalma OK verdi","Şünasif · gəliş "+fmtD(plusDays(0)),20)] }),
-    // Keyfiyyət yoxlayıb, Anbar qeyd edir
-    O({ id:103, from:"Anbar", wh:"Anbar", created:T(28), last_move:T(1), status:"anbar", arrivedAt:T(2), qcAt:T(1), eta:plusDays(0), supplier:"Tayqa (Veliyev Nahid Abbas oglu)", acceptedAt:T(26),
-      items:[{pid:id("Düyü uzun"),qty:"25 kq",qc:"ok"},{pid:id("suxarı unu"),qty:"10 kq",qc:"ok"},{pid:id("Mayonez"),qty:"1 koli",qc:"bad",qcWhy:"Vaxtı keçib"}],
-      history:[H("Anbar","Sifariş yaradıldı","",28),H("Satınalma","Satınalma OK verdi","Tayqa",26),H("Keyfiyyət","Keyfiyyət yoxladı","Mayonez: Vaxtı keçib",1)] }),
-    // Dünən gəldi: problem var, Satınalma cavab verməlidir; bir mal Texnoloqda
-    O({ id:104, from:"Anbar", wh:"Anbar", created:T(50), last_move:T(20), status:"bagli", recvDone:true, eta:plusDays(-1), supplier:"Rofruit", acceptedAt:T(45),
-      items:[{pid:id("keşniş"),qty:"15 dəstə",qc:"ok",got:15},{pid:id("Bibər"),qty:"10 kq",qc:"ok",got:8},{pid:id("toyuq file"),qty:"15 kq",qc:"none",got:0},{pid:id("Darçın toz"),qty:"2 kq",qc:"ok",got:2,tech:true}],
-      history:[H("Anbar","Sifariş yaradıldı","",50),H("Satınalma","Satınalma OK verdi","Rofruit",45),H("Keyfiyyət","Keyfiyyət yoxladı","toyuq file: gəlmədi",22),H("Anbar","Qəbul bitdi","2 mal üçün Satınalmanın cavabı lazımdır · 1 mal Texnoloqda",20)] }),
-    // Tam qəbul olunub
-    O({ id:105, from:"Anbar", wh:"Anbar", created:T(200), last_move:T(150), status:"bagli", recvDone:true, eta:plusDays(-6), supplier:"RİCH S.A. MMC", acceptedAt:T(190),
-      items:[{pid:id("Kakos iri"),qty:"10 kq",qc:"ok",got:10}],
-      history:[H("Anbar","Sifariş yaradıldı","",200),H("Keyfiyyət","Keyfiyyət yoxladı","Hamısı uyğundur",152),H("Anbar","Qəbul bitdi","Hamısı qəbul olundu",150)] }),
-    // Gələcək: İnqilab 3 gün sonra, Anbar 7 gün sonra
-    O({ id:106, from:"Anbar (İnqilab)", wh:"Anbar (İnqilab)", created:T(30), last_move:T(25), status:"yolda", eta:plusDays(3), supplier:"Loyal Packing", acceptedAt:T(25),
-      items:[{pid:id("Strec"),qty:"10 koli"}], history:[H("Anbar (İnqilab)","Sifariş yaradıldı","",30),H("Satınalma","Satınalma OK verdi","Loyal Packing",25)] }),
-    O({ id:109, from:"Anbar", wh:"Anbar", created:T(26), last_move:T(24), status:"yolda", eta:plusDays(0), supplier:"İlkin penaplast", acceptedAt:T(24),
-      items:[{pid:id("D38 penaplast"),qty:"500"},{pid:id("40*80 penaplast"),qty:"200"}], history:[H("Anbar","Sifariş yaradıldı","",26),H("Satınalma","Satınalma OK verdi","İlkin penaplast",24)] }),
-    // Dünən gəlməli idi, heç kim heç nə qeyd etməyib → açılanda xəbərdarlıq
-    O({ id:107, from:"Anbar", wh:"Anbar", created:T(40), last_move:T(34), status:"yolda", eta:plusDays(-1), supplier:"Hicaz", acceptedAt:T(34),
-      items:[{pid:id("toyuq file"),qty:"10 kq"},{pid:id("Bud"),qty:"8 kq"}], history:[H("Anbar","Sifariş yaradıldı","",40),H("Satınalma","Satınalma OK verdi","Hicaz",34)] })
-  ];
+  const orders = [];   // boş başlayır: sifarişləri işçilər özləri yazır
   const log = [];
-  orders.forEach(o=>o.history.forEach(h=>log.push({...h,ref:"Sifariş #"+o.id})));
-  return { v:4, products:P, firms:FIRMS.slice(), orders, log, seq:300 };
+    return { v:5, products:P, firms:FIRMS.slice(), orders, log, alerts:[], seq:100 };
 }
 
 // ===================== Yaddaş =====================
-const KEY = "almond-anbar-demo-v6";
+const KEY = "almond-anbar-v1";
 let S;
 try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
 if (!S.firms) S.firms = FIRMS.slice();
@@ -572,7 +536,7 @@ function vHome(){
   }
   html += upcoming();
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+'Demo · məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Demonu sıfırla</button></div>';
+  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button></div>';
   return html;
 }
 function upcoming(){
@@ -1202,7 +1166,7 @@ $("main").addEventListener("click", e => {
   if (t.id==="pAdd") return addProduct();
   if (t.id==="install"){ installEvt && installEvt.prompt(); return; }
   if (t.id==="notif"){ try { Notification.requestPermission().then(()=>render()); } catch(e){} return; }
-  if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Demo ilkin vəziyyətə qaytarıldı"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
+  if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Bütün sifarişlər silindi"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
   if (d.act) orderAct(d.act, Number(d.id));
 });
 $("main").addEventListener("change", async e => {
