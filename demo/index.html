@@ -133,7 +133,7 @@ button.big{width:100%;padding:11px;font-size:16px}
 .seg3 button.on.ok{background:var(--ok);border-color:var(--ok);color:#fff}
 .seg3 button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
 .seg3 button.on.none{background:var(--arch);border-color:var(--arch);color:#fff}
-.qwhy button{font-size:12px;padding:4px 9px}
+.qw{border-color:var(--bad)}
 .whin{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .whin input{width:84px}
 .who{border:1px solid var(--line);cursor:pointer;background:var(--surface)}
@@ -425,6 +425,7 @@ function itemState(o,i){
   if (i.got!=null) return gotState(i.qty,i.got);
   if (i.qc==="ok") return ["Keyfiyyət ✓","p-info"];
   if (o.status==="acik") return ["Satınalmada","p-mute"];
+  if (i.qc==="none") return ["Gəlmədi","p-bad"];
   if (o.status==="anbar") return ["Gəldi · yoxlanır","p-info"];
   return daysTo(o.eta)>0 ? ["Gözlənilir","p-mute"] : ["Bu gün gəlməlidir","p-info"];
 }
@@ -635,8 +636,8 @@ function itemRow(o,i,k,st){
       cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><div class="seg3">'+
         '<button class="'+(i.qc==="ok"?"on ok":"")+'" data-qc="'+key+'" data-v="ok">✓ Uyğun</button>'+
         '<button class="'+(i.qc==="bad"?"on bad":"")+'" data-qc="'+key+'" data-v="bad">✗ Uyğun deyil</button>'+
-        '<button class="'+(i.qc==="none"?"on none":"")+'" data-qc="'+key+'" data-v="none">Gəlmədi</button></div>'+
-        (i.qc==="bad" ? '<div class="seg qwhy">'+QC_WHY.map(w=>'<button class="'+(i.qcWhy===w?"on":"")+'" data-qcwhy="'+key+'" data-v="'+esc(w)+'">'+w+'</button>').join("")+'</div>' : "")+'</div>');
+        '</div>'+
+        (i.qc==="bad" ? '<input class="qw" data-qcw="'+key+'" value="'+esc(i.qcWhy||"")+'" placeholder="Şərh: niyə uyğun deyil? (məs. vaxtı keçib, etiket yoxdur)">' : "")+'</div>');
     } else if (i.qc){
       cells.push('<div class="cell"><span class="cl">Keyfiyyət</span>'+(i.qc==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.qc==="bad"?'<span class="pill p-bad">✗ '+esc(i.qcWhy||"uyğun deyil")+'</span>':'<span class="pill p-bad">gəlmədi</span>')+'</div>');
     } else if (accepted && arrived(o)) cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><span class="meta">yoxlayır…</span></div>');
@@ -675,9 +676,10 @@ let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, dat
 // Kartın altındakı ümumi düymə (şöbənin addımını bitirmək)
 function footActions(o){
   if (role==="Keyfiyyət" && o.status==="anbar" && hasQC(o) && !o.qcAt){
-    const left = o.items.filter(i=>!i.qc).length;
+    const left = o.items.filter(i=>!i.qc).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
     return '<div class="box"><button class="okb big" data-act="qcall" data-id="'+o.id+'">✓ Hamısı uyğundur</button>'+
-      '<button class="pri big" data-act="qcdone" data-id="'+o.id+'"'+(left?" disabled":"")+'>'+(left?left+" mal yoxlanmayıb":"Yoxlamanı bitir")+'</button></div>';
+      '<button class="pri big" data-act="qcdone" data-id="'+o.id+'">Yoxlamanı bitir</button>'+
+      (left?'<div class="hint">'+left+' mala baxılmayıb — bitirəndə “gəlmədi” sayılacaq.</div>':"")+(noWhy?'<div class="hint rs">'+noWhy+' “uyğun deyil” malın şərhi yazılmayıb.</div>':"")+'</div>';
   }
   if (role===o.wh && o.status==="yolda")
     return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
@@ -1182,8 +1184,8 @@ $("main").addEventListener("click", e => {
   if (d.goorder){ tab="orders"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); render(); return; }
   if (d.seen){ const a=(S.alerts||[]).find(x=>x.id===d.seen); if (a){ a.seen.push(role); save(); render(); } return; }
   // Keyfiyyət
-  if (d.qc){ const [o,i]=itemOf(d.qc); return keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; else if (!i.qcWhy) i.qcWhy = QC_WHY[0]; }); }
-  if (d.qcwhy){ const [o,i]=itemOf(d.qcwhy); return keep(()=>{ i.qcWhy = d.v; }); }
+  if (d.qc){ const [o,i]=itemOf(d.qc); keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; });
+    if (i.qc==="bad"){ const el=document.querySelector('[data-qcw="'+d.qc+'"]'); if (el) el.focus(); } return; }
   // Anbar
   if (d.wit){ const [k,ix]=d.wit.split("|"); itSel[k] = itSel[k]||new Set(); const st=itSel[k], n=Number(ix); const inp=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); const val=inp?inp.value:"";
     const y=window.scrollY; st.has(n)?st.delete(n):st.add(n); render(); window.scrollTo(0,y); const i2=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); if (i2) i2.value=val; return; }
@@ -1245,6 +1247,7 @@ $("main").addEventListener("change", async e => {
 });
 $("main").addEventListener("input", e => {
   const el=e.target;
+  if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.got) paintGot(el);
   if (el.dataset.ii!=null) setItem(el);
@@ -1290,7 +1293,9 @@ function orderAct(act, id){
     toast(hasQC(o) ? "Keyfiyyətə xəbər getdi · gələn miqdarı yazın" : "Gələn miqdarı yazın");
   }
   else if (act==="qcdone"){
-    if (!qcDone(o)) return toast("Bütün malları yoxlayın");
+    const nw = o.items.find(i=>i.qc==="bad" && !(i.qcWhy||"").trim());
+    if (nw) return toast(pname(nw.pid)+": niyə uyğun olmadığını yazın");
+    o.items.forEach(i=>{ if (!i.qc) i.qc = "none"; });
     o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
