@@ -572,9 +572,20 @@ function upcoming(){
 const openMore = new Set();
 // Qeyd və ya şərhin altında şöbələrin adları: kimi seçsən, onun səhifəsində görünür
 const toSel = {};
-function whoChips(key, def){
+const itSel = {};
+function whoChips(key, def, o){
   if (!toSel[key]) toSel[key] = new Set(def||[]);
-  return '<div class="lbl">Kim görsün? (mal gələndə yenidən xatırladılacaq)</div><div class="chips">'+DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>'<button class="ic who'+(toSel[key].has(d)?" on":"")+'" data-who="'+esc(key)+'|'+esc(d)+'">'+(toSel[key].has(d)?"✓ ":"")+esc(d)+'</button>').join("")+'</div>';
+  if (!itSel[key]) itSel[key] = new Set();
+  const its = o && o.items.length>1 ? '<div class="lbl">Hansı mal? (seçməsəniz bütün sifariş)</div><div class="chips">'+o.items.map((i,k)=>'<button class="ic who'+(itSel[key].has(k)?" on":"")+'" data-wit="'+esc(key)+'|'+k+'">'+(itSel[key].has(k)?"✓ ":"")+esc(pname(i.pid))+'</button>').join("")+'</div>' : "";
+  return its+'<div class="lbl">Kim görsün? (mal gələndə yenidən xatırladılacaq)</div><div class="chips">'+DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>'<button class="ic who'+(toSel[key].has(d)?" on":"")+'" data-who="'+esc(key)+'|'+esc(d)+'">'+(toSel[key].has(d)?"✓ ":"")+esc(d)+'</button>').join("")+'</div>';
+}
+// Qeydin seçilən mallara tətbiqi: qayıdır [malların adları, xəta mətni]
+function applyNote(o, key, to){
+  const ks = [...(itSel[key]||[])]; delete itSel[key];
+  if (to.includes("Texnoloq") && !ks.length && o.items.length>1) return [null, "Texnoloq hansı mala baxmalıdır? “Hansı mal?” sətrində seçin"];
+  const idx = ks.length ? ks : o.items.length===1 ? [0] : [];
+  if (to.includes("Texnoloq")) idx.forEach(k=>{ o.items[k].tech = true; });
+  return [idx.map(k=>pname(o.items[k].pid)), null];
 }
 const toLine = to => to && to.length ? ' <span class="meta">→ '+to.map(esc).join(", ")+'</span>' : "";
 const QC_WHY = ["Vaxtı keçib","Etiket yoxdur","Azərbaycanca yazı yoxdur","Tarix yazılmayıb"];
@@ -593,6 +604,7 @@ function orderCard(o){
   const bar = accepted ? '<div class="bar">'+["ok","warn","bad","wait"].map(k=>cnt[k]?'<i class="b-'+k+'" style="flex:'+cnt[k]+'"></i>':"").join("")+'</div>' : "";
   const extra = [o.type, o.group?"#"+o.group+" · hissə "+o.part:"", o.parent?"#"+o.parent+" sifarişinin davamı":""].filter(Boolean).join(" · ");
   const rows = o.status==="acik" ? '<div class="chips">'+o.items.map(i=>'<span class="ic">'+thumb(i.pid,1)+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <b>'+esc(i.qty)+'</b>'+(i.added?' <span class="addtag">+</span>':"")+'</span>').join("")+'</div>'
+    : role==="Texnoloq" && o.items.some(i=>i.tech) ? '<div class="irows">'+o.items.map((i,k)=>i.tech?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+(o.items.some(i=>!i.tech)?'<div class="meta">+ '+o.items.filter(i=>!i.tech).length+' başqa mal (Texnoloqa aid deyil)</div>':"")
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
@@ -631,7 +643,7 @@ function itemRow(o,i,k,st){
   if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
     if (!o.recvDone && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq</span></div>');
     else if (role==="Texnoloq" && !i.techRes){
-      cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Uyğun</button><button data-techres="'+key+'" data-v="bad">✗ Uyğun deyil</button></div></div>');
+      cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Uyğun</button><button data-techres="'+key+'" data-v="bad">✗ Uyğun deyil</button><button class="sm" data-techno="'+key+'">Mənə aid deyil</button></div></div>');
     } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ uyğun deyil</span>':'<span class="pill p-qc">yoxlayır…</span>')+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
   }
   // Satınalmanın cavabı
@@ -671,7 +683,7 @@ function more(o){
   return '<details class="more" data-more="'+o.id+'"'+(openMore.has(o.id)?" open":"")+'><summary>▸ Ətraflı'+(o.comments.length?' · 💬 '+o.comments.length:"")+(nf?' · 📎 '+nf:"")+' · '+fmtT(o.created)+'</summary><div class="more-in">'+
     (o.photos.length?'<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
     o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+toLine(c.to)+'</div>').join("") +
-    '<input id="c-'+o.id+'" placeholder="Şərh yazın">'+whoChips("c"+o.id,[])+'<div class="row"><button class="pri" data-act="comment" data-id="'+o.id+'">Şərhi göndər</button>'+
+    '<input id="c-'+o.id+'" placeholder="Şərh yazın">'+whoChips("c"+o.id,[],o)+'<div class="row"><button class="pri" data-act="comment" data-id="'+o.id+'">Şərhi göndər</button>'+
     '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
     '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" class="fpick"></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
@@ -759,7 +771,7 @@ function acceptBox(o){
         '<input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"></div>').join("")
     : '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       '<input id="sup-'+o.id+'" list="flist" placeholder="Firma və ya sürücü" value="'+esc(guessFirm(o))+'"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi">';
-  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh])+'<button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
+  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh],o)+'<button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
 }
 function acceptOrder(o){
   const G = firmGroups(o), parts = [];
@@ -773,7 +785,11 @@ function acceptOrder(o){
     const eta = ($("eta-"+o.id)||{}).value; if (!eta) return toast("Gəliş gününü seçin");
     parts.push({ eta, sup:(($("sup-"+o.id)||{}).value||"").trim(), items:o.items });
   }
-  const base = JSON.parse(JSON.stringify(o)), now = new Date().toISOString(), note = (($("spn-"+o.id)||{}).value||"").trim();
+  const note0 = (($("spn-"+o.id)||{}).value||"").trim(), to = [...(toSel["a"+o.id]||[])];
+  let note = note0;
+  if (note0 && to.length){ const [nm, err] = applyNote(o, "a"+o.id, to); if (err) return toast(err); if (nm.length) note = nm.join(", ")+": "+note0; }
+  delete toSel["a"+o.id];
+  const base = JSON.parse(JSON.stringify(o)), now = new Date().toISOString();
   const list = parts.map((pt,k)=>{
     const x = k===0 ? o : Object.assign(JSON.parse(JSON.stringify(base)), { id:nextId(), comments:[] });
     x.items = k===0 ? pt.items : JSON.parse(JSON.stringify(pt.items));
@@ -783,7 +799,6 @@ function acceptOrder(o){
     addLog(x, "Satınalma OK verdi", (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(parts.length>1?" · hissə "+x.part:"")+(note?" · "+note:""));
     return x;
   });
-  const to = [...(toSel["a"+o.id]||[])]; delete toSel["a"+o.id];
   if (note && to.length){ list.forEach(x=>{ x.noteTo = to; }); notify(to, "note", "#"+o.id+" · Satınalma: "+note, "Gəliş "+list.map(x=>fmtD(x.eta)).join(", ")+" · mal gələndə baxın", [], o.id); }
   notify([o.wh,o.from].filter(r=>!to.includes(r)||!note), "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
@@ -1158,11 +1173,14 @@ $("main").addEventListener("click", e => {
   if (d.qc){ const [o,i]=itemOf(d.qc); return keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; else if (!i.qcWhy) i.qcWhy = QC_WHY[0]; }); }
   if (d.qcwhy){ const [o,i]=itemOf(d.qcwhy); return keep(()=>{ i.qcWhy = d.v; }); }
   // Anbar
+  if (d.wit){ const [k,ix]=d.wit.split("|"); itSel[k] = itSel[k]||new Set(); const st=itSel[k], n=Number(ix); const inp=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); const val=inp?inp.value:"";
+    const y=window.scrollY; st.has(n)?st.delete(n):st.add(n); render(); window.scrollTo(0,y); const i2=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); if (i2) i2.value=val; return; }
   if (d.who){ const [k,r]=d.who.split("|"); const st=toSel[k]; const inp=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); const val=inp?inp.value:"";
     const y=window.scrollY; st.has(r)?st.delete(r):st.add(r); render(); window.scrollTo(0,y); const i2=$(k[0]==="a"?"spn-"+k.slice(1):"c-"+k.slice(1)); if (i2) i2.value=val; return; }
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   // Texnoloq
+  if (d.techno){ const [o,i]=itemOf(d.techno); return keep(()=>{ i.tech = false; addLog(o,"Texnoloq: yoxlama lazım deyil",pname(i.pid)); }); }
   if (d.techres){ const [o,i]=itemOf(d.techres); const note=($("tn-"+d.techres)||{}).value||"";
     if (d.v==="bad" && !note.trim()) return toast("Niyə uyğun olmadığını yazın");
     return keep(()=>{ i.techRes=d.v; i.techNote=note.trim(); addLog(o,"Texnoloq: "+(d.v==="ok"?"uyğundur":"uyğun deyil"),pname(i.pid)+(note?" · "+note:"")); }); }
@@ -1239,8 +1257,10 @@ function saveGot(el){
 function orderAct(act, id){
   const o = S.orders.find(x=>x.id===id); if (!o) return;
   const v = k => ($(k+"-"+id)||{}).value || "";
-  if (act==="comment"){ const t=v("c").trim(); if(!t) return toast("Şərhi yazın");
-    const to = [...(toSel["c"+id]||[])]; delete toSel["c"+id];
+  if (act==="comment"){ let t=v("c").trim(); if(!t) return toast("Şərhi yazın");
+    const to = [...(toSel["c"+id]||[])];
+    if (to.length){ const [nm, err] = applyNote(o, "c"+id, to); if (err) return toast(err); if (nm.length) t = nm.join(", ")+": "+t; }
+    delete toSel["c"+id];
     o.comments.push({by:role,text:t,to,at:new Date().toISOString()}); addLog(o,"Şərh",t+(to.length?" → "+to.join(", "):""));
     if (to.length){ o.noteTo = [...new Set((o.noteTo||[]).concat(to))]; notify(to, "note", "#"+o.id+" · "+role+": "+t, (o.eta?"Gəliş "+fmtD(o.eta)+" · ":"")+"mal gələndə baxın", [], o.id); }
     toast(to.length ? "Göndərildi → "+to.join(", ") : "Şərh yazıldı"); }
