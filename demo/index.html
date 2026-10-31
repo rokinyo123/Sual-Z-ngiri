@@ -131,6 +131,8 @@ button.big{width:100%;padding:11px;font-size:16px}
 .qwhy button{font-size:12px;padding:4px 9px}
 .whin{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .whin input{width:84px}
+.nwb{border:1px dashed var(--line);cursor:pointer}
+.nwb.on{background:var(--qc);border-color:var(--qc);color:#fff}
 .tg.on{background:var(--qc);border-color:var(--qc);color:#fff}
 .p-qc,.c-chk{background:var(--qc-bg);color:var(--qc)}
 .oc.s-chk{border-left-color:var(--qc)}
@@ -408,12 +410,13 @@ function problem(o,i){
   return "";
 }
 const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
-const techPending = o => o.items.some(i=>i.tech && !i.techRes);
+const techReady = (o,i) => i.tech && !i.techRes && o.recvDone && i.qc!=="bad" && i.qc!=="none" && i.got>0;
+const techPending = o => o.items.some(i=>techReady(o,i));
 // Bir malın ümumi vəziyyəti (rəng + söz) — kalendarda, nişanlarda, cədvəldə
 function itemState(o,i){
   const pr = problem(o,i);
   if (pr) return [pr, pr.startsWith("Az") ? "p-warn" : "p-bad"];
-  if (i.tech && !i.techRes) return ["Texnoloqda","p-qc"];
+  if (techReady(o,i)) return ["Texnoloqda","p-qc"];
   if (i.got!=null) return gotState(i.qty,i.got);
   if (i.qc==="ok") return ["Keyfiyyət ✓","p-info"];
   if (o.status==="acik") return ["Satınalmada","p-mute"];
@@ -617,8 +620,9 @@ function itemRow(o,i,k,st){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span>'+(i.qc==="bad"?'<span class="pill p-bad">qəbul olunmadı</span>':'<span class="pill '+gotState(i.qty,i.got||0)[1]+'">'+(i.got?fmtN(i.got)+" qəbul":"gəlmədi")+'</span>')+(i.tech?' <span class="pill p-qc">🔬</span>':"")+'</div>');
   }
   // Texnoloq
-  if (i.tech){
-    if (role==="Texnoloq" && !i.techRes){
+  if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
+    if (!o.recvDone && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq</span></div>');
+    else if (role==="Texnoloq" && !i.techRes){
       cells.push('<div class="cell"><span class="cl">Texnoloq</span><input id="tn-'+key+'" placeholder="Rəy (məs. bişirdik, effekt verdi)"><div class="seg3"><button data-techres="'+key+'" data-v="ok">✓ Uyğun</button><button data-techres="'+key+'" data-v="bad">✗ Uyğun deyil</button></div></div>');
     } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ uyğun deyil</span>':'<span class="pill p-qc">yoxlayır…</span>')+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
   }
@@ -632,7 +636,7 @@ function itemRow(o,i,k,st){
       '<input id="an-'+key+'" placeholder="Qeyd (istəyə görə)"><button class="pri" data-answer="'+key+'">Cavab ver → Anbar gözləsin</button></div>');
     else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir</span></div>');
   }
-  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
+  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+(i.isNew?' <span class="newtag">🆕 yeni mal</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
 }
 const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="bad" ? fmtN(num(i.qty)-i.got)+String(i.qty).replace(/^[\d.,\s]+/," ") : i.qty;
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
@@ -747,7 +751,9 @@ function acceptBox(o){
         '<input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"></div>').join("")
     : '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
       '<input id="sup-'+o.id+'" list="flist" placeholder="Firma və ya sürücü" value="'+esc(guessFirm(o))+'"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi">';
-  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Anbara qeyd (məs. bulğur 2 gün gec gələcək)"><button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
+  const nw = hasQC(o) ? '<div class="lbl">Yeni mal varmı? Basın — Keyfiyyət və Texnoloq yoxlayacaq</div><div class="chips">'+
+      o.items.map((i,k)=>'<button class="ic nwb'+(i.isNew?" on":"")+'" data-newm="'+o.id+'-'+k+'">'+(i.isNew?"🆕 ":"")+esc(pname(i.pid))+'</button>').join("")+'</div>' : "";
+  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+nw+'<input id="spn-'+o.id+'" placeholder="Anbara qeyd (məs. bulğur 2 gün gec gələcək)"><button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
 }
 function acceptOrder(o){
   const G = firmGroups(o), parts = [];
@@ -766,11 +772,14 @@ function acceptOrder(o){
     const x = k===0 ? o : Object.assign(JSON.parse(JSON.stringify(base)), { id:nextId(), comments:[] });
     x.items = k===0 ? pt.items : JSON.parse(JSON.stringify(pt.items));
     x.eta = pt.eta; x.supplier = pt.sup; x.status = "yolda"; x.acceptedAt = now; x.last_move = now; if (note) x.spNote = note;
+    x.items.forEach(i=>{ if (i.isNew) i.tech = true; });
     if (parts.length>1){ x.group = o.id; x.part = (k+1)+"/"+parts.length; }
     if (k>0) S.orders.unshift(x);
     addLog(x, "Satınalma OK verdi", (x.supplier||"Firmasız")+" · gəliş "+fmtD(x.eta)+(parts.length>1?" · hissə "+x.part:"")+(note?" · "+note:""));
     return x;
   });
+  const news = list.flatMap(x=>x.items.filter(i=>i.isNew).map(i=>pname(i.pid)+" · "+fmtD(x.eta)+" · #"+x.id));
+  if (news.length) notify(["Keyfiyyət","Texnoloq"], "arr", "Yeni mal gələcək · yoxlamaq lazımdır", o.wh+" · #"+o.id, news, o.id);
   notify([o.wh,o.from], "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
   toast(list.length>1 ? list.length+" firmaya bölündü · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
@@ -1144,6 +1153,7 @@ $("main").addEventListener("click", e => {
   if (d.qc){ const [o,i]=itemOf(d.qc); return keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; else if (!i.qcWhy) i.qcWhy = QC_WHY[0]; }); }
   if (d.qcwhy){ const [o,i]=itemOf(d.qcwhy); return keep(()=>{ i.qcWhy = d.v; }); }
   // Anbar
+  if (d.newm){ const [o,i]=itemOf(d.newm); return keep(()=>{ i.isNew = !i.isNew; }); }
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   // Texnoloq
@@ -1247,7 +1257,7 @@ function orderAct(act, id){
     const c = {ok:0,warn:0,bad:0}; o.items.forEach(i=>{ const k=itemCat(itemState(o,i)); if (c[k]!=null) c[k]++; });
     notify(["Satınalma",o.from,"Rəhbərlik"], "res", "#"+o.id+" qəbul olundu", [c.ok?c.ok+" tam":"", c.warn?c.warn+" az":"", c.bad?c.bad+" qəbul olunmadı / gəlmədi":""].filter(Boolean).join(" · ")+(n?" · cavabınız lazımdır":""),
       o.items.filter(i=>problem(o,i)).map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
-    toast(n ? n+" mal üçün Satınalma cavab verəcək" : "Hamısı qəbul olundu ✓");
+    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
