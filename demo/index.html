@@ -963,6 +963,7 @@ function importInfo(){
 function ocrInfo(){
   const o = draft.ocr; if (!o) return "";
   if (o.state==="busy") return '<div class="imp"><div>📷 <b>'+o.n+' şəkil oxunur...</b> Məhsullar bir az sonra aşağıya yazılacaq (adətən 10–40 saniyə).</div></div>';
+  if (o.state==="off") return '<div class="imp"><div>📷 Şəkil sifarişə əlavə olundu. <b>Şəkildən malları oxumaq hələ yalnız Claude linkində işləyir</b> — burada malları əl ilə yazın. Real sistemdə hər yerdə işləyəcək.</div></div>';
   if (o.state==="err") return '<div class="imp"><div>📷 '+esc(o.msg)+' Şəkil sifarişdə qaldı.</div></div>';
   const imp = draft.items.filter(i=>i.src==="img"), miss = imp.filter(i=>!i.pid).length;
   return '<div class="imp"><div>📷 Şəkildən <b>'+o.got+' məhsul</b> oxundu'+(o.got?(miss?': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span>':', hamısı kataloqda tapıldı'):' — şəkildə sifariş siyahısı tapılmadı')+'. Şəkil sifarişdə qaldı. Oxunanları yoxlayın: əl yazısında səhv ola bilər.</div></div>';
@@ -1025,11 +1026,18 @@ let sampleFn = null, canOcr = false;
   } catch(e){ canOcr = false; }
   if (canOcr && tab==="new") render();
 })();
+// Telefon şəkli (HEIC, 10+ MB) əvvəl adi JPEG-ə çevrilir və kiçildilir — oxumağa həmin şəkil gedir
+const dataUrlToBlob = u => { const [h,b64] = u.split(","); const bin = atob(b64), a = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:(h.match(/:(.*?);/)||[])[1]||"image/jpeg"}); };
 async function addDraftPhotos(list){
-  const files = Array.from(list).filter(f=>/^image\//.test(f.type));
-  if (!files.length) return;
-  for (const f of files) draft.photos.push(await shrink(f));
-  if (!canOcr){ render(); return; }
+  const files = Array.from(list).filter(f=>/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name||""));
+  if (!files.length) return toast("Şəkil seçilmədi");
+  const forRead = [];
+  for (const f of files){
+    const small = await shrink(f), big = await shrink(f, 1600);
+    if (small) draft.photos.push(small);
+    forRead.push(big ? dataUrlToBlob(big) : f);
+  }
+  if (!canOcr){ draft.ocr = { state:"off" }; render(); return; }
   draft.ocr = { state:"busy", n:files.length }; render();
   const names = live().map(p=>p.name).join("\n");
   const prompt = "Şəkil(lər)də şirniyyat sexinin anbar sifarişi var: əl ilə və ya çapla yazılmış məhsul siyahısı (Azərbaycan dilində, bəzən rus dilində). "+
@@ -1037,7 +1045,7 @@ async function addDraftPhotos(list){
     "Məhsul aşağıdakı kataloqdakı biri ilə eyni məhsuldursa, kataloqdakı adı hərfbəhərf yaz; deyilsə, şəkildə yazıldığı kimi yaz. "+
     "Cavab yalnız JSON massivi olsun: [{\"name\":\"Pralin\",\"qty\":\"120 kq\"}]. Şəkildə sifariş siyahısı yoxdursa [] qaytar.\n\nKataloq:\n"+names;
   try {
-    const rows = await sampleFn.json(prompt, { images: files });
+    const rows = await sampleFn.json(prompt, { images: forRead });
     const ok = Array.isArray(rows) ? rows.filter(r=>r && String(r.name||"").trim() && String(r.qty??"").trim()) : [];
     draft.items = draft.items.filter(i=>i.pid || (i.pname||"").trim());
     ok.forEach(r=>{ const n = String(r.name).trim(); draft.items.push({pid:pidByName(n), pname:n, qty:normQty(r.qty), imp:true, src:"img"}); });
@@ -1046,7 +1054,7 @@ async function addDraftPhotos(list){
     toast(ok.length ? ok.length+" məhsul şəkildən yazıldı" : "Şəkildə sifariş siyahısı tapılmadı");
   } catch(e){
     const msg = { not_granted:"Şəkli oxumaq üçün Claude-a icazə verilmədi.", rate_limited:"Çox sorğu getdi, bir az sonra yenidən cəhd edin.", image_rejected:"Bu şəkli oxumaq olmadı, başqa şəkil seçin.", invalid_json:"Şəkildəki siyahını oxumaq olmadı." }[e && e.code] || "Şəkli oxumaq alınmadı.";
-    draft.ocr = { state:"err", msg };
+    draft.ocr = { state:"err", msg: msg + (e && e.code ? " ("+e.code+")" : "") };
   }
   if (tab==="new") render();
 }
@@ -1097,10 +1105,14 @@ function newDraft(){ return { type:"Gündəlik", items:[{pid:"",qty:""}], deadli
 function shrink(file, max){
   return new Promise(res=>{
     const r = new FileReader();
-    r.onload = () => { const img = new Image(); img.onload = () => {
-      const k = Math.min(1, (max||640)/Math.max(img.width,img.height)); const c = document.createElement("canvas");
-      c.width = img.width*k; c.height = img.height*k; c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-      res(c.toDataURL("image/jpeg",.7)); }; img.src = r.result; };
+    r.onerror = () => res(null);
+    r.onload = () => { const img = new Image();
+      img.onerror = () => res(null);
+      img.onload = () => {
+        const k = Math.min(1, (max||640)/Math.max(img.width,img.height)); const c = document.createElement("canvas");
+        c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        try { res(c.toDataURL("image/jpeg",.8)); } catch(e){ res(null); } };
+      img.src = r.result; };
     r.readAsDataURL(file);
   });
 }
@@ -1131,7 +1143,8 @@ const closeZoom = () => { $("zoom").hidden = true; };
 async function setPhoto(el){
   const f = el.files[0]; if (!f || role!=="Admin") return;
   const p = prod(el.dataset.pphoto);
-  p.photo = await shrink(f, 900);
+  const ph = await shrink(f, 900); if (!ph) return toast("Bu şəkli açmaq olmadı");
+  p.photo = ph;
   S.log.push({by:role,act:"Məhsul şəkli əlavə edildi",note:p.name,at:now()});
   save(); toast(p.name+": şəkil əlavə olundu");
   const cell = $("ph-"+p.id); if (cell) cell.innerHTML = thumb(p.id);
@@ -1260,7 +1273,7 @@ $("main").addEventListener("change", async e => {
   if (el.dataset.psize && role==="Admin"){ const p=prod(el.dataset.psize), v=el.value.trim(); if (v===(p.size||"")) return; S.log.push({by:role,act:"Ölçü dəyişdirildi",note:p.name+": "+(p.size||"—")+" → "+(v||"—"),at:now()}); p.size=v; save(); el.closest("tr").dataset.s=(p.name+" "+v).toLowerCase(); toast("Ölçü yadda saxlandı"); return; }
   if (el.dataset.firm && role==="Admin"){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
   if (el.dataset.file){ const o=S.orders.find(x=>x.id===Number(el.dataset.file)); o.files=o.files||[]; for (const f of el.files){ const x=await readFile(f); if (x){ o.files.push(x); addLog(o,"Fayl əlavə edildi",x.name); } } save(); render(); return; }
-  if (el.dataset.photo){ const o=S.orders.find(x=>x.id===Number(el.dataset.photo)); for (const f of el.files) o.photos.push(await shrink(f)); addLog(o,"Şəkil əlavə edildi",""); save(); render(); }
+  if (el.dataset.photo){ const o=S.orders.find(x=>x.id===Number(el.dataset.photo)); for (const f of el.files){ const x = await shrink(f); if (x) o.photos.push(x); else toast(f.name+": bu şəkli açmaq olmadı"); } addLog(o,"Şəkil əlavə edildi",""); save(); render(); }
 });
 $("main").addEventListener("input", e => {
   const el=e.target;
