@@ -324,8 +324,9 @@ const age = ms => { const m = Math.max(1,Math.floor(ms/60000)); if (m<60) return
 function toast(t){ const el=$("toast"); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2400); }
 
 // ===================== Kataloq (Excel: 01.10.2025 – 18.10.2026 sifariş vərəqələri) =====================
-// [ad, firma] — firma boşdursa, Satınalma özü alır
-const CATALOG = [];   // boş başlayır: mallar sifarişlərdən və Admin tərəfindən əlavə olunur
+// Xammal siyahısı (Excel "Xammal Siyahısı", Nomenklatur): [ad, ölçü vahidi]. Firma sonra Admin tərəfindən verilir.
+const CATALOG = [["Ağ küncüt","kq"],["Ağ qoz","kq"],["Alma","kq"],["Alma Cemi","kq"],["ananas","kq"],["Ananas konservi","kq"],["Antep fıstığı","kq"],["aqar aqar","kq"],["Araxis","kq"],["armud","kq"],["avakado","kq"],["Badam Ağ","kq"],["badam aroması","kq"],["Badam filesi","kq"],["Badam qabıqlı","kq"],["Badımcan","kq"],["Bal sadə","kq"],["Bal təbii","kq"],["balıq(foreli)","kq"],["Balqabaq tumu","kq"],["Banan","kq"],["Banan aroması","kq"],["Bercolad ağ qəpik","kq"],["Bercolad qara qəpik","kq"],["Bercolad südlü qəpik","kq"],["Berkalat ağ plitka","kq"],["Berkalat qara plitka","kq"],["Berkalat qara plitka (Şəkərsiz)","kq"],["Bibər","kq"],["Bibər acı","kq"],["Bibər qırmızı","kq"],["bibər sarı","kq"],["Bişmiş krem tozu (Frozen)","kq"],["Blueberry","kq"],["Böyürtkən","kq"],["brokoli","kq"],["Buddibi","kq"],["bulğur","kq"],["Calibaut qara qepik","kq"],["Calibaut sütlü qepik","kq"],["Carat plitka ağ","kq"],["Carat Plitka sütlü","kq"],["carat südlü qəpik","kq"],["Çay beta","kq"],["çay birdəfəlik","ədəd"],["Çay earl grey","ədəd"],["Çia toxumu","kq"],["Çiabata çörək","ədəd"],["Cirə","kq"],["Çiyələk","kq"],["çörək baget","ədəd"],["çörək baton (salat)","kq"],["çörək tost","kq"],["cream cheese(pendir)","kq"],["cream cheese(pendir)(savuşkin)","kq"],["Çuğundur","kq"],["Darçın Çubuq","kq"],["Darçın toz","kq"],["Decor kakao","kq"],["decor qızılı","kq"],["dolğu antep","kq"],["Dolğu çiyələk","kq"],["Dolğu malina","kq"],["dolğu mango və marakuya","kq"],["dolğu portağal","kq"],["dolğu qaragilə","kq"],["Dolğu vişnə","kq"],["Dolğu Xaş Xaş","kq"],["Donmuş malina","kq"],["Donmuş vişnə","kq"],["doşab","kq"],["Düyü uzun","kq"],["Düyü vaflisi","ədəd"],["Düyü yumru","kq"],["Düyü yumru (richmond)","kq"],["Duz süfrə","kq"],["Duz xörək","kq"],["Ekapan","kq"],["Əncir Qara ( təzə )","kq"],["Əncir qurusu","kq"],["Ət (mətbəx)","kq"],["Ət farj","kq"],["Findiq qovrulmuş","kq"],["Gavalı qurusu","kq"],["Göbələk","kq"],["Göyərti","kq"],["Göyərti (mətbəx)","ədəd"],["Göyərti(sucrine lettuce)","kq"],["grapefruit","kq"],["Gül qurusu","ədəd"],["Gül qurusu(gül ləçəkləri)","kq"],["Gül qurusu(karkade)","kq"],["Gül qurusu(qızılgül)","kq"],["Gül vaflisi nazik","ədəd"],["Gül vaflisi qalin","ədəd"],["Günəbaxan tumu","kq"],["Harmony şəffaf jele (Termogel)","kq"],["Hill","kq"],["hinduşka filesi","kq"],["İçim labne pendiri","kq"],["İsti şokolad","kq"],["İstiot","kq"],["İzomat","kq"],["jel qida boyası","kq"],["Jelatin toz","kq"],["Jele ağ","kq"],["Jele malina","kq"],["Jele sade","kq"],["Jele şokolad","kq"],["kabaçki","kq"],["Kahı ( Agro Fresh )","kq"],["Kahı Aysberq ( Agro Fresh )","kq"],["Kahı bataviya ( Agro Fresh )","kq"],["Kahı lorosso ( Agro Fresh )","kq"],["Kakao","kq"],["Kakao termostabil","kq"],["Kakao yağı","kq"],["Kakos iri","kq"],["Kakos xirda","kq"],["kandurin","kq"],["kanyak aroması","kq"],["Kartof","kq"],["Kələm","kq"],["kələm qırmızı","kq"],["Kesmik","kq"],["Keşyu","kq"],["Keşyu dekorluq","kq"],["Kətan toxumu","kq"],["Ketcup klassik","kq"],["kinoa","kq"],["Kişmiş qara","kq"],["Kişmiş sarı","kq"],["Kivi","kq"],["Kofe İtalian blend","kq"],["kofe Jacobs","kq"],["Kofe Krema","ədəd"],["Kofe Mehmed Efendi","kq"],["Kök","kq"],["kolbasa doktor","kq"],["kolbasa toyuq","kq"],["kolbasa vetcina","kq"],["Konserv Lobya","kq"],["konserv qarğıdalı","kq"],["konserv yaşıl noxud","litr"],["krasitel","ədəd"],["Kraxmal kartof","kq"],["Kraxmal(pendik)","kq"],["Krem (delice)","kq"],["Krem patiseri","kq"],["Lələk","ədəd"],["lime","kq"],["Limon","kq"],["Limon dolğusu (deli)","kq"],["Limon duzu","kq"],["Limon suyu","litr"],["Lobya","kq"],["lokum","kq"],["Makaron","kq"],["Mal əti","kq"],["Malina","kq"],["mannı","kq"],["marçipan (yeməli şəkil üçün)","ədəd"],["Marcipan açıq yaşıl (maister)","kq"],["Marcipan ağ","kq"],["Marcipan ağ (maister)","kq"],["Marcipan çəhrayı","kq"],["Marcipan fusya(maister)","kq"],["Marcipan Lacivert(maister)","kq"],["Marcipan Mavi","kq"],["Marcipan qara","kq"],["marcipan qara(maister)","kq"],["Marcipan qehveyi","kq"],["Marcipan qırmızı","kq"],["Marcipan qırmızı(maister)","kq"],["Marcipan Sarı","kq"],["Marcipan ten","kq"],["Marcipan ten (maister)","kq"],["Marcipan tünd Mavi","kq"],["Marcipan tund yaşıl","kq"],["Marcipan turuncu","kq"],["Marcipan yaşıl","kq"],["Maya","kq"],["Mayonez","kq"],["Moloko bişmiş","kq"],["Moloko sadə","kq"],["Muncuq draje","kq"],["Nar","kq"],["Nestle isti şokolod","ədəd"],["oreqana","kq"],["Ovaleks","kq"],["Peçenye Moskva","kq"],["Peçenye oreo","kq"],["Peçenye Ülkər","kq"],["peçenye(pişik dili)","kq"],["Pektin","kq"],["Pendir ağ","kq"],["Pendir ağ ( 3 İnək )","kq"],["pendir brest litovsk","kq"],["pendir camella","kq"],["pendir galbani","kq"],["Pendir holland","kq"],["pendir misk","kq"],["pendir mozzarella","ədəd"],["pendir parmezan","kq"],["pendir xardal","kq"],["Pirinc unu","kq"],["Pomidor","kq"],["Pomidor çeri","kq"],["Portağal","kq"],["Portağal qursu halqa","kq"],["Portağal qurusu","kq"],["Pralin","kq"],["President Slivki(250qr)","ədəd"],["Protein tozu","kq"],["Protein tozu ( Ultimate Whey )","kq"],["Protein tozu İso sensation","kq"],["Protein tozu İso100","kq"],["Pudra şəkəri","kq"],["Pul bibər","kq"],["Pyra Pack Berries (çay)","ədəd"],["Pyra Pack Earl Grey Classic (çay)","ədəd"],["Pyra Pack English Breakfast (çay)","ədəd"],["Pyra Pack Jasmine (çay)","ədəd"],["Qabartma tozu","kq"],["Qanad","kq"],["Qaraçörəkotu","kq"],["Qarağat","kq"],["Qarpız","kq"],["Qatıq","kq"],["qaymaq","kq"],["Qaymaq hulala","litr"],["Qaymaq Kalleh","litr"],["Qaymaq laktozasız","litr"],["qaymaq şəkərli","litr"],["Qaymaq şəkərsiz","litr"],["Qaymaq shef dukat","litr"],["Qaymaq Snowpak (Şəkərli )","litr"],["qaymaq sprey","litr"],["Qaysı","kq"],["Qənd kəllə","kq"],["Qırmızı qarağat","kq"],["Qlükoza","kq"],["Qoz 1/2","kq"],["Qreçka","kq"],["Quick Lac","kq"],["Quick Shine","kq"],["Qurudulmuş xurma","kq"],["Razyana","kq"],["rozmarin","dəstə"],["Sandora Mix","litr"],["Sandora Multivitamin","litr"],["sandora şaftalı","litr"],["Sandora Yaşıl Alma","litr"],["Şanti","kq"],["sarıkız","litr"],["sarıkız limonlu","litr"],["Sarıkök","kq"],["Sarımsaq","kq"],["Sədəf sprey","ədəd"],["Şəkər tozu","kq"],["sirab 0.33","litr"],["Sirkə","litr"],["sirop banan","litr"],["sirop çiyələk","litr"],["sirop karamel","litr"],["sirop mango","litr"],["sirop marakuya","litr"],["sirop moxito","litr"],["sirop qarpız","litr"],["sirop şaftalı","litr"],["sirop şokolad","litr"],["sirop vanil","litr"],["snikers","kq"],["Soda","kq"],["Soğan","kq"],["şokolad qırıntısı","kq"],["sosiska","kq"],["Sous Big Ranch","kq"],["Sous Caesar Sauce","kq"],["Sous Honig Senf","kq"],["sous Sweet Chili","litr"],["sous Teriyaki","litr"],["sous Unaqi","litr"],["Sprey buz","ədəd"],["Sprey parladici","ədəd"],["Stevia şekeri Fit","kq"],["Stevia şekeri sadə","kq"],["Su","litr"],["Su filtrli","litr"],["su sirab","litr"],["Süd 1.5%","litr"],["Süd 1.5% (Laktozasız)","litr"],["Süd 3.2%","litr"],["süd laktozasız","litr"],["Süd quru","kq"],["Sulu boya ağ","kq"],["Sulu boya bənövşəyi","kq"],["Sulu boya çəhrayı","kq"],["Sulu boya Mavi","kq"],["Sulu boya Mavi Tünd","kq"],["Sulu boya qara","kq"],["Sulu boya qəhvəyi","kq"],["Sulu boya qırmızı","kq"],["Sulu boya qırmızı( bayraq rəngi)","kq"],["Sulu boya sarı","kq"],["Sulu boya yasil","kq"],["Sumaq","kq"],["suxarı","kq"],["Təmiz Rukola ( Agro Fresh )","kq"],["Tomat pastası","kq"],["Toyuq file","kq"],["Toz boya beyaz","kq"],["Toz boya qara","kq"],["Toz boya sarı 5 qr","kq"],["Toz boya qırmızı","kq"],["Un","kq"],["un makfa","kq"],["Un qlutensiz(sinangil)","kq"],["Un qlutensiz(şir)","kq"],["Un şəkərbura","kq"],["Üzüm","kq"],["Üzüm qara","kq"],["Üzüm qırmızı","kq"],["Vanil diamond","kq"],["Vanil ekstrati","kq"],["Vanil qaymaq","kq"],["Vişnə","kq"],["Vizyon şokolad","kq"],["Xama 10%","kq"],["Xama 25%","kq"],["Xama Romaska","kq"],["Xardal","kq"],["xəmir paxlava(Türk)","kq"],["Xiyar","kq"],["xiyar turşusu","litr"],["Xurma","kq"],["Xurma Fələstin iri","kq"],["Xurma Fələstin xırda","kq"],["Xurma Mədinə","kq"],["Yağ duru","litr"],["Yağ Kərə (Alman)","kq"],["Yağ Kərə(kruasan)","kq"],["Yağ Svalya","kq"],["Yağ valio","kq"],["Yaş maya","kq"],["Yemiş","kq"],["yoqurt moruq","kq"],["Yulaf","kq"],["Yumurta","kq"],["Zər gümüşü","kq"],["Zər qızılı","kq"],["zeytun qara tumsuz","litr"],["zeytun yağı","litr"],["zeytun yaşıl tumsuz","kq"]];
+const UNITS = ["kq","litr","ədəd","dəstə","koli","qutu","vedrə","rulon"];
 const FIRMS = ["A Agro", "Bal Qinyətoğulları", "Bərk Dərə (Həsənov Loğman)", "Cavid Pack", "Hicaz", "Loyal Packing", "Rofruit", "RİCH S.A. MMC", "Sultan təmizlik (Musayev Orxan Vahid oğlu)", "Tayqa (Veliyev Nahid Abbas oglu)", "İlkin penaplast", "Şünasif"];
 
 // Ölçünü addan təxmin et: "40*80 penaplast" → 40*80, "D38" → D38, "Kofe tutacağı 12 oz" → 12 oz
@@ -336,13 +337,13 @@ function guessSize(n){
 
 // ===================== Nümunə sifarişlər =====================
 function seed(){
-  const P = CATALOG.map((x,i)=>({id:i+1,name:x[0],firm:x[1],size:guessSize(x[0])}));
+  const P = CATALOG.map((x,i)=>({id:i+1,name:x[0],unit:x[1],firm:"",size:guessSize(x[0])}));
   const id = n => (P.find(p=>p.name.toLowerCase()===n.toLowerCase())||P[0]).id;
   const now = Date.now();
   const H = (by,act,note,ago) => ({by,act,note:note||"",at:new Date(now-ago*HOUR).toISOString()});
   const orders = [];   // boş başlayır: sifarişləri işçilər özləri yazır
   const log = [];
-    return { v:5, products:P, firms:FIRMS.slice(), orders, log, alerts:[], seq:100, catalogReset:true };
+    return { v:5, products:P, firms:FIRMS.slice(), orders, log, alerts:[], seq:100, catalogReset:true, catalogV:2 };
 }
 
 // ===================== Yaddaş =====================
@@ -358,6 +359,19 @@ if (!S.catalogReset){
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
 }
 S.products.forEach(p=>{ if (p.size===undefined) p.size = guessSize(p.name); });
+// Kataloq Xammal siyahısı ilə əvəz olunur (bir dəfə): siyahıdakı mallar aktiv olur və vahidi yazılır,
+// siyahıda olmayan köhnə adlar gizlənir — keçmiş sifarişlərdə adları ilə qalır
+if (S.catalogV!==2){
+  const byN = new Map(S.products.map(p=>[p.name.trim().toLowerCase(), p]));
+  const keep = new Set();
+  CATALOG.forEach(([n,u])=>{ let p = byN.get(n.toLowerCase());
+    if (p){ p.name = n; p.unit = u; delete p.deleted; delete p.fromExcel; }
+    else { p = { id:Math.max(0,...S.products.map(x=>x.id))+1, name:n, unit:u, firm:"", size:guessSize(n) }; S.products.push(p); }
+    keep.add(p.id); });
+  S.products.forEach(p=>{ if (!keep.has(p.id)) p.deleted = true; });
+  S.catalogV = 2;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+}
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 let tab = "home", catFirm = "", catQ = "";
@@ -367,11 +381,14 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
 const pfirm = id => prod(id) ? prod(id).firm : "";
+const punit = id => prod(id) ? prod(id).unit||"" : "";
+// Yalnız rəqəm yazılıbsa, malın vahidi əlavə olunur: "35" → "35 kq"
+const withUnit = (q, pid) => { const t = String(q).trim(); return /^\d+([.,]\d+)?$/.test(t) && punit(pid) ? t+" "+punit(pid) : normQty(t); };
 const psize = id => prod(id) ? prod(id).size||"" : "";
 const num = v => parseFloat(String(v).replace(",",".")) || 0;
 const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
 const live = () => S.products.filter(p=>!p.deleted);
-const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc(p.firm||"")+'</option>').join("")+'</datalist>';
+const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc([p.unit,p.firm].filter(Boolean).join(" · "))+'</option>').join("")+'</datalist>';
 const nextId = () => ++S.seq;
 const newPid = () => Math.max(0,...S.products.map(x=>x.id))+1;
 // Sifarişdə yazılan ad kataloqda yoxdursa, kataloqa "yeni" kimi əlavə olunur — Admin sonra düzəldir
@@ -852,8 +869,8 @@ function addSend(id){
   if (noQ) return toast(noQ.n+": miqdarı yazın");
   if (!rows.length) return toast("Ən azı bir məhsul yazın");
   if (rows.some(r=>!r.n.trim())) return toast("Malın adını yazın");
-  rows.forEach(r=>o.items.push({pid:ensureProd(r.n), qty:normQty(r.q), added:true}));
-  const note = rows.map(r=>r.n.trim()+" "+normQty(r.q)).join(", ");
+  rows.forEach(r=>{ const pid = ensureProd(r.n); r.qq = withUnit(r.q,pid); o.items.push({pid, qty:r.qq, added:true}); });
+  const note = rows.map(r=>r.n.trim()+" "+r.qq).join(", ");
   o.addedAt = new Date().toISOString();
   if (o.status==="yolda"){
     o.status = "acik"; o.last_move = o.addedAt;
@@ -1153,7 +1170,7 @@ async function addDraftPhotos(list){
 const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="15 kq" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   return '<div class="card">'+
     '<div class="meta">'+esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role))+'</div>'+
     '<div class="hint">Gəliş gününü Satınalma təyin edəcək.</div>'+
@@ -1179,7 +1196,7 @@ function sendOrder(){
   draft.items.forEach(i=>{ if (!i.pid && (i.pname||"").trim() && String(i.qty).trim()){
     i.pid = ensureProd(i.pname, i.firm);
   } });
-  const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>({pid:Number(i.pid),qty:normQty(i.qty)}));
+  const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>({pid:Number(i.pid),qty:withUnit(i.qty,Number(i.pid))}));
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
   const now = new Date().toISOString();
   const o = { id:nextId(), from:role, wh:role, created:now, items, status:"acik", last_move:now,
@@ -1292,8 +1309,8 @@ function vCatalog(){
     '<div class="hint">Məhsul bu firmadan artıq gəlmirsə, sətirdəki <b>“Firmadan çıxar”</b> düyməsini basın: məhsul kataloqda qalır, sadəcə firmasız olur. Məhsulu kataloqdan tamamilə silmək üçün <b>“Sil”</b> basın.</div></div>';
   else if (byFirm) html += '<div class="hint">Bu firmaya məhsul əlavə etmək və ya çıxarmaq üçün yuxarıdan <b>Admin</b> seçin.</div>';
   html += ''+
-    '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Ölçü</th><th>Firma</th></tr></thead><tbody id="cBody">'+
-    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı"><div class="pact">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div>':esc(p.name))+(p.fromExcel?' <span class="newtag">yeni</span>':"")+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
+    '<div class="card tbl"><table><thead><tr><th>#</th><th>Şəkil</th><th>Məhsul</th><th>Vahid</th><th>Ölçü</th><th>Firma</th></tr></thead><tbody id="cBody">'+
+    P.map(p=>'<tr data-s="'+esc((p.name+" "+(p.size||"")).toLowerCase())+'" data-f="'+esc(p.firm||"-")+'"><td class="mono">'+p.id+'</td><td id="ph-'+p.id+'">'+thumb(p.id)+'</td><td>'+(admin?'<input class="pname" data-pname="'+p.id+'" value="'+esc(p.name)+'" aria-label="Məhsulun adı"><div class="pact">'+(byFirm&&p.firm===catFirm?'<button class="sm" data-unfirm="'+p.id+'">Firmadan çıxar</button>':"")+'<button class="sm badb" data-pdel="'+p.id+'">Sil</button></div>':esc(p.name))+(p.fromExcel?' <span class="newtag">yeni</span>':"")+'</td><td>'+(admin?'<select data-punit="'+p.id+'" style="width:auto;padding:4px 6px;font-size:13px" aria-label="Vahid"><option value="">—</option>'+UNITS.concat(p.unit&&!UNITS.includes(p.unit)?[p.unit]:[]).map(u=>'<option'+(p.unit===u?" selected":"")+'>'+u+'</option>').join("")+'</select>':esc(p.unit||"—"))+'</td><td>'+(admin?'<input class="pname psz" data-psize="'+p.id+'" value="'+esc(p.size||"")+'" placeholder="məs. 40×80 sm" aria-label="Ölçü">':(p.size?'<span class="sz">'+esc(p.size)+'</span>':'<span class="meta">—</span>'))+'</td><td>'+
       (admin?'<select data-firm="'+p.id+'" style="width:auto;max-width:100%;padding:4px 6px;font-size:13px">'+firmOpts(p.firm)+'</select>':esc(p.firm||"—"))+'</td>'+
       '</tr>').join("")+'</tbody></table></div>';
   return html;
@@ -1388,6 +1405,7 @@ $("main").addEventListener("change", async e => {
   if (el.id==="cF"){ catFirm=el.value; render(); return; }
   if (el.dataset.pname && role==="Admin"){ renameProduct(el); return; }
   if (el.dataset.psize && role==="Admin"){ const p=prod(el.dataset.psize), v=el.value.trim(); if (v===(p.size||"")) return; S.log.push({by:role,act:"Ölçü dəyişdirildi",note:p.name+": "+(p.size||"—")+" → "+(v||"—"),at:now()}); p.size=v; save(); el.closest("tr").dataset.s=(p.name+" "+v).toLowerCase(); toast("Ölçü yadda saxlandı"); return; }
+  if (el.dataset.punit && role==="Admin"){ const p=prod(el.dataset.punit); p.unit=el.value; S.log.push({by:role,act:"Vahid dəyişdirildi",note:p.name+" → "+(p.unit||"—"),at:now()}); save(); toast("Yadda saxlandı"); return; }
   if (el.dataset.firm && role==="Admin"){ const p=prod(el.dataset.firm); p.firm=el.value; S.log.push({by:role,act:"Firma dəyişdirildi",note:p.name+" → "+(p.firm||"firmasız"),at:new Date().toISOString()}); save(); el.closest("tr").dataset.f=p.firm||"-"; toast("Yadda saxlandı"); return; }
   if (el.dataset.file){ const o=S.orders.find(x=>x.id===Number(el.dataset.file)); o.files=o.files||[]; for (const f of el.files){ const x=await readFile(f); if (x){ o.files.push(x); addLog(o,"Fayl əlavə edildi",x.name); } } save(); render(); return; }
   if (el.dataset.photo){ const o=S.orders.find(x=>x.id===Number(el.dataset.photo)); for (const f of el.files){ const x = await shrink(f); if (x) o.photos.push(x); else toast(f.name+": bu şəkli açmaq olmadı"); } addLog(o,"Şəkil əlavə edildi",""); save(); render(); }
@@ -1403,7 +1421,9 @@ $("main").addEventListener("input", e => {
 });
 function setItem(el){
   const it = draft.items[Number(el.dataset.ii)];
-  if (el.dataset.f==="pname"){ it.pname = el.value; it.pid = pidByName(el.value); } else it.qty = el.value;
+  if (el.dataset.f==="pname"){ it.pname = el.value; it.pid = pidByName(el.value);
+    const q = el.parentNode.querySelector('[data-f="qty"]'); if (q) q.placeholder = it.pid && punit(it.pid) ? punit(it.pid) : "15 kq"; }
+  else it.qty = el.value;
 }
 // Yazan kimi rəng: tam — yaşıl, az — sarı, 0 — qırmızı
 function paintGot(el){
