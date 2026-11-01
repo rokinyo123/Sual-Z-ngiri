@@ -1018,12 +1018,12 @@ function applySheet(){
 // ----- Şəkildən sifariş -----
 // Sifariş siyahısının şəkli (əl yazısı və ya çap): şəkil sifarişdə qalır, Claude şəkildəki
 // məhsulları və miqdarları oxuyur və kataloq adları ilə uyğunlaşdırır. Yalnız Claude linkində işləyir.
-let sampleFn = null, canOcr = false;
+let sampleFn = null, canOcr = false, imgLim = null;
 (async () => {
   try {
     sampleFn = window.claude && await window.claude.use("sample");
     const lim = sampleFn && await sampleFn.limits().catch(()=>null);
-    canOcr = !!(lim && lim.images);
+    canOcr = !!(lim && lim.images); imgLim = lim && lim.images;
   } catch(e){ canOcr = false; }
   if (canOcr && tab==="new") render();
 })();
@@ -1032,13 +1032,17 @@ const dataUrlToBlob = u => { const [h,b64] = u.split(","); const bin = atob(b64)
 async function addDraftPhotos(list){
   const files = Array.from(list).filter(f=>/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name||""));
   if (!files.length) return toast("Şəkil seçilmədi");
-  const forRead = [];
+  const forRead = [], alt = [];
   draft.ocr = { state:"prep", n:files.length }; if (tab==="new") render();
   await new Promise(r=>setTimeout(r,30));
   for (const f of files){
     const [small, big] = await shrink2(f, 640, 1600);
     if (small) draft.photos.push(small);
-    forRead.push(big ? dataUrlToBlob(big) : f);
+    // Adi JPEG/PNG — əvvəlki kimi orijinal fayl; HEIC və ya çox böyük — çevrilmiş JPEG
+    const okType = (imgLim && imgLim.mediaTypes || ["image/jpeg","image/png","image/webp","image/gif"]).includes(f.type);
+    const okSize = f.size <= ((imgLim && imgLim.maxInputBytes) || 5e6);
+    const conv = big ? dataUrlToBlob(big) : null;
+    if (okType && okSize){ forRead.push(f); if (conv) alt.push(conv); } else { forRead.push(conv || f); if (conv && okType) alt.push(f); }
   }
   if (!canOcr){ draft.ocr = { state:"off" }; render(); return; }
   draft.ocr = { state:"busy", n:files.length }; render();
@@ -1048,7 +1052,10 @@ async function addDraftPhotos(list){
     "Məhsul aşağıdakı kataloqdakı biri ilə eyni məhsuldursa, kataloqdakı adı hərfbəhərf yaz; deyilsə, şəkildə yazıldığı kimi yaz. "+
     "Cavab yalnız JSON massivi olsun: [{\"name\":\"Pralin\",\"qty\":\"120 kq\"}]. Şəkildə sifariş siyahısı yoxdursa [] qaytar.\n\nKataloq:\n"+names;
   try {
-    const rows = await sampleFn.json(prompt, { images: forRead });
+    let rows;
+    try { rows = await sampleFn.json(prompt, { images: forRead }); }
+    catch(e1){ if (!alt.length || !["image_rejected","invalid_request","transform_error","upstream_error"].includes(e1 && e1.code)) throw e1;
+      rows = await sampleFn.json(prompt, { images: alt.length===forRead.length ? alt : forRead.map((x,k)=>alt[k]||x) }); }
     const ok = Array.isArray(rows) ? rows.filter(r=>r && String(r.name||"").trim() && String(r.qty??"").trim()) : [];
     draft.items = draft.items.filter(i=>i.pid || (i.pname||"").trim());
     ok.forEach(r=>{ const n = String(r.name).trim(); draft.items.push({pid:pidByName(n), pname:n, qty:normQty(r.qty), imp:true, src:"img"}); });
