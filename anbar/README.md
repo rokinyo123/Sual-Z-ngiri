@@ -68,6 +68,36 @@ Kim nəyi görür: Anbar → öz sifarişləri; İnqilab → öz sifarişləri; 
 Keyfiyyət, Texnoloq, İstehsalat → Anbarın sifarişləri. Yeni sifariş Satınalmaya "qəbul et" tapşırığı açır
 (standart 4 saat — `anbar.admin_set_setting('satinalma_qebul_saat','4')`).
 
+## Mərhələ 2b — sürücülər
+
+SQL Editor → [`sql/04_surucu.sql`](sql/04_surucu.sql) → **Run**.
+
+Sürücü üçün: **Add user** (`elvin@almond.local`), sonra:
+```sql
+select anbar.admin_add_employee('elvin@almond.local', 'Elvin Məmmədov', 'elvin', 'surucu');
+select anbar.admin_link_driver((select id from anbar.employees where username = 'elvin'));
+```
+Satınalma malı sürücüyə verəndə sürücü onu öz siyahısında görür və `anbar.driver_bought(mal, miqdar, qeyd)`
+ilə "Aldım" yazır (az alıbsa — səbəb mütləqdir). Sürücü yalnız ona verilən malları görür.
+
+## Mərhələ 3 — mal qəbulu və Keyfiyyət
+
+SQL Editor → [`sql/05_qebul.sql`](sql/05_qebul.sql) → **Run**.
+
+| Kim | Funksiya | Nə edir |
+|---|---|---|
+| Anbar / İnqilab | `anbar.mark_arrived(sifariş, sətirlər)` | "📦 Gəldi": gələn miqdarlar. Yazılmayan mal "gəlmədi" sayılır. Anbarda Keyfiyyətə tapşırıq düşür |
+| Keyfiyyət | `anbar.qc_line(sətir, true/false, səbəb)` | ✓ keçdi / ✗ blok — blokda **səbəb mütləqdir** |
+| Keyfiyyət | `anbar.qc_finish(qəbul)` | Gələn bütün mallara baxılmayınca bitmir |
+| Anbar / İnqilab | `anbar.close_delivery(qəbul)` | Anbarda Keyfiyyət bitirməmiş **bağlanmır**. Qəbul olunan miqdar mala yazılır; qalıq varsa mal "problem" olur və məsul Satınalma işçisinə tapşırıq düşür |
+| Satınalma | `anbar.answer_problem(mal, yeni tarix, səbəb)` | Problemli mal yenə gözlənilir (səbəb mütləq) |
+| Satınalma | `anbar.cancel_remaining(mal, səbəb)` | Qalığı səbəblə bağlamaq |
+
+Bir mal bir neçə dəfə, hissə-hissə gələ bilər; hər gəliş ayrıca qeyd olunur (`deliveries`, `delivery_lines`).
+
+> **Diqqət:** faylları sıra ilə işlədin: 01 → 03 → 04 → 05. Hansısa faylı yenidən işlətsəniz,
+> ondan sonrakıları da sıra ilə yenidən işlədin (sonrakı fayllar bəzi funksiyaları yeniləyir).
+
 ## Təhlükəsizlik qaydaları (01_temel.sql-də)
 - Cədvəlləri yalnız **aktiv işçi** oxuya bilər; giriş etməmiş (`anon`) heç nə görmür.
 - Cədvəllərə birbaşa yazmaq **bağlıdır** — yalnız yoxlama aparan funksiyalarla (`anbar.admin_*` və s.).
