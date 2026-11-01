@@ -237,7 +237,7 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .checks input{display:none}
 /* files, photos, catalog bits (kept from v1) */
 .photos{display:flex;gap:6px;flex-wrap:wrap}
-.photos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
 .files{display:flex;flex-direction:column;gap:6px}
 .file{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--sunk);border-radius:8px;padding:6px 8px;font-size:13px}
 .fic{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--ok-bg);color:var(--ok);border-radius:4px;padding:2px 5px}
@@ -708,7 +708,7 @@ function footActions(o){
 function more(o){
   const nf = o.photos.length + (o.files||[]).length;
   return '<details class="more" data-more="'+o.id+'"'+(openMore.has(o.id)?" open":"")+'><summary>▸ Ətraflı'+(o.comments.length?' · 💬 '+o.comments.length:"")+(nf?' · 📎 '+nf:"")+' · '+fmtT(o.created)+'</summary><div class="more-in">'+
-    (o.photos.length?'<div class="photos">'+o.photos.map(p=>'<img src="'+p+'" alt="Sifariş şəkli">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
+    (o.photos.length?'<div class="photos">'+o.photos.map((p,k)=>'<img src="'+p+'" alt="Sifariş şəkli" data-big="'+o.id+'-'+k+'">').join("")+'</div>':"") + fileList(o.files||[],o.id) +
     o.comments.map(c=>'<div class="hint"><b>'+esc(c.by)+':</b> '+esc(c.text)+toLine(c.to)+'</div>').join("") +
     '<input id="c-'+o.id+'" placeholder="Şərh yazın">'+whoChips("c"+o.id,[],o)+'<div class="row"><button class="pri" data-act="comment" data-id="'+o.id+'">Şərhi göndər</button>'+
     '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
@@ -962,6 +962,7 @@ function importInfo(){
 }
 function ocrInfo(){
   const o = draft.ocr; if (!o) return "";
+  if (o.state==="prep") return '<div class="imp"><div>📷 <b>Şəkil hazırlanır…</b></div></div>';
   if (o.state==="busy") return '<div class="imp"><div>📷 <b>'+o.n+' şəkil oxunur...</b> Məhsullar bir az sonra aşağıya yazılacaq (adətən 10–40 saniyə).</div></div>';
   if (o.state==="off") return '<div class="imp"><div>📷 Şəkil sifarişə əlavə olundu. <b>Şəkildən malları oxumaq hələ yalnız Claude linkində işləyir</b> — burada malları əl ilə yazın. Real sistemdə hər yerdə işləyəcək.</div></div>';
   if (o.state==="err") return '<div class="imp"><div>📷 '+esc(o.msg)+' Şəkil sifarişdə qaldı.</div></div>';
@@ -1032,8 +1033,10 @@ async function addDraftPhotos(list){
   const files = Array.from(list).filter(f=>/^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name||""));
   if (!files.length) return toast("Şəkil seçilmədi");
   const forRead = [];
+  draft.ocr = { state:"prep", n:files.length }; if (tab==="new") render();
+  await new Promise(r=>setTimeout(r,30));
   for (const f of files){
-    const small = await shrink(f), big = await shrink(f, 1600);
+    const [small, big] = await shrink2(f, 640, 1600);
     if (small) draft.photos.push(small);
     forRead.push(big ? dataUrlToBlob(big) : f);
   }
@@ -1073,7 +1076,7 @@ function vNew(){
       '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
       importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
     '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
-    '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map(p=>'<img src="'+p+'" alt="">').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
+    '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map((p,k)=>'<img src="'+p+'" alt="" data-big="d-'+k+'">').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
     '<button class="pri big" id="send">Satınalmaya göndər</button><div class="hint" id="nErr"></div>'+
     '</div>';
 }
@@ -1102,6 +1105,22 @@ function sendOrder(){
 }
 function newDraft(){ return { type:"Gündəlik", items:[{pid:"",qty:""}], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null }; }
 
+// Bir dəfə açıb iki ölçüdə JPEG verir (telefonda böyük şəkli iki dəfə açmamaq üçün)
+function shrink2(file, a, b){
+  return new Promise(res=>{
+    const r = new FileReader();
+    r.onerror = () => res([null,null]);
+    r.onload = () => { const img = new Image();
+      img.onerror = () => res([null,null]);
+      img.onload = () => {
+        const out = [a,b].map(max=>{ const k = Math.min(1, max/Math.max(img.width,img.height)); const c = document.createElement("canvas");
+          c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+          try { return c.toDataURL("image/jpeg",.8); } catch(e){ return null; } });
+        res(out); };
+      img.src = r.result; };
+    r.readAsDataURL(file);
+  });
+}
 function shrink(file, max){
   return new Promise(res=>{
     const r = new FileReader();
@@ -1140,6 +1159,12 @@ function openZoom(pid){
   $("zoom").hidden = false;
 }
 const closeZoom = () => { $("zoom").hidden = true; };
+function openPic(key){
+  const [a,k] = key.split("-"); const src = a==="d" ? draft.photos[Number(k)] : (S.orders.find(o=>o.id===Number(a))||{photos:[]}).photos[Number(k)];
+  if (!src) return;
+  $("zoomImg").src = src; $("zoomName").textContent = a==="d" ? "Sifarişin şəkli" : "Sifariş #"+a; $("zoomAdmin").innerHTML = ""; $("zoom").hidden = false;
+}
+document.addEventListener("click", e => { const im = e.target.closest && e.target.closest("img[data-big]"); if (im) openPic(im.dataset.big); });
 async function setPhoto(el){
   const f = el.files[0]; if (!f || role!=="Admin") return;
   const p = prod(el.dataset.pphoto);
