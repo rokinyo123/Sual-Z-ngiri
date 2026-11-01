@@ -95,7 +95,50 @@ SQL Editor → [`sql/05_qebul.sql`](sql/05_qebul.sql) → **Run**.
 
 Bir mal bir neçə dəfə, hissə-hissə gələ bilər; hər gəliş ayrıca qeyd olunur (`deliveries`, `delivery_lines`).
 
-> **Diqqət:** faylları sıra ilə işlədin: 01 → 03 → 04 → 05. Hansısa faylı yenidən işlətsəniz,
+## Mərhələ 4 — Texnoloq və alternativ mallar
+
+SQL Editor → [`sql/06_texnoloq.sql`](sql/06_texnoloq.sql) → **Run**.
+
+Texnoloqa düşən mallar: kataloqda **Texnoloq tələb edir** işarəli mal, Satınalmanın "Texnoloq baxsın" dediyi mal,
+və hər **əvəzedici (alternativ)** mal. Belə mal qəbul olunanda Texnoloqa tapşırıq düşür; Texnoloq təsdiq edənə qədər
+mal **bağlanmır** (istifadəyə buraxılmır).
+
+| Kim | Funksiya | Nə edir |
+|---|---|---|
+| Satınalma | `anbar.request_tech(mal, qeyd)` | Gəlişdən əvvəl "Texnoloq baxsın" |
+| Satınalma | `anbar.substitute_item(mal, əvəzedici_id, miqdar, ölçü, təchizatçı, tarix, səbəb, əvəzedici_adı)` | Əvəzedici mal: əslinin qalığı səbəblə bağlanır, yeni sətir Texnoloq təsdiqi ilə gəlir. Kataloqda yoxdursa adı yazılır. Bir dəfə təsdiqlənmiş cüt sonra Texnoloqsuz keçir |
+| Texnoloq | `anbar.tech_set_due(yoxlama, gün)` | Əvvəl cavab gününü təyin edir |
+| Texnoloq | `anbar.tech_decide(yoxlama, 'tesdiq' / 'redd' / 'lazim_deyil', qeyd)` | Rədddə **səbəb mütləqdir**; mal qəbul sayılmır, Satınalmaya "cavab ver" düşür |
+| Admin | `anbar.admin_product_status(məhsul, 'bloklu'/'aktiv', texnoloq_lazımdır)` | Bloklanmış məhsulu sifariş etmək olmur |
+
+## Mərhələ 5 — bildirişlər və gecikmələr
+
+1. **Database → Extensions → `pg_cron`** → Enable (gecikmə yoxlaması üçün).
+2. SQL Editor → [`sql/07_bildiris.sql`](sql/07_bildiris.sql) → **Run**.
+   Sonda "pg_cron: anbar-gecikme hər 15 dəqiqədən bir işləyəcək" yazısı görünməlidir.
+
+Avtomatik bildirişlər (`anbar.notifications`, hər işçinin öz siyahısı, proqrama Realtime ilə dərhal gəlir):
+
+| Nə oldu | Kimə |
+|---|---|
+| Yeni tapşırıq | məsul işçiyə (məsul yoxdursa şöbənin hamısına) |
+| ⛔ Keyfiyyət blokladı | Satınalma + həmin anbar + Rəhbərlik — **dərhal** |
+| ✗ Texnoloq qəbul etmədi | Satınalma + anbar + Rəhbərlik |
+| ⚠ Mal az gəldi / gəlmədi | Rəhbərlik (Satınalmaya tapşırıq artıq düşür) |
+| ⏰ Vəd edilən gün keçdi, mal gəlməyib | Məsul Satınalma işçisinə **"gecikmə səbəbi"** tapşırığı + Rəhbərlik |
+| 📅 Sifarişin son günü keçdi | Rəhbərlik + anbar |
+| ⌛ Tapşırığın vaxtı keçdi | məsula + Rəhbərlik |
+
+Eyni xəbər bir nəfərə **bir dəfə** gedir. Satınalma yeni tarix (`replan_item`) və ya səbəb
+(`anbar.set_delay_reason(mal, səbəb)`) yazanda gecikmə tapşırığı özü bağlanır.
+Oxundu: `anbar.mark_read()` (hamısı) və ya `anbar.mark_read(array[id,...])`.
+
+Rəhbərlik üçün canlı siyahı: `select * from anbar.v_problemler;` — gecikən, problemli, Texnoloqda gözləyən
+və vaxtında planlanmamış bütün mallar, gecikmə günü və səbəbi ilə.
+
+Telefona push bildiriş (`anbar.push_subscriptions`) proqram bazaya qoşulanda işə düşəcək.
+
+> **Diqqət:** faylları sıra ilə işlədin: 01 → 03 → 04 → 05 → 06 → 07. Hansısa faylı yenidən işlətsəniz,
 > ondan sonrakıları da sıra ilə yenidən işlədin (sonrakı fayllar bəzi funksiyaları yeniləyir).
 
 ## Təhlükəsizlik qaydaları (01_temel.sql-də)
@@ -109,8 +152,5 @@ Bir mal bir neçə dəfə, hissə-hissə gələ bilər; hər gəliş ayrıca qey
 [`sql/99_geri_al.sql`](sql/99_geri_al.sql) — yalnız `anbar` sxemini silir (Sual Zəncirinə toxunmur).
 
 ## Növbəti mərhələlər
-2. Sifariş və Satınalma (`orders`, `order_items`, `tasks`, SLA: gündəlik → sabah, həftəlik bazar → çərşənbə)
-3. Qəbul və Keyfiyyət (`deliveries`, `delivery_lines`, qismən çatdırılma, blok)
-4. Texnoloq və alternativlər
-5. Bildirişlər və gecikmələr (Realtime, pg_cron, Web Push)
-6. Rəhbərlik paneli · 7. Excel/şəkil idxalı, domen · 8. Sınaq həftəsi
+6. Proqramı bu bazaya qoşmaq (giriş: istifadəçi adı + parol; bütün ekranlar) və Rəhbərlik paneli
+7. Telefona push bildiriş, Excel/şəkil idxalı, domen · 8. Sınaq həftəsi
