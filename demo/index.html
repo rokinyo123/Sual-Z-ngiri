@@ -423,6 +423,10 @@ function problem(o,i){
   return "";
 }
 const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
+// Satınalma nə vaxt cavab verə bilər: Keyfiyyət yoxlamanı bitirib malı bloklayıbsa — dərhal
+// (Anbarın qəbulu bitirməsini gözləmədən); Texnoloq rədd edibsə; və ya qəbul bitib (gəlmədi / az gəldi)
+const canAnswer = (o,i) => !i.ans && !!problem(o,i) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad");
+const waitWhy = (o,i) => i.qc==="bad" && !o.qcAt ? "Keyfiyyət yoxlamanı bitirəndə cavab vermək olacaq" : "Anbar qəbulu bitirəndə cavab vermək olacaq";
 const techReady = (o,i) => i.tech && !i.techRes && o.recvDone && i.qc!=="bad" && i.qc!=="none" && i.got>0;
 const techPending = o => o.items.some(i=>techReady(o,i));
 // Bir malın ümumi vəziyyəti (rəng + söz) — kalendarda, nişanlarda, cədvəldə
@@ -441,7 +445,7 @@ const rowCls = st => ({"p-ok":"okr","p-warn":"warnr","p-bad":"miss"})[st[1]] || 
 function finishReceive(o, by, note){
   o.items.forEach(i=>{ if (i.qc==="bad"||i.qc==="none") i.got = 0; else if (i.got==null) i.got = 0; });
   o.recvDone = true; o.status = "bagli"; o.last_move = new Date().toISOString();
-  const pr = o.items.filter(i=>problem(o,i)).length, th = o.items.filter(i=>i.tech).length;
+  const pr = o.items.filter(i=>problem(o,i) && !i.ans).length, th = o.items.filter(i=>i.tech).length;
   addLog(o, "Qəbul bitdi", [pr ? pr+" mal üçün Satınalmanın cavabı lazımdır" : "Hamısı qəbul olundu", th ? th+" mal Texnoloqda" : "", note].filter(Boolean).join(" · "), by);
   return pr;
 }
@@ -550,7 +554,7 @@ function resRow(r){
     if (techReady(o,i)) label += " · Texnoloqda"; else if (i.tech && i.techRes==="ok") label += " · Texnoloq ✓"; }
   else { label = i.ans ? "Cavab verildi" : "Cavab gözlənilir"; cls = i.ans ? "warnr" : "miss"; }
   const ans = i.ans ? '<div class="spn">📋 <b>Satınalma:</b> '+(i.ans.sub?'əvəzinə '+esc(pname(i.ans.sub))+' · ':'')+fmtD(i.ans.date)+' gələcək'+(i.ans.note?' · '+esc(i.ans.note):"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>' : "";
-  const form = r.cat!=="ok" && !i.ans && role==="Satınalma" && o.recvDone ? '<div class="cell ans"><span class="cl">Cavabınız</span>'+ansForm(key,i)+'</div>' : "";
+  const form = r.cat==="ok" || i.ans ? "" : role==="Satınalma" && canAnswer(o,i) ? '<div class="cell ans"><span class="cl">Cavabınız</span>'+ansForm(key,i)+'</div>' : !canAnswer(o,i) ? '<div class="meta">'+waitWhy(o,i)+'</div>' : "";
   return '<div class="irow '+cls+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(r.cat==="ok"?"p-ok":i.ans?"p-warn":"p-bad")+' st">'+esc(label)+'</span></div>'+
     '<div class="rmeta"><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · '+fmtD(rDate(r))+'</div>'+
     (r.pr?'<div class="rs">'+esc(r.pr)+'</div>':"")+ans+form+'</div>';
@@ -750,8 +754,8 @@ function itemRow(o,i,k,st){
   const pr = problem(o,i);
   if (pr){
     if (i.ans) cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="pill p-info">'+(i.ans.sub?'🔄 əvəzinə '+esc(pname(i.ans.sub)):'📅 '+fmtD(i.ans.date)+' gələcək')+'</span>'+(i.ans.sub?' <span class="meta">'+fmtD(i.ans.date)+'</span>':"")+(i.ans.note?' <span class="meta">'+esc(i.ans.note)+'</span>':"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>');
-    else if (role==="Satınalma" && o.recvDone) cells.push('<div class="cell ans"><span class="cl">Satınalmanın cavabı</span>'+ansForm(key,i)+'</div>');
-    else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir</span></div>');
+    else if (role==="Satınalma" && canAnswer(o,i)) cells.push('<div class="cell ans"><span class="cl">Satınalmanın cavabı</span>'+ansForm(key,i)+'</div>');
+    else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir'+(canAnswer(o,i)?"":" · "+waitWhy(o,i))+'</span></div>');
   }
   return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
 }
@@ -1442,6 +1446,8 @@ function orderAct(act, id){
     o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
+    const blk = o.items.filter(i=>i.qc==="bad");
+    if (blk.length) notify(["Satınalma",o.wh,"Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
     toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
@@ -1455,7 +1461,8 @@ function orderAct(act, id){
     const c = {ok:0,warn:0,bad:0}; o.items.forEach(i=>{ const k=itemCat(itemState(o,i)); if (c[k]!=null) c[k]++; });
     notify(["Satınalma",o.from,"Rəhbərlik"], "res", "#"+o.id+" qəbul olundu", [c.ok?c.ok+" tam":"", c.warn?c.warn+" az":"", c.bad?c.bad+" qəbul olunmadı / gəlmədi":""].filter(Boolean).join(" · ")+(n?" · cavabınız lazımdır":""),
       o.items.filter(i=>problem(o,i)).map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
-    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı qəbul olundu ✓");
+    const re = o.items.filter(i=>problem(o,i) && i.ans).length;
+    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : re ? "Qəbul bitdi · "+re+" mal yenidən sifariş olunub, gözlənilir" : "Hamısı qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
