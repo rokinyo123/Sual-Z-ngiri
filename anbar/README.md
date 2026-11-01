@@ -48,6 +48,26 @@ select anbar.admin_add_employee('aysel@almond.local', 'Aysel Məmmədova', 'ayse
 6 cədvəl, hamısında RLS `true`, `anon` üçün icazə **yoxdur**, `authenticated` yalnız `SELECT`,
 Sual Zəncirinin sətir sayları dəyişməyib.
 
+## Mərhələ 2 — sifariş və Satınalma
+
+SQL Editor → [`sql/03_sifaris.sql`](sql/03_sifaris.sql) → **Run** (01-dən sonra).
+
+Yaradılır: `orders`, `order_items` (hər mal ayrıca), `cancellations`, `tasks`, `settings`.
+
+| Kim | Funksiya | Nə edir |
+|---|---|---|
+| Anbar / İnqilab | `anbar.create_order(növ, mallar, qeyd)` | Sifariş yazır. Müddət avtomatik: gündəlik → sabah, həftəlik → növbəti çərşənbə (bazar → çərşənbə). Kataloqda olmayan ad "yeni" mal kimi əlavə olunur |
+| Anbar / İnqilab | `anbar.add_items(sifariş, mallar)` | Yalnız həmin gün, yalnız öz sifarişinə; yeni mal yenə Satınalmaya düşür |
+| Satınalma | `anbar.plan_items(sətirlər)` | Hər mal üçün **kimdən** (firma/sürücü), **nə vaxt**, **kim məsul** |
+| Satınalma | `anbar.add_supplier(ad, 'firma'/'surucu')` | Yeni firma və ya sürücü |
+| Satınalma | `anbar.replan_item(...)` | Tarixi/təchizatçını dəyişir; tarix gec çəkilirsə **səbəb mütləqdir** |
+| Satınalma / Rəhbərlik | `anbar.cancel_remaining(sətir, səbəb)` | Qalığı yalnız **səbəblə** bağlayır — mal səssizcə itmir |
+| Hamı | `anbar.claim_task(tapşırıq)` | Şöbənin tapşırığını üzərinə götürür (məsul olur) |
+
+Kim nəyi görür: Anbar → öz sifarişləri; İnqilab → öz sifarişləri; Satınalma, Rəhbərlik, Admin → hamısı;
+Keyfiyyət, Texnoloq, İstehsalat → Anbarın sifarişləri. Yeni sifariş Satınalmaya "qəbul et" tapşırığı açır
+(standart 4 saat — `anbar.admin_set_setting('satinalma_qebul_saat','4')`).
+
 ## Təhlükəsizlik qaydaları (01_temel.sql-də)
 - Cədvəlləri yalnız **aktiv işçi** oxuya bilər; giriş etməmiş (`anon`) heç nə görmür.
 - Cədvəllərə birbaşa yazmaq **bağlıdır** — yalnız yoxlama aparan funksiyalarla (`anbar.admin_*` və s.).
