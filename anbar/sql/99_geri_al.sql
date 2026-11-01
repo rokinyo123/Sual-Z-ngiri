@@ -1,0 +1,8 @@
+-- =====================================================================
+-- 99 · GERİ AL — yalnız yeni "anbar" sxemini tamamilə silir.
+-- DİQQƏT: anbar sxemindəki BÜTÜN məlumatlar (sifarişlər, işçilər, tarixçə) silinir.
+-- public sxeminə (Sual Zənciri) TOXUNMUR.
+-- Yalnız sınaq mərhələsində, hamı razı olanda işlədin.
+-- =====================================================================
+-- drop schema if exists anbar cascade;
+-- Yuxarıdakı sətrin əvvəlindəki "-- " işarəsini silib işlədin.
