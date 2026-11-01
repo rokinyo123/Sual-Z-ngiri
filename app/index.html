@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Almond Anbar</title>
+<meta name="theme-color" content="#5C2E0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Almond Anbar">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=Noto+Sans+Mono:wght@500&display=swap">
+<style>
+/* Təchizat və Anbar — işçi proqramı. Rənglər: narıncı Satınalmada → mavi Gözlənilir → bənövşəyi Keyfiyyət/Texnoloq → yaşıl Bağlı, qırmızı Problem/Gecikir. */
+:root{
+  --bg:#F6F1EA; --surface:#FFFFFF; --sunk:#F1E8DC; --line:#E6D9C7;
+  --fg:#2B1A10; --muted:#7D6553; --brand:#5C2E0E; --brand-2:#7A4220; --brand-fg:#FFF6EA;
+  --buy:#E8590C; --buy-bg:#FFE8D6; --wait:#1C7ED6; --wait-bg:#DBEDFF; --ok:#2B8A3E; --ok-bg:#D3F9D8;
+  --bad:#E03131; --bad-bg:#FFE3E3; --warn:#B7791F; --warn-bg:#FFF1BF; --qc:#7048E8; --qc-bg:#E5DBFF; --arch:#868E96; --arch-bg:#EEF0F2;
+  --display:"Noto Serif",Georgia,serif; --body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"Noto Sans Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17110C; --surface:#211912; --sunk:#2B2118; --line:#3D2F23;
+  --fg:#F4E8D8; --muted:#BFA48A; --brand:#3A1D09; --brand-2:#4E2A12; --brand-fg:#FFF1DE;
+  --buy:#FF8A3D; --buy-bg:#3D2312; --wait:#5AB0FF; --wait-bg:#132B42; --ok:#5FD37A; --ok-bg:#16331D;
+  --bad:#FF7070; --bad-bg:#44191A; --warn:#F5C451; --warn-bg:#3A2E10; --qc:#A991FF; --qc-bg:#2A2147; --arch:#A0A7AE; --arch-bg:#2A2D30; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17110C; --surface:#211912; --sunk:#2B2118; --line:#3D2F23;
+  --fg:#F4E8D8; --muted:#BFA48A; --brand:#3A1D09; --brand-2:#4E2A12; --brand-fg:#FFF1DE;
+  --buy:#FF8A3D; --buy-bg:#3D2312; --wait:#5AB0FF; --wait-bg:#132B42; --ok:#5FD37A; --ok-bg:#16331D;
+  --bad:#FF7070; --bad-bg:#44191A; --warn:#F5C451; --warn-bg:#3A2E10; --qc:#A991FF; --qc-bg:#2A2147; --arch:#A0A7AE; --arch-bg:#2A2D30; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+header{background:var(--brand);color:var(--brand-fg);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 2px 12px rgba(40,15,0,.18)}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-block:10px 6px}
+.brand{display:flex;align-items:baseline;gap:8px;min-width:0}
+.brand b{font-family:var(--display);font-size:21px}
+.brand span{font-size:12px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who{display:flex;align-items:center;gap:6px}
+.who button{background:var(--brand-2);color:var(--brand-fg);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:5px 11px;font-weight:600;position:relative}
+.who .n{position:absolute;top:-5px;right:-5px;min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px}
+.tabs{display:grid;gap:4px;padding-bottom:8px}
+.tabs button{background:transparent;border:none;color:var(--brand-fg);opacity:.75;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;font-weight:600;position:relative}
+.tabs button i{font-style:normal;font-size:18px;line-height:1.1}
+.tabs button.on{opacity:1;background:rgba(255,255,255,.14)}
+.tabs .n{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px}
+main.wrap{padding-block:14px 60px;display:flex;flex-direction:column;gap:12px}
+h2{font-family:var(--display);font-size:19px;margin:6px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h2 .cnt{font-family:var(--mono);font-size:13px;background:var(--sunk);color:var(--muted);border-radius:999px;padding:1px 9px}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-width:0}
+input[type=checkbox]{width:auto}
+textarea{min-height:44px;resize:vertical}
+:focus-visible{outline:2px solid var(--wait);outline-offset:1px}
+button{background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+button.pri{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
+button.okb{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:600}
+button.badb{background:transparent;color:var(--bad);border-color:var(--bad);font-weight:600}
+button.sm{padding:4px 9px;font-size:13px}
+button.big{width:100%;padding:11px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 150px;min-width:0}
+.w90{flex:0 0 90px} .w120{flex:0 1 130px} .w160{flex:1 1 160px}
+.hint{font-size:13px;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.c-buy{background:var(--buy-bg);color:var(--buy)} .c-wait{background:var(--wait-bg);color:var(--wait)} .c-ok{background:var(--ok-bg);color:var(--ok)}
+.c-bad{background:var(--bad-bg);color:var(--bad)} .c-qc{background:var(--qc-bg);color:var(--qc)} .c-arch{background:var(--arch-bg);color:var(--arch)} .c-warn{background:var(--warn-bg);color:var(--warn)}
+.oc{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--arch);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.oc.s-buy{border-left-color:var(--buy)} .oc.s-wait{border-left-color:var(--wait)} .oc.s-ok{border-left-color:var(--ok)} .oc.s-bad{border-left-color:var(--bad)} .oc.s-qc{border-left-color:var(--qc)}
+.oc-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.oid{font-family:var(--mono);font-weight:700}
+.route{font-weight:600;flex:1 1 auto;min-width:0}
+.irows{display:flex;flex-direction:column;gap:6px}
+.irow{border:1px solid var(--line);border-radius:10px;padding:7px 9px;display:flex;flex-direction:column;gap:6px;background:var(--surface);min-width:0}
+.irow.badr{background:var(--bad-bg);border-color:transparent} .irow.okr{background:var(--ok-bg);border-color:transparent}
+.ih{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ih b{font-weight:600}
+.ih .st{margin-left:auto}
+.sub{font-size:13px;color:var(--muted)}
+.note{font-size:13px;background:var(--warn-bg);border-radius:8px;padding:5px 9px}
+.note.bad{background:var(--bad-bg)}
+.frm{display:flex;flex-direction:column;gap:7px;border-top:1px dashed var(--line);padding-top:8px}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{background:var(--surface)}
+.seg button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pipe div{border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;color:#fff}
+.pipe b{font-family:var(--mono);font-size:24px;line-height:1}
+.pipe span{font-size:12px;font-weight:600}
+.pipe .bad{background:var(--bad)} .pipe .buy{background:var(--buy)} .pipe .qc{background:var(--qc)} .pipe .wait{background:var(--wait)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pipe div{color:#160d06}}
+:root[data-theme="dark"] .pipe div{color:#160d06}
+@media (max-width:480px){.pipe{grid-template-columns:repeat(2,1fr)}}
+.task{display:flex;gap:8px;align-items:center;font-size:14px;border-bottom:1px dashed var(--line);padding:6px 0}
+.task:last-child{border-bottom:none}
+.task .t{flex:1;min-width:0}
+.late{color:var(--bad);font-weight:600}
+.nf{display:flex;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.nf:last-child{border-bottom:none}
+.nf.unread .t{font-weight:600}
+.nf .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--wait)}
+.nf .dot.danger{background:var(--bad)} .nf .dot.warn{background:var(--warn)}
+.nf.read .dot{background:var(--line)}
+#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(92vw,520px);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;z-index:20;box-shadow:0 6px 24px rgba(0,0,0,.25);display:none}
+#toast.err{background:var(--bad);color:#fff}
+.banner{background:var(--wait-bg);color:var(--wait);border-radius:10px;padding:8px 12px;font-size:14px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.banner[hidden]{display:none}
+.login{max-width:380px;margin:12vh auto 0;padding:0 16px;display:flex;flex-direction:column;gap:12px}
+.login h1{font-family:var(--display);font-size:26px;margin:0;color:var(--brand)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .login h1{color:var(--fg)}}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+// ===== Supabase layihəsi (Sual Zənciri ilə eyni layihə, ayrıca "anbar" sxemi) =====
+const SUPABASE_URL = "https://qzvyawuhmqdhzawfihzy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s";
+const EMAIL_DOMAIN = "almond.local";
+// Yalnız kompüterdə sınaq üçün: localStorage["anbar-test-api"] = "http://127.0.0.1:8787"
+let API = SUPABASE_URL;
+try { const t = localStorage.getItem("anbar-test-api"); if (t && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(t)) API = t; } catch {}
+
+const UNITS = ["kq","koli","ədəd","litr","vedrə","qutu","dəstə","rulon"];
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const S = { sess: store.get("anbar-sess"), me: null, d: null, tab: null, open: null, dirty: false, q: "", filt: "acik",
+            draft: { type: "gundelik", note: "", rows: [{ name: "", qty: "", unit: "kq", note: "" }] }, busy: false, stale: false };
+
+// ---------- köməkçilər ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const num = n => { n = Number(n); return Number.isFinite(n) ? String(+n.toFixed(3)) : ""; };
+const dm = d => d ? d.slice(8,10) + "." + d.slice(5,7) : "";
+const DTF = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Baku", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+const dt = t => { if (!t) return ""; const p = Object.fromEntries(DTF.formatToParts(new Date(t)).map(x => [x.type, x.value])); return `${p.day}.${p.month} ${p.hour}:${p.minute}`; };
+const addDays = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0,10); };
+const val = id => { const e = document.getElementById(id); return e ? e.value.trim() : ""; };
+let toastT;
+function toast(msg, err) { const t = $("#toast"); t.textContent = msg; t.className = err ? "err" : ""; t.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = "none", err ? 6000 : 2800); }
+
+// ---------- API (Supabase REST: Auth + PostgREST) ----------
+async function authReq(path, body) {
+  const r = await fetch(API + "/auth/v1/" + path, { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 400 ? "İstifadəçi adı və ya parol səhvdir" : (j.error_description || j.msg || j.message || "Giriş alınmadı"));
+  return { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (j.expires_in || 3600) * 1000 };
+}
+async function refresh() {
+  if (!S.sess?.refresh_token) throw new Error("Yenidən giriş edin");
+  S.sess = await authReq("token?grant_type=refresh_token", { refresh_token: S.sess.refresh_token });
+  store.set("anbar-sess", S.sess);
+}
+async function req(method, path, body, retry = true) {
+  if (S.sess && S.sess.expires_at - Date.now() < 60000) { try { await refresh(); } catch { return logout("Sessiya bitib — yenidən giriş edin"); } }
+  const h = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + (S.sess?.access_token || SUPABASE_ANON_KEY), "Accept-Profile": "anbar" };
+  if (body !== undefined) { h["Content-Type"] = "application/json"; h["Content-Profile"] = "anbar"; }
+  let r;
+  try { r = await fetch(API + "/rest/v1/" + path, { method, headers: h, body: body === undefined ? undefined : JSON.stringify(body) }); }
+  catch { throw new Error("İnternet yoxdur və ya server cavab vermir"); }
+  if (r.status === 401 && retry) { try { await refresh(); } catch { return logout("Sessiya bitib — yenidən giriş edin"); } return req(method, path, body, false); }
+  const txt = await r.text();
+  let j = null; try { j = txt ? JSON.parse(txt) : null; } catch { j = txt; }
+  if (!r.ok) throw new Error((j && j.message) || ("Xəta " + r.status));
+  return j;
+}
+const sel = (t, q = "") => req("GET", t + "?select=*" + (q ? "&" + q : ""));
+const rpc = (fn, args = {}) => req("POST", "rpc/" + fn, args);
+const inList = ids => "in.(" + ids.join(",") + ")";
+async function selIn(t, col, ids, extra = "") {
+  if (!ids.length) return [];
+  const out = [];
+  for (let i = 0; i < ids.length; i += 150) out.push(...await sel(t, col + "=" + inList(ids.slice(i, i + 150)) + (extra ? "&" + extra : "")));
+  return out;
+}
+
+async function login(e) {
+  e.preventDefault();
+  const u = val("lu").toLowerCase(), p = $("#lp").value;
+  if (!u || !p) return toast("İstifadəçi adı və parolu yazın", true);
+  const b = $("#lb"); b.disabled = true;
+  try {
+    S.sess = await authReq("token?grant_type=password", { email: u.includes("@") ? u : u + "@" + EMAIL_DOMAIN, password: p });
+    store.set("anbar-sess", S.sess);
+    await start();
+  } catch (err) { toast(err.message, true); b.disabled = false; }
+}
+function logout(msg) {
+  if (S.sess) fetch(API + "/auth/v1/logout", { method: "POST", headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + S.sess.access_token } }).catch(() => {});
+  S.sess = null; S.me = null; S.d = null; store.set("anbar-sess", null);
+  renderLogin(); if (msg) toast(msg, true);
+}
+
+// ---------- məlumat ----------
+async function load() {
+  const me = await rpc("my_profile");
+  if (!me || !me.active) { logout("Hesabınız sistemdə aktiv deyil — Adminə müraciət edin"); throw new Error("stop"); }
+  S.me = me;
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [products, suppliers, employees, warehouses, departments, settings, oOpen, oRecent, tasks, notifs] = await Promise.all([
+    sel("products", "order=name"), sel("suppliers", "order=name"), sel("employees", "order=full_name"), sel("warehouses"), sel("departments", "order=sort"), sel("settings"),
+    sel("orders", "status=not.in.(bagli,legv)&order=id.desc"), sel("orders", "created_at=gte." + since + "&order=id.desc&limit=300"),
+    sel("tasks", "status=eq.acik&order=due_at"), sel("notifications", "order=id.desc&limit=80")
+  ]);
+  const om = new Map(); [...oOpen, ...oRecent].forEach(o => om.set(o.id, o));
+  const orders = [...om.values()].sort((a, b) => b.id - a.id);
+  const items = await selIn("order_items", "order_id", orders.map(o => o.id), "order=id");
+  const deliveries = await selIn("deliveries", "order_id", orders.map(o => o.id), "order=id");
+  const [lines, reviews] = await Promise.all([selIn("delivery_lines", "delivery_id", deliveries.map(d => d.id), "order=id"), selIn("tech_reviews", "item_id", items.map(i => i.id))]);
+  const problems = ["rehberlik","admin","satinalma"].includes(me.dept_code) || me.role === "admin" ? await sel("v_problemler") : [];
+  const by = a => new Map(a.map(x => [x.id, x]));
+  S.d = { products, suppliers, employees, warehouses, departments, settings, orders, items, deliveries, lines, reviews, tasks, notifs, problems,
+          P: by(products), SU: by(suppliers), E: by(employees), O: by(orders), I: by(items), D: by(deliveries),
+          W: new Map(warehouses.map(w => [w.code, w])), byName: new Map(products.map(p => [p.name.toLowerCase().trim(), p])) };
+}
+async function reload(force) {
+  if (!S.sess || S.busy) return;
+  try { await load(); } catch (e) { if (e.message !== "stop") toast(e.message, true); return; }
+  const editing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.id !== "q";
+  if (!force && (S.dirty || editing)) { S.stale = true; const b = $("#stale"); if (b) b.hidden = false; return; }
+  S.stale = false; render();
+}
+async function run(btn, fn, ok) {
+  if (S.busy) return;
+  S.busy = true; window.__busy = true; if (btn) btn.disabled = true;
+  try { const r = await fn(); S.busy = false; S.dirty = false; S.open = null; if (ok) toast(typeof ok === "function" ? ok(r) : ok); await reload(true); }
+  catch (e) { S.busy = false; if (btn) btn.disabled = false; toast(e.message, true); }
+  finally { window.__busy = false; }
+}
+
+// ---------- adlar və statuslar ----------
+const today = () => S.me.today;
+const pname = id => S.d.P.get(id)?.name || "?";
+const sname = id => { const s = S.d.SU.get(id); return s ? (s.kind === "surucu" ? "🚚 " : "") + s.name : ""; };
+const ename = id => S.d.E.get(id)?.full_name || "";
+const wname = c => S.d.W.get(c)?.name || c;
+const isDriverItem = i => S.d.SU.get(i.supplier_id)?.kind === "surucu";
+function ist(i) {
+  if (i.status === "planlandi" && i.promised_date < today()) return ["Gecikir", "c-bad"];
+  return ({ yeni: ["Satınalmada","c-buy"], planlandi: ["Gözlənilir","c-wait"], geldi: ["Gəldi","c-wait"], keyfiyyetde: ["Keyfiyyətdə","c-qc"],
+            problem: ["Problem","c-bad"], qebul_olundu: ["Qəbul olundu","c-ok"], texnoloqda: ["Texnoloqda","c-qc"],
+            bagli: [Number(i.qty_received) < Number(i.qty_ordered) ? "Bağlı (qismən)" : "Bağlı", "c-ok"], legv: ["Ləğv","c-arch"] })[i.status] || [i.status, "c-arch"];
+}
+function ost(o) {
+  const its = S.d.items.filter(i => i.order_id === o.id);
+  if (its.some(i => i.status === "problem" || (i.status === "planlandi" && i.promised_date < today()))) return ["Problem var","c-bad","s-bad"];
+  return ({ satinalmada: ["Satınalmada","c-buy","s-buy"], gozlenilir: ["Gözlənilir","c-wait","s-wait"], qismen: ["Qismən gəlib","c-qc","s-qc"],
+            bagli: ["Bağlı","c-ok","s-ok"], legv: ["Ləğv","c-arch",""] })[o.status] || [o.status, "c-arch", ""];
+}
+const pill = ([t, c]) => `<span class="pill ${c}">${esc(t)}</span>`;
+const qtyTxt = i => `${num(i.qty_ordered)} ${esc(i.unit)}` + (Number(i.qty_received) > 0 && i.status !== "bagli" ? ` · gəlib ${num(i.qty_received)}` : "") + (Number(i.qty_cancelled) > 0 ? ` · ləğv ${num(i.qty_cancelled)}` : "");
+const supOpts = (selId, onlyActive = true) => `<option value="">— kimdən —</option>` + S.d.suppliers.filter(s => !onlyActive || s.active || s.id === selId)
+  .sort((a, b) => (a.kind > b.kind) - (a.kind < b.kind) || a.name.localeCompare(b.name, "az"))
+  .map(s => `<option value="${s.id}" ${s.id === selId ? "selected" : ""}>${s.kind === "surucu" ? "🚚 " : ""}${esc(s.name)}</option>`).join("");
+const buyerOpts = selId => S.d.employees.filter(e => e.dept_code === "satinalma" && e.active)
+  .map(e => `<option value="${e.id}" ${e.id === selId ? "selected" : ""}>${esc(e.full_name)}</option>`).join("");
+const unitOpts = u => UNITS.map(x => `<option ${x === u ? "selected" : ""}>${x}</option>`).join("") + (u && !UNITS.includes(u) ? `<option selected>${esc(u)}</option>` : "");
+const isOpen = k => S.open === k;
+const tog = (k, label, cls = "sm") => `<button class="${cls}" data-a="open" data-k="${k}">${label}</button>`;
+
+// ---------- tablar ----------
+const ALL_TABS = {
+  bugun: ["🏠","Bu gün"], yeni: ["➕","Sifariş"], sif: ["📋","Sifarişlər"], problem: ["⚠️","Problemlər"], yoxla: ["🔍","Yoxla"], tex: ["🧪","Texnoloq"],
+  alis: ["🚚","Alınacaqlar"], axtar: ["🔎","Nə vaxt?"], kataloq: ["📚","Kataloq"], isci: ["👥","İşçilər"], bild: ["🔔","Bildirişlər"]
+};
+function tabsFor(me) {
+  if (me.role === "admin" || me.dept_code === "admin") return ["problem","sif","kataloq","isci"];
+  return ({ anbar: ["bugun","yeni","sif"], inqilab: ["bugun","yeni","sif"], satinalma: ["bugun","problem","sif","axtar"],
+            keyfiyyet: ["yoxla","sif"], texnoloq: ["tex","sif"], surucu: ["alis"], rehberlik: ["problem","sif","bugun","axtar"] })[me.dept_code] || ["axtar","sif"];
+}
+function badge(t) {
+  const d = S.d, me = S.me;
+  if (t === "problem") return d.problems.filter(p => p.nov === "problem" || p.nov === "gecikir").length;
+  if (t === "yoxla") return d.deliveries.filter(x => x.status === "acik" && x.qc_required && !x.qc_done_at).length;
+  if (t === "tex") return d.reviews.filter(r => r.result === "gozleyir").length;
+  if (t === "alis") return d.items.filter(i => i.supplier_id === me.driver_supplier && i.status === "planlandi" && !i.bought_at).length;
+  if (t === "bugun") return myTasks().length;
+  return 0;
+}
+const myTasks = () => S.d.tasks.filter(t => t.assignee_id === S.me.id || (!t.assignee_id && t.dept_code === S.me.dept_code));
+
+// ---------- ekranlar ----------
+function renderLogin() {
+  $("#app").innerHTML = `<form class="login" id="lf" autocomplete="on">
+    <h1>Almond · Anbar</h1><div class="hint">Təchizat və anbar nəzarəti. Öz istifadəçi adınız və parolunuzla daxil olun.</div>
+    <label class="lbl" for="lu">İstifadəçi adı</label><input id="lu" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="məs. aysel">
+    <label class="lbl" for="lp">Parol</label><input id="lp" type="password" autocomplete="current-password">
+    <button class="pri big" id="lb">Daxil ol</button>
+    <div class="meta">Parolu unutmusunuzsa, Adminə müraciət edin.</div></form>`;
+  $("#lf").onsubmit = login;
+}
+function render() {
+  const me = S.me, tabs = tabsFor(me);
+  if (!S.tab || (!tabs.includes(S.tab) && S.tab !== "bild")) S.tab = tabs[0];
+  const unread = S.d.notifs.filter(n => !n.read_at).length;
+  const sy = window.scrollY;
+  $("#app").innerHTML = `<header><div class="wrap">
+    <div class="top"><div class="brand"><b>Almond</b><span>${esc(me.full_name)} · ${esc(me.dept_name)}</span></div>
+      <div class="who"><button data-a="tab" data-t="bild" aria-label="Bildirişlər">🔔${unread ? `<span class="n">${unread}</span>` : ""}</button>
+      <button data-a="logout">Çıx</button></div></div>
+    <nav class="tabs" style="grid-template-columns:repeat(${tabs.length},1fr)">${tabs.map(t => { const n = badge(t);
+      return `<button data-a="tab" data-t="${t}" class="${S.tab === t ? "on" : ""}"><i>${ALL_TABS[t][0]}</i>${ALL_TABS[t][1]}${n ? `<span class="n">${n}</span>` : ""}</button>`; }).join("")}</nav>
+  </div></header>
+  <main class="wrap"><div class="banner" id="stale" ${S.stale ? "" : "hidden"}>Yeni məlumat var <button class="sm" data-a="refresh">Yenilə</button></div>${VIEWS[S.tab]()}</main>`;
+  window.scrollTo(0, sy);
+}
+
+const VIEWS = {
+  bugun() {
+    const me = S.me, dc = me.dept_code; let h = tasksBlock();
+    if (dc === "anbar" || dc === "inqilab") h += arrivalsBlock() + openDeliveriesBlock();
+    if (dc === "satinalma") h += planBlock() + lateBlock();
+    if (dc === "rehberlik") h += `<h2>Bütün açıq tapşırıqlar <span class="cnt">${S.d.tasks.length}</span></h2>` + taskList(S.d.tasks, true);
+    return h;
+  },
+  yeni: newOrderView, sif: ordersView, problem: problemView, yoxla: qcView, tex: techView, alis: driverView, axtar: searchView,
+  kataloq: catalogView, isci: staffView, bild: notifView
+};
+
+function taskList(list, showDept) {
+  if (!list.length) return `<div class="empty">Açıq tapşırıq yoxdur</div>`;
+  return `<div class="card">${list.map(t => { const late = t.due_at && new Date(t.due_at) < new Date();
+    return `<div class="task"><div class="t">${esc(t.title)}<div class="meta">${showDept ? esc(S.d.departments.find(d => d.code === t.dept_code)?.name || t.dept_code) + " · " : ""}${t.assignee_id ? "👤 " + esc(ename(t.assignee_id)) : "məsul yoxdur"}${t.due_at ? ` · <span class="${late ? "late" : ""}">${late ? "vaxtı keçib " : "son "}${dt(t.due_at)}</span>` : ""}</div></div>
+      ${!t.assignee_id && t.dept_code === S.me.dept_code ? `<button class="sm" data-a="claim" data-id="${t.id}">Mən götürürəm</button>` : ""}</div>`; }).join("")}</div>`;
+}
+function tasksBlock() { const t = myTasks(); return `<h2>Tapşırıqlarım <span class="cnt">${t.length}</span></h2>` + taskList(t); }
+
+// ----- Anbar / İnqilab: gələcək mallar (firma üzrə) -----
+function arrivalsBlock() {
+  const groups = new Map();
+  S.d.items.filter(i => i.status === "planlandi" && S.d.O.get(i.order_id)?.warehouse_code === S.me.warehouse).forEach(i => {
+    const k = i.order_id + ":" + i.supplier_id; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(i); });
+  const gs = [...groups.entries()].sort((a, b) => a[1][0].promised_date.localeCompare(b[1][0].promised_date));
+  let h = `<h2>Gələcək mallar <span class="cnt">${gs.length}</span></h2>`;
+  if (!gs.length) return h + `<div class="empty">Gözlənilən mal yoxdur</div>`;
+  return h + gs.map(([k, its]) => {
+    const d0 = its.reduce((m, i) => i.promised_date < m ? i.promised_date : m, its[0].promised_date), late = d0 < today(), key = "arr" + k.replace(":", "_");
+    return `<div class="oc ${late ? "s-bad" : "s-wait"}"><div class="oc-h"><span class="oid">#${its[0].order_id}</span><span class="route">${esc(sname(its[0].supplier_id))}</span>
+      ${pill(late ? ["Gecikir " + dm(d0), "c-bad"] : [d0 === today() ? "Bu gün" : dm(d0), "c-wait"])}</div>
+      <div class="sub">${its.map(i => `${esc(pname(i.product_id))} — ${num(i.qty_remaining)} ${esc(i.unit)}${i.bought_at ? ` <b>(sürücü aldı: ${num(i.bought_qty)}${i.bought_note ? ", " + esc(i.bought_note) : ""})</b>` : ""}`).join(" · ")}</div>
+      ${isOpen(key) ? `<div class="frm"><div class="lbl">Gələn miqdar (gəlməyibsə 0 yazın)</div>
+        ${its.map(i => `<div class="row"><span class="grow">${esc(pname(i.product_id))} <span class="meta">sifariş: ${num(i.qty_remaining)} ${esc(i.unit)}</span></span>
+          <input class="w90 mono" inputmode="decimal" id="aq${i.id}" value="${num(i.bought_at ? i.bought_qty : i.qty_remaining)}" aria-label="miqdar"><span class="meta">${esc(i.unit)}</span></div>`).join("")}
+        <input id="an${key}" placeholder="Qeyd (istəyə görə)">
+        <div class="row"><button class="okb grow" data-a="arrive" data-o="${its[0].order_id}" data-ids="${its.map(i => i.id).join(",")}" data-k="${key}">✓ Qəbula göndər</button>${tog(key, "Bağla", "")}</div>
+        ${S.d.W.get(S.me.warehouse)?.requires_qc ? `<div class="meta">Keyfiyyətə tapşırıq düşəcək. Yoxlamadan sonra qəbulu bitirəcəksiniz.</div>` : ""}</div>`
+      : `<button class="pri" data-a="open" data-k="${key}">📦 Gəldi</button>`}</div>`;
+  }).join("");
+}
+function deliveryLinesHtml(d) {
+  return S.d.lines.filter(l => l.delivery_id === d.id).map(l => { const i = S.d.I.get(l.item_id) || {};
+    const st = l.qty_arrived == 0 ? ["Gəlmədi","c-bad"] : ({ gozleyir: ["Yoxlanır","c-qc"], kecdi: ["✓ Uyğun","c-ok"], bloklandi: ["✗ Bloklandı","c-bad"], lazim_deyil: ["—","c-arch"] })[l.qc_status];
+    return `<div class="irow ${l.qc_status === "bloklandi" || l.qty_arrived == 0 ? "badr" : l.qc_status === "kecdi" ? "okr" : ""}"><div class="ih"><b>${esc(pname(i.product_id))}</b><span class="mono">${num(l.qty_arrived)} / ${num(i.qty_remaining)} ${esc(i.unit)}</span><span class="st">${pill(st)}</span></div>
+      ${l.qc_note ? `<div class="note bad">${esc(l.qc_note)}</div>` : ""}</div>`; }).join("");
+}
+function openDeliveriesBlock() {
+  const ds = S.d.deliveries.filter(d => d.status === "acik" && d.warehouse_code === S.me.warehouse);
+  let h = `<h2>Qəbuldadır <span class="cnt">${ds.length}</span></h2>`;
+  if (!ds.length) return h + `<div class="empty">Açıq qəbul yoxdur</div>`;
+  return h + ds.map(d => { const wait = d.qc_required && !d.qc_done_at;
+    return `<div class="oc ${wait ? "s-qc" : "s-ok"}"><div class="oc-h"><span class="oid">#${d.order_id}</span><span class="route">Qəbul ${dt(d.arrived_at)}</span>${pill(wait ? ["Keyfiyyət yoxlayır","c-qc"] : ["Hazırdır","c-ok"])}</div>
+      <div class="irows">${deliveryLinesHtml(d)}</div>
+      ${wait ? `<div class="meta">Keyfiyyət bitirəndən sonra qəbulu bitirə biləcəksiniz.</div>` : `<button class="okb" data-a="closeDel" data-id="${d.id}">Qəbulu bitir → çatmayanlar Satınalmaya</button>`}</div>`; }).join("");
+}
+
+// ----- Satınalma: yeni mallar → kimdən, nə vaxt, kim məsul -----
+function planBlock() {
+  const groups = new Map();
+  S.d.items.filter(i => i.status === "yeni").forEach(i => { if (!groups.has(i.order_id)) groups.set(i.order_id, []); groups.get(i.order_id).push(i); });
+  let h = `<h2>Yeni sifarişlər — kimdən, nə vaxt <span class="cnt">${[...groups.values()].reduce((a, x) => a + x.length, 0)}</span></h2>`;
+  if (!groups.size) return h + `<div class="empty">Planlanmamış mal yoxdur</div>`;
+  h += [...groups.entries()].sort((a, b) => a[0] - b[0]).map(([oid, its]) => { const o = S.d.O.get(oid), def = o.need_by < today() ? today() : o.need_by;
+    return `<div class="oc s-buy"><div class="oc-h"><span class="oid">#${oid}</span><span class="route">${esc(wname(o.warehouse_code))} · ${o.type === "heftelik" ? "Həftəlik" : "Gündəlik"}</span>${pill(["son gün " + dm(o.need_by), o.need_by < today() ? "c-bad" : "c-buy"])}</div>
+      ${o.note ? `<div class="note">${esc(o.note)}</div>` : ""}
+      <div class="row"><span class="lbl">Hamısına:</span><select class="w160" id="pall-s${oid}">${supOpts()}</select><input class="w120" type="date" min="${today()}" id="pall-d${oid}" value="${def}"><button class="sm" data-a="fillAll" data-o="${oid}">Doldur</button></div>
+      <div class="irows">${its.map(i => { const p = S.d.P.get(i.product_id) || {};
+        return `<div class="irow"><div class="ih"><b>${esc(p.name)}</b><span class="mono">${num(i.qty_ordered)} ${esc(i.unit)}</span>${p.status === "yeni" ? pill(["kataloqda yeni","c-warn"]) : ""}${i.tech_required ? pill(["Texnoloq","c-qc"]) : ""}${i.added_later ? pill(["sonradan","c-arch"]) : ""}</div>
+          ${i.note ? `<div class="sub">${esc(i.note)}</div>` : ""}
+          <div class="row"><select class="w160" id="ps${i.id}" data-o="${oid}" aria-label="kimdən">${supOpts(p.default_supplier_id)}</select>
+            <input class="w120" type="date" min="${today()}" id="pd${i.id}" value="${def}" aria-label="nə vaxt">
+            <select class="w160" id="pb${i.id}" aria-label="məsul">${buyerOpts(S.me.id)}</select></div>
+          <label class="row meta"><input type="checkbox" id="pt${i.id}" ${i.tech_required ? "checked disabled" : ""}> Texnoloq baxsın</label></div>`; }).join("")}</div>
+      <div class="row"><input class="grow" id="pn${oid}" placeholder="Qeyd (istəyə görə)"><button class="pri" data-a="plan" data-o="${oid}" data-ids="${its.map(i => i.id).join(",")}">Planla</button></div></div>`; }).join("");
+  h += isOpen("newsup") ? `<div class="card"><div class="lbl">Yeni təchizatçı</div><div class="row"><input class="grow" id="ns-n" placeholder="Firma və ya sürücü adı"><select class="w120" id="ns-k"><option value="firma">Firma</option><option value="surucu">Sürücü</option></select><input class="w120" id="ns-p" placeholder="Telefon" inputmode="tel"></div>
+      <div class="row"><button class="pri" data-a="addSup">Əlavə et</button>${tog("newsup", "Bağla", "")}</div></div>` : `<div>${tog("newsup", "+ Yeni firma / sürücü", "")}</div>`;
+  return h;
+}
+function lateBlock() {
+  const its = S.d.items.filter(i => i.status === "planlandi" && i.promised_date < today());
+  let h = `<h2>Gecikənlər <span class="cnt">${its.length}</span></h2>`;
+  if (!its.length) return h + `<div class="empty">Gecikən mal yoxdur</div>`;
+  return h + `<div class="irows">${its.map(i => itemCard(i, true)).join("")}</div>`;
+}
+function itemCard(i, withOrder) {
+  const o = S.d.O.get(i.order_id) || {};
+  return `<div class="irow ${ist(i)[1] === "c-bad" ? "badr" : ""}"><div class="ih">${withOrder ? `<span class="oid">#${i.order_id}</span>` : ""}<b>${esc(pname(i.product_id))}</b><span class="sub">${qtyTxt(i)}</span>${i.is_alternative ? pill(["əvəzedici","c-warn"]) : ""}<span class="st">${pill(ist(i))}</span></div>
+    <div class="sub">${withOrder ? esc(wname(o.warehouse_code)) + " · " : ""}${i.supplier_id ? esc(sname(i.supplier_id)) : ""}${i.promised_date ? " · " + dm(i.promised_date) : ""}${i.purchaser_id ? " · 👤 " + esc(ename(i.purchaser_id)) : ""}</div>
+    ${i.problem_note && ["problem"].includes(i.status) ? `<div class="note bad">${esc(i.problem_note)}</div>` : ""}
+    ${i.delay_reason ? `<div class="note">Səbəb: ${esc(i.delay_reason)}</div>` : ""}
+    ${i.tech_note ? `<div class="sub">🧪 ${esc(i.tech_note)}</div>` : ""}
+    ${i.bought_at ? `<div class="sub">🚚 Sürücü aldı: ${num(i.bought_qty)}${i.bought_note ? " — " + esc(i.bought_note) : ""}</div>` : ""}
+    ${itemActions(i)}</div>`;
+}
+function itemActions(i) {
+  const dc = S.me.dept_code, buy = dc === "satinalma", k = "it" + i.id;
+  if (!(buy || dc === "rehberlik")) return "";
+  const btns = [];
+  if (buy && i.status === "planlandi") btns.push(tog(k + "r", "📅 Tarix / firma"), i.promised_date < today() ? tog(k + "w", "Səbəb yaz") : "", !i.tech_required ? tog(k + "t", "🧪 Texnoloq baxsın") : "");
+  if (buy && i.status === "problem") btns.push(tog(k + "a", "📅 Yeni tarix"), tog(k + "s", "🔁 Əvəzedici"));
+  if (buy && i.status === "planlandi") btns.push(tog(k + "s", "🔁 Əvəzedici"));
+  if (["yeni","planlandi","problem"].includes(i.status) && Number(i.qty_remaining) > 0) btns.push(tog(k + "c", "Ləğv"));
+  let f = "";
+  if (isOpen(k + "r")) f = `<div class="frm"><div class="row"><input class="w120" type="date" min="${today()}" id="${k}rd" value="${i.promised_date}"><select class="w160" id="${k}rs">${supOpts(i.supplier_id)}</select><select class="w160" id="${k}rb">${buyerOpts(i.purchaser_id)}</select></div>
+      <input id="${k}rn" placeholder="Səbəb (tarix gec çəkilirsə mütləqdir)"><div class="row"><button class="pri" data-a="replan" data-id="${i.id}">Yadda saxla</button></div></div>`;
+  if (isOpen(k + "w")) f = `<div class="frm"><input id="${k}wn" placeholder="Niyə gecikir? (məs. firmada qurtarıb)"><div class="row"><button class="pri" data-a="delay" data-id="${i.id}">Göndər</button></div></div>`;
+  if (isOpen(k + "t")) f = `<div class="frm"><input id="${k}tn" placeholder="Texnoloq nəyə baxsın? (məs. yeni firma)"><div class="row"><button class="pri" data-a="reqTech" data-id="${i.id}">Göndər</button></div></div>`;
+  if (isOpen(k + "a")) f = `<div class="frm"><div class="row"><input class="w120" type="date" min="${today()}" id="${k}ad" value="${addDays(today(), 1)}"><select class="w160" id="${k}as">${supOpts(i.supplier_id)}</select></div>
+      <input id="${k}an" placeholder="Səbəb (mütləq)"><div class="row"><button class="pri" data-a="answer" data-id="${i.id}">Göndər</button></div></div>`;
+  if (isOpen(k + "s")) f = `<div class="frm"><div class="lbl">Əvəzinə nə gələcək</div><div class="row"><input class="grow" list="plist" id="${k}sp" placeholder="Məhsul adı"><input class="w90 mono" inputmode="decimal" id="${k}sq" value="${num(i.qty_remaining)}"><select class="w90" id="${k}su">${unitOpts(i.unit)}</select></div>
+      <div class="row"><select class="w160" id="${k}ss">${supOpts(i.supplier_id)}</select><input class="w120" type="date" min="${today()}" id="${k}sd" value="${addDays(today(), 1)}"></div>
+      <input id="${k}sn" placeholder="Səbəb (mütləq)"><div class="meta">Əvəzedici mal Texnoloq təsdiq etmədən istifadəyə buraxılmır (əvvəl təsdiqlənibsə — lazım deyil).</div>
+      <div class="row"><button class="pri" data-a="subst" data-id="${i.id}">Göndər</button></div>${plist()}</div>`;
+  if (isOpen(k + "c")) f = `<div class="frm"><div class="row"><input class="w90 mono" inputmode="decimal" id="${k}cq" value="${num(i.qty_remaining)}"><span class="meta">${esc(i.unit)} ləğv</span></div>
+      <input id="${k}cn" placeholder="Səbəb (mütləq)"><div class="row"><button class="badb" data-a="cancel" data-id="${i.id}">Ləğv et</button></div></div>`;
+  return (btns.filter(Boolean).length ? `<div class="row">${btns.join("")}</div>` : "") + f;
+}
+const plist = () => `<datalist id="plist">${S.d.products.filter(p => p.status !== "arxiv" && p.status !== "bloklu").map(p => `<option value="${esc(p.name)}">`).join("")}</datalist>`;
+
+// ----- Yeni sifariş (Anbar / İnqilab) -----
+function newOrderView() {
+  const dr = S.draft, t = today(), wd = new Date(t + "T12:00:00Z").getUTCDay();
+  const weekly = addDays(t, ((3 - wd + 7) % 7) || 7);
+  return `<h2>Yeni sifariş · ${esc(wname(S.me.warehouse))}</h2>
+  <div class="card"><div class="seg"><button data-a="dtype" data-v="gundelik" class="${dr.type === "gundelik" ? "on" : ""}">Gündəlik · ${dm(addDays(t, 1))}</button>
+    <button data-a="dtype" data-v="heftelik" class="${dr.type === "heftelik" ? "on" : ""}">Həftəlik · ${dm(weekly)}</button></div>
+    <div class="meta">Təminat müddəti avtomatik: gündəlik — növbəti gün, həftəlik — çərşənbə.</div>
+    <div class="irows">${dr.rows.map((r, n) => `<div class="irow"><div class="row"><input class="grow" list="plist" data-dr="${n}" data-f="name" value="${esc(r.name)}" placeholder="Mal adı" aria-label="mal">
+      <input class="w90 mono" inputmode="decimal" data-dr="${n}" data-f="qty" value="${esc(r.qty)}" placeholder="Miqdar" aria-label="miqdar">
+      <select class="w90" data-dr="${n}" data-f="unit" aria-label="ölçü">${unitOpts(r.unit)}</select>
+      ${dr.rows.length > 1 ? `<button class="sm" data-a="drDel" data-n="${n}" aria-label="sil">✕</button>` : ""}</div>
+      <input data-dr="${n}" data-f="note" value="${esc(r.note)}" placeholder="Qeyd (istəyə görə)"></div>`).join("")}</div>
+    <button data-a="drAdd">+ Sətir</button>
+    <textarea id="dnote" placeholder="Sifarişə ümumi qeyd (istəyə görə)">${esc(dr.note)}</textarea>
+    <button class="pri big" data-a="sendOrder">Göndər → Satınalma</button>
+    <div class="meta">Kataloqda olmayan ad "yeni mal" kimi əlavə olunur.</div>${plist()}</div>`;
+}
+
+// ----- Sifarişlər -----
+function ordersView() {
+  return `<div class="row"><input class="grow" id="q" placeholder="Axtar: mal, firma, #nömrə" value="${esc(S.q)}" autocomplete="off">
+    <div class="seg">${[["acik","Açıq"],["hamisi","Hamısı"]].map(([v, t]) => `<button class="${S.filt === v ? "on" : ""}" data-a="filt" data-v="${v}">${t}</button>`).join("")}</div></div>
+    <div id="olist">${ordersList()}</div>`;
+}
+function ordersList() {
+  const q = S.q.toLowerCase().replace(/^#/, "");
+  let os = S.d.orders.filter(o => S.filt === "hamisi" || !["bagli","legv"].includes(o.status));
+  if (q) os = os.filter(o => String(o.id) === q || S.d.items.some(i => i.order_id === o.id && (pname(i.product_id).toLowerCase().includes(q) || sname(i.supplier_id).toLowerCase().includes(q))));
+  if (!os.length) return `<div class="empty">Sifariş tapılmadı</div>`;
+  return os.slice(0, 80).map(orderCard).join("");
+}
+function orderCard(o) {
+  const st = ost(o), its = S.d.items.filter(i => i.order_id === o.id), k = "add" + o.id;
+  const canAdd = S.me.warehouse === o.warehouse_code && ["anbar","inqilab"].includes(S.me.dept_code) && !["bagli","legv"].includes(o.status) && dt(o.created_at).slice(0, 5) === dm(today());
+  return `<div class="oc ${st[2]}"><div class="oc-h"><span class="oid">#${o.id}</span><span class="route">${esc(wname(o.warehouse_code))} · ${o.type === "heftelik" ? "Həftəlik" : "Gündəlik"}</span>${pill(st)}</div>
+    <div class="meta">Yazıldı ${dt(o.created_at)}${o.created_by ? " · " + esc(ename(o.created_by)) : ""} · son gün ${dm(o.need_by)}</div>
+    ${o.note ? `<div class="note">${esc(o.note)}</div>` : ""}
+    <div class="irows">${its.map(i => itemCard(i, false)).join("")}</div>
+    ${canAdd ? (isOpen(k) ? `<div class="frm"><div class="row"><input class="grow" list="plist" id="${k}n" placeholder="Mal adı"><input class="w90 mono" inputmode="decimal" id="${k}q" placeholder="Miqdar"><select class="w90" id="${k}u">${unitOpts("kq")}</select></div>
+      <div class="row"><button class="pri" data-a="addItem" data-o="${o.id}">Əlavə et</button>${tog(k, "Bağla", "")}</div>${plist()}</div>` : `<div>${tog(k, "+ Bu sifarişə mal əlavə et")}</div>`) : ""}</div>`;
+}
+
+// ----- Problemlər (Satınalma / Rəhbərlik / Admin) -----
+function problemView() {
+  const P = S.d.problems, c = n => P.filter(p => p.nov === n).length;
+  let h = `<div class="pipe"><div class="bad"><b>${c("gecikir")}</b><span>Gecikir</span></div><div class="bad"><b>${c("problem")}</b><span>Problem</span></div>
+    <div class="buy"><b>${c("planlanmayib")}</b><span>Planlanmayıb</span></div><div class="qc"><b>${c("texnoloq")}</b><span>Texnoloqda</span></div></div>`;
+  const its = S.d.items.filter(i => i.status === "problem");
+  if (S.me.dept_code === "satinalma") {
+    h += `<h2>Cavab gözləyən mallar <span class="cnt">${its.length}</span></h2>` + (its.length ? `<div class="irows">${its.map(i => itemCard(i, true)).join("")}</div>` : `<div class="empty">Problemli mal yoxdur</div>`);
+    return h + lateBlock();
+  }
+  const NOV = { gecikir: "⏰ Gecikir", problem: "⚠ Problem", planlanmayib: "🟠 Planlanmayıb", texnoloq: "🧪 Texnoloqda" };
+  h += `<h2>Bütün açıq problemlər <span class="cnt">${P.length}</span></h2>`;
+  if (!P.length) return h + `<div class="empty">Problem yoxdur 👍</div>`;
+  return h + `<div class="card scroll"><table><thead><tr><th>#</th><th>Mal</th><th>Nə</th><th>Kimdən / məsul</th><th>Səbəb</th></tr></thead><tbody>${
+    P.sort((a, b) => b.gecikme_gun - a.gecikme_gun).map(p => `<tr><td class="mono">${p.order_id}</td><td><b>${esc(p.product)}</b><div class="meta">${num(p.qty_remaining)} ${esc(p.unit)} · ${esc(wname(p.warehouse_code))}</div></td>
+      <td>${NOV[p.nov] || esc(p.nov)}${p.gecikme_gun > 0 ? `<div class="late">${p.gecikme_gun} gün</div>` : ""}${p.promised_date ? `<div class="meta">${dm(p.promised_date)}</div>` : ""}</td>
+      <td>${esc(p.supplier || "—")}<div class="meta">${esc(p.purchaser || "")}</div></td><td class="sub">${esc(p.sebeb || "—")}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+// ----- Keyfiyyət -----
+function qcView() {
+  const ds = S.d.deliveries.filter(d => d.status === "acik" && d.qc_required && !d.qc_done_at);
+  let h = `<h2>Yoxlanacaq gəlişlər <span class="cnt">${ds.length}</span></h2>`;
+  if (!ds.length) return h + `<div class="empty">Yoxlanacaq mal yoxdur</div>` + tasksBlock();
+  return h + ds.map(d => { const ls = S.d.lines.filter(l => l.delivery_id === d.id);
+    return `<div class="oc s-qc"><div class="oc-h"><span class="oid">#${d.order_id}</span><span class="route">${esc(wname(d.warehouse_code))} · ${dt(d.arrived_at)}</span></div>
+      <div class="hint">Etiket, son istifadə tarixi, Azərbaycan dilində yazı, istehsal tarixi.</div>
+      <div class="irows">${ls.map(l => { const i = S.d.I.get(l.item_id) || {}, k = "qc" + l.id;
+        if (Number(l.qty_arrived) === 0) return `<div class="irow badr"><div class="ih"><b>${esc(pname(i.product_id))}</b><span class="st">${pill(["Gəlmədi","c-bad"])}</span></div></div>`;
+        return `<div class="irow ${l.qc_status === "kecdi" ? "okr" : l.qc_status === "bloklandi" ? "badr" : ""}"><div class="ih"><b>${esc(pname(i.product_id))}</b><span class="mono">${num(l.qty_arrived)} ${esc(i.unit)}</span>${sname(i.supplier_id) ? `<span class="meta">${esc(sname(i.supplier_id))}</span>` : ""}</div>
+          ${l.qc_note ? `<div class="note bad">${esc(l.qc_note)}</div>` : ""}
+          <div class="row"><button class="${l.qc_status === "kecdi" ? "okb" : ""} sm" data-a="qcOk" data-id="${l.id}">✓ Uyğun</button><button class="${l.qc_status === "bloklandi" ? "badb" : ""} sm" data-a="open" data-k="${k}">✗ Uyğun deyil</button></div>
+          ${isOpen(k) ? `<div class="frm"><input id="${k}n" placeholder="Nə uyğun deyil? (mütləq)" value="${esc(l.qc_note || "")}"><div class="row"><button class="badb" data-a="qcBad" data-id="${l.id}">Blokla</button></div></div>` : ""}</div>`; }).join("")}</div>
+      <button class="pri" data-a="qcFinish" data-id="${d.id}">Yoxlamanı bitir</button></div>`; }).join("") + tasksBlock();
+}
+
+// ----- Texnoloq -----
+function techView() {
+  const rs = S.d.reviews.filter(r => r.result === "gozleyir");
+  const REASON = { mal: "Kataloqda Texnoloq tələb edir", satinalma: "Satınalma göndərdi", alternativ: "Əvəzedici mal" };
+  let h = `<h2>Yoxlanacaq mallar <span class="cnt">${rs.length}</span></h2>`;
+  if (!rs.length) h += `<div class="empty">Gözləyən yoxlama yoxdur</div>`;
+  h += rs.map(r => { const i = S.d.I.get(r.item_id) || {}, k = "tx" + r.id, late = r.due_date && r.due_date < today();
+    const parent = i.parent_item_id ? S.d.I.get(i.parent_item_id) : null;
+    return `<div class="oc s-qc"><div class="oc-h"><span class="oid">#${i.order_id}</span><span class="route">${esc(pname(r.product_id))}</span>${r.due_date ? pill([(late ? "Gecikir · " : "Cavab: ") + dm(r.due_date), late ? "c-bad" : "c-qc"]) : pill(["Cavab günü yoxdur","c-warn"])}</div>
+      <div class="sub">${esc(REASON[r.reason])}${parent ? " · əvəzinə: <b>" + esc(pname(parent.product_id)) + "</b>" : ""} · ${num(i.qty_received)} ${esc(i.unit)} · ${esc(sname(i.supplier_id))}</div>
+      ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
+      ${!r.due_date ? `<div class="row"><span class="lbl">Cavab günü</span><input class="w120" type="date" min="${today()}" id="${k}d" value="${addDays(today(), 1)}"><button class="pri" data-a="techDue" data-id="${r.id}">Təyin et</button></div>`
+        : `<div class="row"><button class="okb grow" data-a="techOk" data-id="${r.id}">✓ Qəbul olundu</button><button class="badb grow" data-a="open" data-k="${k}">✗ Qəbul olunmadı</button></div>
+          ${isOpen(k) ? `<div class="frm"><input id="${k}n" placeholder="Niyə? (mütləq)"><div class="row"><button class="badb" data-a="techBad" data-id="${r.id}">Göndər → Satınalma</button></div></div>` : ""}
+          <div class="row"><span class="meta">Cavab günü: ${dm(r.due_date)}</span><button class="sm" data-a="open" data-k="${k}c">Dəyiş</button></div>
+          ${isOpen(k + "c") ? `<div class="row"><input class="w120" type="date" min="${today()}" id="${k}d" value="${r.due_date < today() ? today() : r.due_date}"><button class="pri sm" data-a="techDue" data-id="${r.id}">Yadda saxla</button></div>` : ""}`}</div>`; }).join("");
+  return h + tasksBlock();
+}
+
+// ----- Sürücü -----
+function driverView() {
+  const its = S.d.items.filter(i => i.supplier_id === S.me.driver_supplier && i.status === "planlandi").sort((a, b) => a.promised_date.localeCompare(b.promised_date));
+  if (!S.me.driver_supplier) return `<div class="empty">Hesabınız hələ sürücü kimi bağlanmayıb — Adminə deyin.</div>`;
+  let h = `<h2>Alınacaqlar <span class="cnt">${its.length}</span></h2>`;
+  if (!its.length) return h + `<div class="empty">Sizə verilmiş mal yoxdur</div>`;
+  return h + its.map(i => { const o = S.d.O.get(i.order_id) || {}, k = "dr" + i.id, late = i.promised_date < today();
+    return `<div class="oc ${i.bought_at ? "s-ok" : late ? "s-bad" : "s-wait"}"><div class="oc-h"><span class="route">${esc(pname(i.product_id))}</span><span class="mono">${num(i.qty_remaining)} ${esc(i.unit)}</span>${pill(i.bought_at ? ["Aldım ✓ " + num(i.bought_qty), "c-ok"] : [(late ? "Gecikir " : "") + dm(i.promised_date), late ? "c-bad" : "c-wait"])}</div>
+      <div class="sub">#${i.order_id} · ${esc(wname(o.warehouse_code))}${i.note ? " · " + esc(i.note) : ""}</div>
+      ${isOpen(k) ? `<div class="frm"><div class="row"><input class="w90 mono" inputmode="decimal" id="${k}q" value="${num(i.bought_at ? i.bought_qty : i.qty_remaining)}"><span class="meta">${esc(i.unit)} aldım</span></div>
+        <input id="${k}n" placeholder="Qeyd (az alınıbsa — səbəb mütləq)" value="${esc(i.bought_note || "")}"><div class="row"><button class="okb" data-a="bought" data-id="${i.id}">Yadda saxla</button>${tog(k, "Bağla", "")}</div></div>`
+        : `<button class="${i.bought_at ? "" : "pri"}" data-a="open" data-k="${k}">${i.bought_at ? "Düzəlt" : "🛒 Aldım"}</button>`}</div>`; }).join("");
+}
+
+// ----- "Nə vaxt gələcək?" -----
+function searchView() {
+  return `<h2>Mal nə vaxt gələcək?</h2><input id="q" placeholder="Mal adını yazın (məs. un)" value="${esc(S.q)}" autocomplete="off"><div id="olist">${searchList()}</div>`;
+}
+function searchList() {
+  const q = S.q.toLowerCase().trim();
+  if (!q) return `<div class="empty">Mal adını yazın — açıq sifarişlərdə harada olduğunu və nə vaxt gələcəyini göstərəcək.</div>`;
+  const its = S.d.items.filter(i => pname(i.product_id).toLowerCase().includes(q)).sort((a, b) => (["bagli","legv"].includes(a.status)) - (["bagli","legv"].includes(b.status)) || b.id - a.id).slice(0, 40);
+  if (!its.length) return `<div class="empty">Son 30 gündə belə mal sifariş olunmayıb</div>`;
+  return `<div class="irows">${its.map(i => itemCard(i, true)).join("")}</div>`;
+}
+
+// ----- Bildirişlər -----
+function notifView() {
+  const ns = S.d.notifs;
+  return `<h2>Bildirişlər <span class="cnt">${ns.filter(n => !n.read_at).length}</span>${ns.some(n => !n.read_at) ? `<button class="sm" data-a="readAll">Hamısı oxundu</button>` : ""}</h2>
+    ${ns.length ? `<div class="card">${ns.map(n => `<div class="nf ${n.read_at ? "read" : "unread"}"><span class="dot ${n.severity}"></span><div class="t" style="flex:1">${esc(n.title)}<div class="meta">${dt(n.created_at)}</div></div>
+      ${n.read_at ? "" : `<button class="sm" data-a="read1" data-id="${n.id}" aria-label="oxundu">✓</button>`}</div>`).join("")}</div>` : `<div class="empty">Bildiriş yoxdur</div>`}`;
+}
+
+// ----- Admin: kataloq, təchizatçılar, ayarlar -----
+function catalogView() {
+  const q = S.q.toLowerCase(), ST = { aktiv: "Aktiv", yeni: "Yeni", texnoloq_gozleyir: "Texnoloq gözləyir", bloklu: "Bloklu", arxiv: "Arxiv" };
+  const ps = S.d.products.filter(p => !q || p.name.toLowerCase().includes(q));
+  const pf = (p, k) => `<div class="frm"><div class="row"><input class="grow" id="${k}n" value="${esc(p.name || "")}" placeholder="Ad"><input class="w120" id="${k}z" value="${esc(p.size || "")}" placeholder="Ölçü (məs. 5 kq)"><select class="w90" id="${k}u">${unitOpts(p.default_unit || "kq")}</select></div>
+    <div class="row"><select class="w160" id="${k}s">${supOpts(p.default_supplier_id)}</select><select class="w160" id="${k}t">${Object.entries(ST).map(([v, t]) => `<option value="${v}" ${(p.status || "aktiv") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <select class="w120" id="${k}g"><option value="stok">Stok</option><option value="gundelik" ${p.storage_type === "gundelik" ? "selected" : ""}>Gündəlik</option></select></div>
+    <label class="row meta"><input type="checkbox" id="${k}x" ${p.needs_tech ? "checked" : ""}> Texnoloq yoxlamalıdır</label>
+    <div class="row"><button class="pri" data-a="saveProd" data-id="${p.id || ""}" data-k="${k}">Yadda saxla</button>${tog(k, "Bağla", "")}</div></div>`;
+  let h = `<h2>Kataloq <span class="cnt">${S.d.products.length}</span></h2>
+    <div class="row"><input class="grow" id="q" placeholder="Axtar" value="${esc(S.q)}" autocomplete="off">${tog("pnew", "+ Yeni məhsul", "pri")}</div>${isOpen("pnew") ? `<div class="card">${pf({}, "pnew")}</div>` : ""}
+    <div id="olist" class="card">${ps.length ? ps.slice(0, 150).map(p => `<div><div class="task"><div class="t"><b>${esc(p.name)}</b>${p.size ? ` <span class="meta">${esc(p.size)}</span>` : ""}<div class="meta">${esc(p.default_unit || "")}${p.default_supplier_id ? " · " + esc(sname(p.default_supplier_id)) : ""}${p.needs_tech ? " · 🧪" : ""}</div></div>
+      ${pill([ST[p.status] || p.status, { aktiv: "c-ok", yeni: "c-warn", bloklu: "c-bad", arxiv: "c-arch", texnoloq_gozleyir: "c-qc" }[p.status]])}${tog("p" + p.id, "✎")}</div>${isOpen("p" + p.id) ? pf(p, "p" + p.id) : ""}</div>`).join("") : `<div class="empty">Kataloq boşdur</div>`}</div>`;
+  h += `<h2>Təchizatçılar <span class="cnt">${S.d.suppliers.length}</span>${tog("snew", "+ Yeni")}</h2>`;
+  const sf = (s, k) => `<div class="frm"><div class="row"><input class="grow" id="${k}n" value="${esc(s.name || "")}" placeholder="Ad"><select class="w120" id="${k}k"><option value="firma">Firma</option><option value="surucu" ${s.kind === "surucu" ? "selected" : ""}>Sürücü</option></select><input class="w120" id="${k}p" value="${esc(s.phone || "")}" placeholder="Telefon" inputmode="tel"></div>
+    <input id="${k}o" value="${esc(s.note || "")}" placeholder="Qeyd"><label class="row meta"><input type="checkbox" id="${k}a" ${s.active !== false ? "checked" : ""}> Aktiv</label>
+    <div class="row"><button class="pri" data-a="saveSup" data-id="${s.id || ""}" data-k="${k}">Yadda saxla</button>${tog(k, "Bağla", "")}</div></div>`;
+  h += isOpen("snew") ? `<div class="card">${sf({}, "snew")}</div>` : "";
+  h += `<div class="card">${S.d.suppliers.map(s => `<div><div class="task"><div class="t">${s.kind === "surucu" ? "🚚 " : ""}<b>${esc(s.name)}</b><div class="meta">${esc(s.phone || "")}${s.employee_id ? " · giriş: " + esc(S.d.E.get(s.employee_id)?.username || "") : ""}</div></div>${s.active ? "" : pill(["passiv","c-arch"])}${tog("s" + s.id, "✎")}</div>${isOpen("s" + s.id) ? sf(s, "s" + s.id) : ""}</div>`).join("")}</div>`;
+  const set = k => S.d.settings.find(s => s.key === k)?.value || "";
+  h += `<h2>Ayarlar</h2><div class="card"><div class="row"><span class="grow">Satınalma yeni sifarişi neçə saata qəbul etməlidir</span><input class="w90 mono" id="set1" value="${esc(set("satinalma_qebul_saat"))}"><button class="sm" data-a="setSet" data-key="satinalma_qebul_saat" data-src="set1">Saxla</button></div>
+    <div class="row"><span class="grow">Həftəlik sifarişin təminat günü (1 = bazar ertəsi … 3 = çərşənbə)</span><input class="w90 mono" id="set2" value="${esc(set("heftelik_gun"))}"><button class="sm" data-a="setSet" data-key="heftelik_gun" data-src="set2">Saxla</button></div></div>`;
+  return h;
+}
+function staffView() {
+  const D = S.d.departments, R = { isci: "İşçi", rehber: "Rəhbər", admin: "Admin" };
+  const dOpts = v => D.map(d => `<option value="${d.code}" ${d.code === v ? "selected" : ""}>${esc(d.name)}</option>`).join("");
+  const rOpts = v => Object.entries(R).map(([k, t]) => `<option value="${k}" ${k === v ? "selected" : ""}>${t}</option>`).join("");
+  let h = `<h2>İşçilər <span class="cnt">${S.d.employees.length}</span>${tog("enew", "+ Yeni işçi", "pri sm")}</h2>`;
+  if (isOpen("enew")) h += `<div class="card"><div class="note">1) Supabase → Authentication → Users → <b>Add user</b>: <span class="mono">istifadəçiadı@${EMAIL_DOMAIN}</span>, parol, <b>Auto Confirm</b> ✓.<br>2) Sonra burada əlavə edin.</div>
+    <div class="row"><input class="w160" id="en-u" placeholder="istifadəçi adı (məs. aysel)" autocapitalize="none"><input class="grow" id="en-n" placeholder="Ad Soyad"></div>
+    <div class="row"><select class="w160" id="en-d">${dOpts("anbar")}</select><select class="w120" id="en-r">${rOpts("isci")}</select><input class="w120" id="en-p" placeholder="Telefon" inputmode="tel"></div>
+    <div class="row"><button class="pri" data-a="addEmp">Əlavə et</button>${tog("enew", "Bağla", "")}</div></div>`;
+  h += `<div class="card">${S.d.employees.map(e => { const k = "e" + e.id.slice(0, 8), drv = S.d.suppliers.find(s => s.employee_id === e.id);
+    return `<div><div class="task"><div class="t"><b>${esc(e.full_name)}</b> <span class="mono meta">${esc(e.username)}</span><div class="meta">${esc(D.find(d => d.code === e.dept_code)?.name || e.dept_code)} · ${R[e.role]}${e.dept_code === "surucu" ? (drv ? " · 🚚 " + esc(drv.name) : " · <span class='late'>sürücü bağlanmayıb</span>") : ""}</div></div>
+      ${e.active ? "" : pill(["passiv","c-arch"])}${tog(k, "✎")}</div>
+      ${isOpen(k) ? `<div class="frm"><div class="row"><select class="w160" id="${k}d">${dOpts(e.dept_code)}</select><select class="w120" id="${k}r">${rOpts(e.role)}</select><label class="row meta"><input type="checkbox" id="${k}a" ${e.active ? "checked" : ""}> Aktiv</label></div>
+        <div class="row"><button class="pri" data-a="saveEmp" data-id="${e.id}" data-k="${k}">Yadda saxla</button>${e.dept_code === "surucu" && !drv ? `<button data-a="linkDrv" data-id="${e.id}">🚚 Sürücü kimi bağla</button>` : ""}${tog(k, "Bağla", "")}</div></div>` : ""}</div>`; }).join("")}</div>`;
+  return h;
+}
+
+// ---------- hərəkətlər ----------
+const numIn = id => { const v = val(id).replace(",", "."); return v === "" ? null : Number(v); };
+const ACT = {
+  tab: d => { S.tab = d.t; S.open = null; S.q = ""; S.dirty = false; render(); window.scrollTo(0, 0); },
+  open: d => { S.open = S.open === d.k ? null : d.k; S.dirty = false; render(); },
+  refresh: () => reload(true),
+  logout: () => logout(),
+  claim: (d, b) => run(b, () => rpc("claim_task", { p_task: +d.id }), "Tapşırıq sizdədir"),
+  filt: d => { S.filt = d.v; render(); },
+  // yeni sifariş
+  dtype: d => { S.draft.type = d.v; render(); },
+  drAdd: () => { S.draft.rows.push({ name: "", qty: "", unit: "kq", note: "" }); render(); const els = document.querySelectorAll('[data-f="name"]'); els[els.length - 1]?.focus(); },
+  drDel: d => { S.draft.rows.splice(+d.n, 1); render(); },
+  sendOrder: (d, b) => {
+    S.draft.note = val("dnote");
+    const rows = S.draft.rows.filter(r => r.name.trim() || r.qty);
+    if (!rows.length) return toast("Ən azı bir mal yazın", true);
+    for (const r of rows) { const q = Number(String(r.qty).replace(",", ".")); if (!r.name.trim() || !(q > 0)) return toast("Hər sətirdə mal adı və miqdar olmalıdır", true); }
+    const items = rows.map(r => { const p = S.d.byName.get(r.name.toLowerCase().trim());
+      return { ...(p ? { product_id: p.id } : { product_name: r.name.trim() }), qty: Number(String(r.qty).replace(",", ".")), unit: r.unit, note: r.note || null }; });
+    run(b, async () => { const id = await rpc("create_order", { p_type: S.draft.type, p_items: items, p_note: S.draft.note || null });
+      S.draft = { type: S.draft.type, note: "", rows: [{ name: "", qty: "", unit: "kq", note: "" }] }; store.set("anbar-draft", null); S.tab = "sif"; return id; }, id => `#${id} sifarişi Satınalmaya göndərildi`);
+  },
+  addItem: (d, b) => { const k = "add" + d.o, n = val(k + "n"), q = numIn(k + "q"); if (!n || !(q > 0)) return toast("Mal adı və miqdar", true);
+    const p = S.d.byName.get(n.toLowerCase());
+    run(b, () => rpc("add_items", { p_order: +d.o, p_items: [{ ...(p ? { product_id: p.id } : { product_name: n }), qty: q, unit: val(k + "u") }] }), "Əlavə olundu"); },
+  // anbar qəbul
+  arrive: (d, b) => {
+    const lines = d.ids.split(",").map(id => ({ item_id: +id, qty: numIn("aq" + id) }));
+    if (lines.some(l => l.qty == null || !(l.qty >= 0))) return toast("Hər mal üçün miqdar yazın (gəlməyibsə 0)", true);
+    const needQc = S.d.W.get(S.me.warehouse)?.requires_qc;
+    run(b, async () => { const del = await rpc("mark_arrived", { p_order: +d.o, p_lines: lines, p_note: val("an" + d.k) || null });
+      if (!needQc) return { closed: await rpc("close_delivery", { p_delivery: del }) }; return { del }; },
+      r => r.closed !== undefined ? (r.closed ? `Qəbul olundu · ${r.closed} mal çatmadı → Satınalmaya` : "Qəbul olundu") : "Keyfiyyətə göndərildi");
+  },
+  closeDel: (d, b) => run(b, () => rpc("close_delivery", { p_delivery: +d.id }), n => n ? `Bağlandı · ${n} mal Satınalmaya qayıtdı` : "Qəbul bağlandı ✓"),
+  // satınalma
+  fillAll: d => { const s = val("pall-s" + d.o), dd = val("pall-d" + d.o);
+    document.querySelectorAll(`select[id^="ps"][data-o="${d.o}"]`).forEach(e => { const id = e.id.slice(2); if (s) e.value = s; if (dd) document.getElementById("pd" + id).value = dd; }); S.dirty = true; },
+  plan: (d, b) => {
+    const ids = d.ids.split(","), lines = [], tech = [];
+    for (const id of ids) { const s = val("ps" + id), dd = val("pd" + id); if (!s && !dd) continue;
+      if (!s || !dd) return toast("Hər mal üçün həm firma, həm tarix seçin (və ya ikisini də boş qoyun)", true);
+      lines.push({ item_id: +id, supplier_id: +s, promised_date: dd, purchaser_id: val("pb" + id) || null });
+      const t = document.getElementById("pt" + id); if (t && t.checked && !t.disabled) tech.push(+id); }
+    if (!lines.length) return toast("Ən azı bir mal üçün firma və tarix seçin", true);
+    run(b, async () => { for (const id of tech) await rpc("request_tech", { p_item: id, p_note: "Satınalma: Texnoloq baxsın" });
+      return rpc("plan_items", { p_lines: lines, p_note: val("pn" + d.o) || null }); }, n => `${n} mal planlandı`);
+  },
+  addSup: (d, b) => { const n = val("ns-n"); if (!n) return toast("Adı yazın", true);
+    run(b, () => rpc("add_supplier", { p_name: n, p_kind: val("ns-k"), p_phone: val("ns-p") || null }), "Əlavə olundu"); },
+  replan: (d, b) => { const k = "it" + d.id; run(b, () => rpc("replan_item", { p_item: +d.id, p_promised: val(k + "rd"), p_supplier: +val(k + "rs") || null, p_purchaser: val(k + "rb") || null, p_reason: val(k + "rn") || null }), "Dəyişdirildi"); },
+  delay: (d, b) => run(b, () => rpc("set_delay_reason", { p_item: +d.id, p_reason: val("it" + d.id + "wn") }), "Səbəb yazıldı"),
+  reqTech: (d, b) => run(b, () => rpc("request_tech", { p_item: +d.id, p_note: val("it" + d.id + "tn") || null }), "Texnoloqa işarə qoyuldu"),
+  answer: (d, b) => { const k = "it" + d.id; run(b, () => rpc("answer_problem", { p_item: +d.id, p_promised: val(k + "ad"), p_reason: val(k + "an"), p_supplier: +val(k + "as") || null }), "Yeni tarix göndərildi"); },
+  subst: (d, b) => { const k = "it" + d.id, n = val(k + "sp"); if (!n) return toast("Əvəzedici malın adını yazın", true);
+    const p = S.d.byName.get(n.toLowerCase());
+    run(b, () => rpc("substitute_item", { p_item: +d.id, p_alt_product: p ? p.id : null, p_alt_name: p ? null : n, p_qty: numIn(k + "sq"), p_unit: val(k + "su"), p_supplier: +val(k + "ss") || null, p_promised: val(k + "sd"), p_reason: val(k + "sn") }), "Əvəzedici sifariş edildi"); },
+  cancel: (d, b) => { const k = "it" + d.id; run(b, () => rpc("cancel_remaining", { p_item: +d.id, p_reason: val(k + "cn"), p_qty: numIn(k + "cq") }), "Ləğv edildi"); },
+  // keyfiyyət
+  qcOk: (d, b) => run(b, () => rpc("qc_line", { p_line: +d.id, p_pass: true })),
+  qcBad: (d, b) => run(b, () => rpc("qc_line", { p_line: +d.id, p_pass: false, p_note: val("qc" + d.id + "n") }), "Bloklandı — Satınalma və Anbara xəbər getdi"),
+  qcFinish: (d, b) => run(b, () => rpc("qc_finish", { p_delivery: +d.id }), n => n ? `Bitdi · ${n} mal bloklandı` : "Yoxlama bitdi ✓"),
+  // texnoloq
+  techDue: (d, b) => run(b, () => rpc("tech_set_due", { p_review: +d.id, p_due: val("tx" + d.id + "d") }), "Cavab günü təyin olundu"),
+  techOk: (d, b) => run(b, () => rpc("tech_decide", { p_review: +d.id, p_result: "tesdiq" }), "Qəbul olundu ✓"),
+  techBad: (d, b) => run(b, () => rpc("tech_decide", { p_review: +d.id, p_result: "redd", p_note: val("tx" + d.id + "n") }), "Satınalmaya göndərildi"),
+  // sürücü
+  bought: (d, b) => run(b, () => rpc("driver_bought", { p_item: +d.id, p_qty: numIn("dr" + d.id + "q"), p_note: val("dr" + d.id + "n") || null }), "Yadda saxlandı"),
+  // bildiriş
+  readAll: (d, b) => run(b, () => rpc("mark_read", {})),
+  read1: (d, b) => run(b, () => rpc("mark_read", { p_ids: [+d.id] })),
+  // admin
+  saveProd: (d, b) => { const k = d.k; if (!val(k + "n")) return toast("Adı yazın", true);
+    run(b, () => rpc("admin_upsert_product", { p_id: d.id ? +d.id : null, p_name: val(k + "n"), p_size: val(k + "z") || null, p_unit: val(k + "u"), p_supplier_id: +val(k + "s") || null,
+      p_storage_type: val(k + "g"), p_needs_tech: document.getElementById(k + "x").checked, p_status: val(k + "t") }), "Yadda saxlandı"); },
+  saveSup: (d, b) => { const k = d.k; if (!val(k + "n")) return toast("Adı yazın", true);
+    run(b, () => rpc("admin_upsert_supplier", { p_id: d.id ? +d.id : null, p_name: val(k + "n"), p_kind: val(k + "k"), p_phone: val(k + "p") || null, p_note: val(k + "o") || null, p_active: document.getElementById(k + "a").checked }), "Yadda saxlandı"); },
+  setSet: (d, b) => run(b, () => rpc("admin_set_setting", { p_key: d.key, p_value: val(d.src) }), "Yadda saxlandı"),
+  addEmp: (d, b) => { const u = val("en-u").toLowerCase(); if (!u || !val("en-n")) return toast("İstifadəçi adı və ad soyad", true);
+    run(b, () => rpc("admin_add_employee", { p_email: u + "@" + EMAIL_DOMAIN, p_full_name: val("en-n"), p_username: u, p_dept: val("en-d"), p_role: val("en-r"), p_phone: val("en-p") || null }), "İşçi əlavə olundu"); },
+  saveEmp: (d, b) => { const k = d.k; run(b, () => rpc("admin_set_employee", { p_id: d.id, p_dept: val(k + "d"), p_role: val(k + "r"), p_active: document.getElementById(k + "a").checked }), "Yadda saxlandı"); },
+  linkDrv: (d, b) => run(b, () => rpc("admin_link_driver", { p_employee: d.id }), "Sürücü bağlandı"),
+};
+document.addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (!b || !ACT[b.dataset.a]) return; e.preventDefault(); ACT[b.dataset.a](b.dataset, b); });
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.closest("#lf")) return;
+  if (t.id === "q") { S.q = t.value;
+    if (S.tab === "kataloq") { render(); const q = $("#q"); q.focus(); q.setSelectionRange(S.q.length, S.q.length); }
+    else { const l = $("#olist"); if (l) l.innerHTML = S.tab === "axtar" ? searchList() : ordersList(); }
+    return; }
+  if (t.dataset.dr != null) { const r = S.draft.rows[+t.dataset.dr]; r[t.dataset.f] = t.value;
+    if (t.dataset.f === "name") { const p = S.d.byName.get(t.value.toLowerCase().trim()); if (p?.default_unit) { r.unit = p.default_unit; const u = document.querySelector(`[data-dr="${t.dataset.dr}"][data-f="unit"]`); if (u) u.value = p.default_unit; } }
+    store.set("anbar-draft", S.draft); }
+  if (t.id === "dnote") { S.draft.note = t.value; store.set("anbar-draft", S.draft); }
+  S.dirty = true;
+});
+document.addEventListener("change", e => { if (e.target.dataset.dr != null) { S.draft.rows[+e.target.dataset.dr][e.target.dataset.f] = e.target.value; store.set("anbar-draft", S.draft); } });
+
+// ---------- başlanğıc ----------
+async function start() {
+  $("#app").innerHTML = `<div class="login"><div class="hint">Yüklənir…</div></div>`;
+  try { await load(); } catch (e) { if (e.message !== "stop") { toast(e.message, true); renderLogin(); } return; }
+  const dr = store.get("anbar-draft"); if (dr && Array.isArray(dr.rows) && dr.rows.length) S.draft = dr;
+  S.dirty = false; S.stale = false; render();
+}
+setInterval(() => { if (document.visibilityState === "visible") reload(); }, 30000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reload(); });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+S.sess ? start() : renderLogin();
+</script>
+</body>
+</html>

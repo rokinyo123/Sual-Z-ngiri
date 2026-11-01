@@ -138,8 +138,31 @@ və vaxtında planlanmamış bütün mallar, gecikmə günü və səbəbi ilə.
 
 Telefona push bildiriş (`anbar.push_subscriptions`) proqram bazaya qoşulanda işə düşəcək.
 
-> **Diqqət:** faylları sıra ilə işlədin: 01 → 03 → 04 → 05 → 06 → 07. Hansısa faylı yenidən işlətsəniz,
-> ondan sonrakıları da sıra ilə yenidən işlədin (sonrakı fayllar bəzi funksiyaları yeniləyir).
+## Mərhələ 6 — proqram (işçilər üçün)
+
+1. SQL Editor → [`sql/08_proqram.sql`](sql/08_proqram.sql) → **Run**.
+2. Proqram: [`app/index.html`](../app/index.html) — sayt yerləşən yerdə `/app/` ünvanında açılır
+   (demo `/demo/`-da olduğu kimi). Telefonda **"Ana ekrana əlavə et"** — proqram kimi açılır.
+3. Hər işçi öz **istifadəçi adı** (`aysel`) və **parolu** ilə girir. Hər kəs yalnız öz işini görür:
+
+| Şöbə | Ekranlar |
+|---|---|
+| Anbar / İnqilab | **Bu gün**: gələcək mallar (firma üzrə) → "📦 Gəldi", qəbulu bitirmək · **Sifariş** yazmaq · **Sifarişlər** (həmin gün mal əlavə etmək) |
+| Satınalma | **Bu gün**: yeni mallar — kimdən / nə vaxt / kim məsul, "Texnoloq baxsın", gecikənlər · **Problemlər**: yeni tarix, əvəzedici, ləğv |
+| Keyfiyyət | **Yoxla**: ✓ Uyğun / ✗ Uyğun deyil (səbəb) → bitir |
+| Texnoloq | cavab günü → ✓ qəbul / ✗ rədd (səbəb) |
+| Sürücü | **Alınacaqlar** → "🛒 Aldım" |
+| Rəhbərlik | **Problemlər** (gecikən, problemli, planlanmamış, Texnoloqda) · bütün sifarişlər və tapşırıqlar |
+| Satış, Çeşidləmə, İstehsalat | **Nə vaxt?** — mal adını yazır, harada olduğunu və nə vaxt gələcəyini görür |
+| Admin | Kataloq, təchizatçılar, ayarlar, işçilər |
+
+🔔 — işçinin bildirişləri. Məlumat hər 30 saniyədən bir və proqram açılanda yenilənir.
+
+"📦 Gəldi" yalnız seçilən firmanın malları üçündür: başqa firmanın sonra gələcək malı "gəlmədi" sayılmır.
+Gəlməyən malın miqdarına **0** yazılır.
+
+> **Diqqət:** faylları sıra ilə işlədin: 01 → 03 → 04 → 05 → 06 → 07 → 08.
+> Hansısa faylı yenidən işlətsəniz, ondan sonrakıları da sıra ilə yenidən işlədin.
 
 ## Təhlükəsizlik qaydaları (01_temel.sql-də)
 - Cədvəlləri yalnız **aktiv işçi** oxuya bilər; giriş etməmiş (`anon`) heç nə görmür.
@@ -152,5 +175,4 @@ Telefona push bildiriş (`anbar.push_subscriptions`) proqram bazaya qoşulanda i
 [`sql/99_geri_al.sql`](sql/99_geri_al.sql) — yalnız `anbar` sxemini silir (Sual Zəncirinə toxunmur).
 
 ## Növbəti mərhələlər
-6. Proqramı bu bazaya qoşmaq (giriş: istifadəçi adı + parol; bütün ekranlar) və Rəhbərlik paneli
-7. Telefona push bildiriş, Excel/şəkil idxalı, domen · 8. Sınaq həftəsi
+7. Telefona push bildiriş, Excel/şəkil idxalı, şəkil (Keyfiyyət), domen · 8. Sınaq həftəsi
