@@ -1,6 +1,6 @@
 # Almond Anbar Zənciri — quraşdırma (sınaq)
 
-Proqram: `demo/index.html`. Saytda (`https://…/demo/`) açılanda **ortaq bazaya** qoşulur və giriş istəyir.
+Proqram: `app/index.html`. Saytda (`https://rokinyo123.github.io/Sual-Z-ngiri/app/`) açılanda **ortaq bazaya** qoşulur və giriş istəyir.
 Claude linkində isə əvvəlki kimi demo rejimində işləyir (məlumat yalnız həmin cihazda).
 
 ## 1. Ehtiyat nüsxə (2 dəqiqə)
