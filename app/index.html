@@ -440,16 +440,19 @@ const Cloud = (() => {
     const ext = (name && name.includes(".") ? name.split(".").pop() : (mime.split("/")[1]||"bin")).replace(/[^a-z0-9]/gi,"").slice(0,5) || "bin";
     const path = new Date().toISOString().slice(0,7)+"/"+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(36).slice(2))+"."+ext;
     const r = await fetch(URL0+"/storage/v1/object/"+BUCKET+"/"+path, { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+C.sess.access_token, "Content-Type":mime }, body:a });
-    if (!r.ok) throw new Error("Fayl yüklənmədi");
+    if (!r.ok){ const t = await r.text().catch(()=>""); throw new Error("Fayl yüklənmədi ("+r.status+") "+t.slice(0,120)); }
     return URL0+"/storage/v1/object/public/"+BUCKET+"/"+path;
   }
+  // Fayl yerinə yazmaq alınmasa, şəkil sifarişin içində qalır (yenə hamıya görünür) — sifariş heç vaxt ilişib qalmır
   async function uploads(){
     const isD = v => typeof v==="string" && v.startsWith("data:");
+    if (C.noStore) return;
+    const up = async (v, n) => { try { return await upload(v, n); } catch(e){ C.noStore = true; console.warn("Fayl yeri işləmir:", e.message); return v; } };
     for (const o of S.orders){
-      for (let k=0;k<(o.photos||[]).length;k++) if (isD(o.photos[k])) o.photos[k] = await upload(o.photos[k], "sekil.jpg");
-      for (const f of (o.files||[])) if (isD(f.data)) f.data = await upload(f.data, f.name);
+      for (let k=0;k<(o.photos||[]).length;k++) if (isD(o.photos[k]) && !C.noStore) o.photos[k] = await up(o.photos[k], "sekil.jpg");
+      for (const f of (o.files||[])) if (isD(f.data) && !C.noStore) f.data = await up(f.data, f.name);
     }
-    for (const p of S.products) if (isD(p.photo)) p.photo = await upload(p.photo, "mehsul.jpg");
+    for (const p of S.products) if (isD(p.photo) && !C.noStore) p.photo = await up(p.photo, "mehsul.jpg");
   }
   // Yerli vəziyyəti yazılara çevir
   function records(){
