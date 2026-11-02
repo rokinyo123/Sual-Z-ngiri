@@ -451,11 +451,9 @@ const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 // (Anbarın qəbulu bitirməsini gözləmədən); Texnoloq rədd edibsə; və ya qəbul bitib (gəlmədi / az gəldi)
 const canAnswer = (o,i) => !i.ans && !!problem(o,i) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad" || !!i.unav || !!i.notFound);
 const waitWhy = (o,i) => i.qc==="bad" && !o.qcAt ? "Keyfiyyət yoxlamanı bitirəndə cavab vermək olacaq" : "Anbar qəbulu bitirəndə cavab vermək olacaq";
-// Texnoloqun öz sifarişində Texnoloq malı Anbar qəbulu bitirməzdən ƏVVƏL yoxlayır (Keyfiyyətdən sonra);
-// başqa sifarişlərdə — qəbul bitəndən sonra
-const techReady = (o,i) => i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none" && !i.unav && !i.notFound &&
-  (o.techOrder ? (o.status==="anbar" && (!hasQC(o) || !!o.qcAt)) : (o.recvDone && i.got>0));
-const techWait = o => o.techOrder && o.status==="anbar" && o.items.some(i=>i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none");
+// Ardıcıllıq: mal gəlir → Keyfiyyət (etiket, tarix) → Anbar qəbul edir → Texnoloq dadına və bişirildikdən
+// sonrakı prosesə baxır. Texnoloqun öz sifarişi də eyni yolla gedir.
+const techReady = (o,i) => i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none" && !i.unav && !i.notFound && o.recvDone && i.got>0;
 const techPending = o => o.items.some(i=>techReady(o,i));
 // Bir malın ümumi vəziyyəti (rəng + söz) — kalendarda, nişanlarda, cədvəldə
 function itemState(o,i){
@@ -651,7 +649,7 @@ function render(){
 }
 
 // ----- Bu gün -----
-const WORK_TITLE = { "Sürücü Yusif":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Sürücü Ceyhun":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"İstehsalatda yoxlanacaq mallar", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
+const WORK_TITLE = { "Sürücü Yusif":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Sürücü Ceyhun":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"Anbara qəbul olunan mallar · dadına və bişirildikdən sonrakı prosesə baxın", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
 function pipe(){
   const c = k => S.orders.filter(o=>stage(o).k===k && (k!=="ok" || daysTo(odate(o))>=-7)).length;
   return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="orders:'+k+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
@@ -775,7 +773,7 @@ function itemRow(o,i,k,st){
   }
   // Texnoloq
   if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
-    if (!techReady(o,i) && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">'+(o.techOrder?"mal gəlib Keyfiyyətdən keçəndə yoxlayacaq, Anbar sonra qəbul edir":"mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq")+'</span></div>');
+    if (!techReady(o,i) && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal Keyfiyyətdən keçib Anbara qəbul olunandan sonra dadına və bişirilməsinə baxacaq</span></div>');
     else if (role==="Texnoloq" && !i.techRes){
       cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+techBlock(o,i,k)+'</div>');
     } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ qəbul olundu</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ qəbul olunmadı</span>':(i.techDue?dueTxt(i):'<span class="pill p-qc">cavab günü təyin edilməyib</span>'))+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
@@ -818,7 +816,7 @@ function footActions(o){
   if (role===o.wh && o.status==="yolda")
     return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
   if (role===o.wh && o.status==="anbar"){
-    const wait = hasQC(o) && !o.qcAt, tw = !wait && techWait(o);
+    const wait = hasQC(o) && !o.qcAt, tw = false;
     return '<div class="box"><button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
       '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait||tw?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlamasını gözləyir…":tw?"Texnoloqun qərarını gözləyir…":"Bitir → Satınalmaya göndər")+'</button>'+
       '<div class="hint">Boş qalan mallar "gəlmədi" sayılacaq. Nəticə Satınalmaya gedəcək.</div></div>';
@@ -1220,7 +1218,7 @@ function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
   const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   return '<div class="card">'+
-    '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar · mal gələndə əvvəl siz yoxlayırsınız, sonra Anbar qəbul edir':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
+    '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar → Keyfiyyət → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
     '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
@@ -1255,7 +1253,7 @@ function sendOrder(){
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
   draft = newDraft();
-  if (tech) notify(["Anbar"], "note", "Texnoloq yeni mal sifariş etdi · #"+o.id, "Satınalma təmin edəcək; mal gələndə əvvəl Texnoloq yoxlayacaq", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
+  if (tech) notify(["Anbar"], "note", "Texnoloq yeni mal sifariş etdi · #"+o.id, "Satınalma təmin edəcək; mal gələndə Keyfiyyət yoxlayacaq, Anbar qəbul edəcək, sonra Texnoloq dadına baxacaq", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   const nf = o.items.filter(i=>!dest(i)).length;
   tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi"+(nf?" · "+nf+" malın firması kataloqda yoxdur, Satınalma seçəcək":""));
 }
@@ -1537,7 +1535,6 @@ function orderAct(act, id){
     o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
-    if (o.techOrder && o.items.some(i=>techReady(o,i))) notify(["Texnoloq"], "arr", "#"+o.id+" gəldi, Keyfiyyət yoxladı · indi siz yoxlayın", "Siz qərar verəndən sonra Anbar qəbul edəcək", o.items.filter(i=>techReady(o,i)).map(i=>pname(i.pid)+" "+i.qty), o.id);
     const blk = o.items.filter(i=>i.qc==="bad");
     if (blk.length) notify(["Satınalma",o.wh,"Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
     toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
