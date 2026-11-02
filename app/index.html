@@ -974,7 +974,7 @@ function orderCard(o){
     : role==="Texnoloq" && o.items.some(i=>i.tech) ? '<div class="irows">'+o.items.map((i,k)=>i.tech?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+(o.items.some(i=>!i.tech)?'<div class="meta">+ '+o.items.filter(i=>!i.tech).length+' başqa mal (Texnoloqa aid deyil)</div>':"")
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
-    '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
+    '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(isAdminUser()?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
     '<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
@@ -1063,7 +1063,7 @@ function more(o){
     '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
     '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" class="fpick"></label>'+
     (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+
-    (isAdminUser() ? '<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sifarişi sil</button>' : "")+'</div>'+
+    '</div>'+
     '<div class="log">'+o.history.map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div></details>';
 }
 document.addEventListener("toggle", e => { const d=e.target; if (d.dataset && d.dataset.more){ const id=Number(d.dataset.more); d.open ? openMore.add(id) : openMore.delete(id); } }, true);
@@ -1081,18 +1081,21 @@ const canEditAtt = o => o.from===role && o.status==="acik";
 function fileList(files, key, canDel){
   if (!files.length) return "";
   return '<div class="files">'+files.map((f,i)=>'<div class="file"><span class="fic">'+(isSheet(f.name)?"XLS":(f.name.split(".").pop()||"").slice(0,4).toUpperCase())+'</span><span class="grow"><b>'+esc(f.name)+'</b><span class="meta"> · '+fsize(f.size)+(f.by?' · '+esc(f.by):"")+'</span></span>'+
-    (isSheet(f.name)?'<button class="sm" data-view="'+key+':'+i+'">Bax</button>':"")+
+    (isSheet(f.name)?'<button class="sm" data-view="'+key+':'+i+'">Bax</button>':/\.(jpe?g|png|webp|gif)$/i.test(f.name)?'<a class="sm btnlink" href="'+f.data+'" target="_blank" rel="noopener">Bax</a>':"")+
     '<a class="sm btnlink" href="'+f.data+'" download="'+esc(f.name)+'">Yüklə</a>'+
     (key==="d"?'<button class="sm badb" data-fdel="'+i+'" aria-label="Faylı sil">✕</button>':canDel?'<button class="sm badb" data-ofdel="'+key+':'+i+'" aria-label="Faylı sil">✕</button>':"")+
     '</div><div class="sheet" id="sv-'+key+'-'+i+'" hidden></div>').join("")+'</div>';
 }
-function viewSheet(key, i){
+async function viewSheet(key, i){
   const box = $("sv-"+key+"-"+i);
   if (!box.hidden){ box.hidden = true; return; }
   const f = (key==="d" ? draft.files : S.orders.find(o=>o.id===Number(key)).files)[i];
   if (!window.XLSX){ box.innerHTML='<div class="hint">Excel oxuyucu yüklənmədi. İnternet bağlantısını yoxlayın.</div>'; box.hidden=false; return; }
   try {
-    const wb = XLSX.read(f.data.split(",")[1], {type:"base64"});
+    // fayl ya sifarişin içindədir (data:), ya da ortaq fayl yerindədir (link)
+    let wb;
+    if (/^data:/.test(f.data)) wb = XLSX.read(f.data.split(",")[1], {type:"base64"});
+    else { box.innerHTML = '<div class="hint">Yüklənir…</div>'; box.hidden = false; wb = XLSX.read(new Uint8Array(await (await fetch(f.data)).arrayBuffer()), {type:"array"}); }
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false}).slice(0,60);
     box.innerHTML = '<div class="meta">Vərəq: '+esc(wb.SheetNames[0])+(wb.SheetNames.length>1?' (cəmi '+wb.SheetNames.length+' vərəq, birincisi göstərilir)':"")+'</div><div class="tbl"><table>'+
@@ -1994,8 +1997,8 @@ async function importFirmMap(file){
 // ----- Admin: kataloq əməliyyatları -----
 function sure(btn, fn){
   if (btn.dataset.sure) return fn();
-  btn.dataset.sure = 1; btn.textContent = btn.dataset.act==="del" ? "Əminsiniz? Yenidən basın" : "Əminsiniz?";
-  setTimeout(()=>{ if (btn.isConnected){ delete btn.dataset.sure; btn.textContent = btn.dataset.act==="del" ? "🗑 Sifarişi sil" : btn.dataset.pdel ? "Sil" : "×"; } }, 4000);
+  btn.dataset.sure = 1; btn.textContent = btn.dataset.act==="del" ? "Silinsin? Yenidən basın" : "Əminsiniz?";
+  setTimeout(()=>{ if (btn.isConnected){ delete btn.dataset.sure; btn.textContent = btn.dataset.act==="del" ? "🗑 Sil" : btn.dataset.pdel ? "Sil" : "×"; } }, 4000);
 }
 const now = () => new Date().toISOString();
 function addProduct(){
