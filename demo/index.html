@@ -286,6 +286,7 @@ span.thumb.empty{cursor:default}
 .net{font-size:13px;opacity:.85;min-width:14px;text-align:center}
 .outb{background:var(--brand-2);color:var(--brand-fg);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:5px 10px;font-size:13px}
 .who select:disabled{opacity:1}
+#role[hidden]{display:none}
 .sday{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding:10px 2px 4px;margin-top:4px}
 .sday b{font-family:var(--display);font-size:16px} .sday span{font-size:12px;color:var(--muted)}
 .sent{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--sunk);color:var(--fg)}
@@ -528,15 +529,19 @@ const Cloud = (() => {
   function queue(){ clearTimeout(C.timer); C.timer = setTimeout(push, 400); }
   function net(t){ const el = $("net"); if (el){ el.textContent = t; el.title = t==="✓" ? "Bazaya yazıldı" : t==="⚠" ? "İnternet yoxdur — sonra göndəriləcək" : "Göndərilir…"; } }
   function out(msg){ C.sess = null; C.me = null; keepSess(); loginView(msg); throw new Error("stop"); }
+  // Giriş siyahısı: şöbə adı → istifadəçi adı (Supabase-də <ad>@almond.local)
+  const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["admin","Admin"]];
+  const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || "anbar"; } catch(e){ return "anbar"; } };
   function loginView(msg){
     $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true;
     $("main").innerHTML = '<form class="card" id="lf" style="max-width:380px;margin:8vh auto 0"><h2>Daxil olun</h2>'+
-      '<div class="hint">Şöbənizin istifadəçi adı və parolu ilə.</div>'+
-      '<input id="lu" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="İstifadəçi adı (məs. anbar)">'+
+      '<div class="hint">Şöbənizi seçin və parolu yazın.</div>'+
+      '<select id="lu" aria-label="Şöbə">'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>'+
       '<input id="lp" type="password" autocomplete="current-password" placeholder="Parol">'+
       '<button class="pri big" id="lb">Daxil ol</button>'+(msg?'<div class="hint rs">'+esc(msg)+'</div>':"")+'</form>';
     $("lf").onsubmit = async e => { e.preventDefault();
-      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u || !p) return toast("İstifadəçi adı və parolu yazın");
+      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u || !p) return toast("Parolu yazın");
+      try { localStorage.setItem("almond-last-login", u); } catch(e){}
       $("lb").disabled = true;
       try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:p }); keepSess(); await start(); }
       catch(err){ if (err.message!=="stop") toast(err.message); $("lb").disabled = false; } };
