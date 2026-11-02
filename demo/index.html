@@ -305,7 +305,10 @@ span.thumb.empty{cursor:default}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===================== Əsas siyahılar =====================
-const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Keyfiyyət","Texnoloq","İstehsalat","Çeşidləmə","Satış","Rəhbərlik","Admin"];
+const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Keyfiyyət","Texnoloq","Sürücü Yusif","Sürücü Ceyhun","İstehsalat","Çeşidləmə","Satış","Rəhbərlik","Admin"];
+// Gündəlik malları (Sədərək, meyvə, salat) Satınalma iki sürücüyə bölür
+const DRIVERS = ["Sürücü Yusif","Sürücü Ceyhun"];
+const isDriver = s => DRIVERS.includes(s);
 const WAREHOUSES = ["Anbar","Anbar (İnqilab)"];
 const QC = ["Keyfiyyət","Texnoloq"];
 const HOUR = 3600000, DAY = 86400000;
@@ -381,6 +384,8 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
 const pfirm = id => prod(id) ? prod(id).firm : "";
+// Malın hara gedəcəyi (firma və ya sürücü): sifarişdə öz yeri varsa o, yoxsa kataloqdakı firma
+const dest = i => i.firm!=null ? i.firm : pfirm(i.pid);
 const punit = id => prod(id) ? prod(id).unit||"" : "";
 // Yalnız rəqəm yazılıbsa, malın vahidi əlavə olunur: "35" → "35 kq"
 const withUnit = (q, pid) => { const t = String(q).trim(); return /^\d+([.,]\d+)?$/.test(t) && punit(pid) ? t+" "+punit(pid) : normQty(t); };
@@ -432,6 +437,8 @@ function gotState(qty, got){
 }
 // Problemli mal: Keyfiyyət qəbul etmədi, gəlmədi, az gəldi və ya Texnoloq uyğun saymadı
 function problem(o,i){
+  if (i.unav) return "Satınalma: mal yoxdur"+(i.unav.note?" — "+i.unav.note:"");
+  if (i.notFound) return "Sürücü tapmadı"+(i.notFound.note?" — "+i.notFound.note:"");
   if (i.qc==="bad") return "Keyfiyyət: "+(i.qcWhy||"uyğun deyil");
   if (i.techRes==="bad") return "Texnoloq qəbul etmədi"+(i.techNote?": "+i.techNote:"");
   if (!o.recvDone) return "";
@@ -442,9 +449,13 @@ function problem(o,i){
 const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 // Satınalma nə vaxt cavab verə bilər: Keyfiyyət yoxlamanı bitirib malı bloklayıbsa — dərhal
 // (Anbarın qəbulu bitirməsini gözləmədən); Texnoloq rədd edibsə; və ya qəbul bitib (gəlmədi / az gəldi)
-const canAnswer = (o,i) => !i.ans && !!problem(o,i) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad");
+const canAnswer = (o,i) => !i.ans && !!problem(o,i) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad" || !!i.unav || !!i.notFound);
 const waitWhy = (o,i) => i.qc==="bad" && !o.qcAt ? "Keyfiyyət yoxlamanı bitirəndə cavab vermək olacaq" : "Anbar qəbulu bitirəndə cavab vermək olacaq";
-const techReady = (o,i) => i.tech && !i.techRes && o.recvDone && i.qc!=="bad" && i.qc!=="none" && i.got>0;
+// Texnoloqun öz sifarişində Texnoloq malı Anbar qəbulu bitirməzdən ƏVVƏL yoxlayır (Keyfiyyətdən sonra);
+// başqa sifarişlərdə — qəbul bitəndən sonra
+const techReady = (o,i) => i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none" && !i.unav && !i.notFound &&
+  (o.techOrder ? (o.status==="anbar" && (!hasQC(o) || !!o.qcAt)) : (o.recvDone && i.got>0));
+const techWait = o => o.techOrder && o.status==="anbar" && o.items.some(i=>i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none");
 const techPending = o => o.items.some(i=>techReady(o,i));
 // Bir malın ümumi vəziyyəti (rəng + söz) — kalendarda, nişanlarda, cədvəldə
 function itemState(o,i){
@@ -460,7 +471,7 @@ function itemState(o,i){
 }
 const rowCls = st => ({"p-ok":"okr","p-warn":"warnr","p-bad":"miss"})[st[1]] || "";
 function finishReceive(o, by, note){
-  o.items.forEach(i=>{ if (i.qc==="bad"||i.qc==="none") i.got = 0; else if (i.got==null) i.got = 0; });
+  o.items.forEach(i=>{ if (i.qc==="bad"||i.qc==="none"||i.techRes==="bad") i.got = 0; else if (i.got==null) i.got = 0; });
   o.recvDone = true; o.status = "bagli"; o.last_move = new Date().toISOString();
   const pr = o.items.filter(i=>problem(o,i) && !i.ans).length, th = o.items.filter(i=>i.tech).length;
   addLog(o, "Qəbul bitdi", [pr ? pr+" mal üçün Satınalmanın cavabı lazımdır" : "Hamısı qəbul olundu", th ? th+" mal Texnoloqda" : "", note].filter(Boolean).join(" · "), by);
@@ -604,6 +615,7 @@ function myWork(){
     if (role==="Satınalma") return o.status==="acik";
     if (role==="Keyfiyyət") return o.status==="anbar" && hasQC(o) && !o.qcAt;
     if (role==="Texnoloq") return techPending(o);
+    if (isDriver(role)) return o.supplier===role && o.status==="yolda";
     if (WAREHOUSES.includes(role)) return o.wh===role && (o.status==="anbar" || dueNow(o));
     return false;
   }).sort((a,b)=> odate(a).localeCompare(odate(b)) || a.id-b.id);
@@ -613,7 +625,7 @@ function myWork(){
 // Hər şöbə yalnız ona lazım olan bölmələri görür
 function tabsFor(r){
   const t = [["home","🏠","Bu gün"],["orders","📦","Sifarişlər"]];
-  if (WAREHOUSES.includes(r)) t.push(["new","➕","Sifariş"]);
+  if (WAREHOUSES.includes(r) || r==="Texnoloq") t.push(["new","➕","Sifariş"]);
   if (["Satınalma","Rəhbərlik","Anbar","Anbar (İnqilab)","İstehsalat","Admin"].includes(r)) t.push(["days","🗓","Gəlişlər"]);
   if (["Satınalma","Rəhbərlik","Anbar","Anbar (İnqilab)","Admin"].includes(r)) t.push(["res","📋","Nəticələr"]);
   if (r==="Admin") t.push(["catalog","📚","Kataloq"]);
@@ -639,7 +651,7 @@ function render(){
 }
 
 // ----- Bu gün -----
-const WORK_TITLE = { "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"İstehsalatda yoxlanacaq mallar", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
+const WORK_TITLE = { "Sürücü Yusif":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Sürücü Ceyhun":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"İstehsalatda yoxlanacaq mallar", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
 function pipe(){
   const c = k => S.orders.filter(o=>stage(o).k===k && (k!=="ok" || daysTo(odate(o))>=-7)).length;
   return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="orders:'+k+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
@@ -734,6 +746,7 @@ function orderCard(o){
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
     (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
 }
+const openAct = {};
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
 function itemRow(o,i,k,st){
   const key = o.id+"-"+k, accepted = !!o.eta && o.status!=="acik";
@@ -752,7 +765,7 @@ function itemRow(o,i,k,st){
   }
   // Anbar / İnqilab
   const canWh = role===o.wh && o.status==="anbar";
-  if (canWh && i.qc!=="bad" && i.qc!=="none"){
+  if (canWh && i.qc!=="bad" && i.qc!=="none" && i.techRes!=="bad"){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><div class="whin"><input type="number" min="0" step="any" data-got="'+key+'" data-q="'+esc(i.qty)+'" id="got-'+key+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+key+'" data-q="'+num(i.qty)+'">Tam</button>'+
 '</div></div>');
   } else if (canWh){
@@ -762,11 +775,24 @@ function itemRow(o,i,k,st){
   }
   // Texnoloq
   if (i.tech && (i.techRes || techReady(o,i) || !o.recvDone)){
-    if (!o.recvDone && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq</span></div>');
+    if (!techReady(o,i) && !i.techRes) cells.push('<div class="cell"><span class="cl">Texnoloq</span><span class="meta">'+(o.techOrder?"mal gəlib Keyfiyyətdən keçəndə yoxlayacaq, Anbar sonra qəbul edir":"mal gəlib Keyfiyyətdən keçəndən sonra yoxlayacaq")+'</span></div>');
     else if (role==="Texnoloq" && !i.techRes){
       cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+techBlock(o,i,k)+'</div>');
     } else cells.push('<div class="cell"><span class="cl">Texnoloq</span>'+(i.techRes==="ok"?'<span class="pill p-ok">✓ qəbul olundu</span>':i.techRes==="bad"?'<span class="pill p-bad">✗ qəbul olunmadı</span>':(i.techDue?dueTxt(i):'<span class="pill p-qc">cavab günü təyin edilməyib</span>'))+(i.techNote?' <span class="meta">'+esc(i.techNote)+'</span>':"")+'</div>');
   }
+  // Satınalma: qəbuldan sonra — mal yoxdur və ya başqa firmaya/sürücüyə keçir (mal gəlməmiş)
+  if (role==="Satınalma" && o.status==="yolda" && !i.unav && !i.notFound){
+    const op = openAct[key];
+    cells.push('<div class="cell"><span class="cl">Satınalma</span><button class="sm" data-iact="'+key+'|move">↪ Başqa firmaya</button><button class="sm badb" data-iact="'+key+'|unav">✗ Mal yoxdur</button>'+
+      (op==="move" ? '<div class="dt" style="flex:1 1 100%"><select id="mv-'+key+'">'+destOpts("")+'</select><input type="date" id="mvd-'+key+'" value="'+(o.eta && daysTo(o.eta)>=0?o.eta:plusDays(1))+'" min="'+today()+'"></div><button class="pri" data-move="'+key+'">Keçir</button>' : "")+
+      (op==="unav" ? '<input id="un-'+key+'" placeholder="Niyə yoxdur? (məs. firmada qurtarıb)" style="flex:1 1 100%"><button class="badb" data-unav="'+key+'">Bildir → Anbar və Rəhbərlik görsün</button>' : "")+'</div>');
+  }
+  // Sürücü: aldım / tapmadım
+  if (role===o.supplier && isDriver(role) && o.status==="yolda"){
+    cells.push('<div class="cell"><span class="cl">Sürücü</span>'+(i.notFound?'<span class="pill p-bad">✗ tapılmadı</span>':
+      '<button class="sm'+(i.bought?" okb":"")+'" data-drv="'+key+'|ok">✓ Aldım</button><button class="sm badb" data-iact="'+key+'|nf">✗ Tapmadım</button>'+
+      (openAct[key]==="nf" ? '<input id="nf-'+key+'" placeholder="Qeyd (məs. bazarda yoxdur)" style="flex:1 1 100%"><button class="badb" data-drv="'+key+'|nf">Bildir → Satınalma</button>' : ""))+'</div>');
+  } else if (i.bought || i.notFound) cells.push('<div class="cell"><span class="cl">Sürücü</span>'+(i.notFound?'<span class="pill p-bad">✗ tapmadı</span>':'<span class="pill p-ok">✓ aldı</span>')+'</div>');
   // Satınalmanın cavabı
   const pr = problem(o,i);
   if (pr){
@@ -792,9 +818,9 @@ function footActions(o){
   if (role===o.wh && o.status==="yolda")
     return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
   if (role===o.wh && o.status==="anbar"){
-    const wait = hasQC(o) && !o.qcAt;
+    const wait = hasQC(o) && !o.qcAt, tw = !wait && techWait(o);
     return '<div class="box"><button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
-      '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlamasını gözləyir…":"Bitir → Satınalmaya göndər")+'</button>'+
+      '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait||tw?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlamasını gözləyir…":tw?"Texnoloqun qərarını gözləyir…":"Bitir → Satınalmaya göndər")+'</button>'+
       '<div class="hint">Boş qalan mallar "gəlmədi" sayılacaq. Nəticə Satınalmaya gedəcək.</div></div>';
   }
   if (role==="Satınalma" && o.status==="acik") return acceptBox(o);
@@ -884,30 +910,36 @@ function addSend(id){
 // Bir neçə firmanın malı varsa, hər firmaya öz günü verilir və sifariş firmalar üzrə bölünür.
 function firmGroups(o){
   const g = {};
-  o.items.forEach((i,k)=>{ const f = pfirm(i.pid) || ""; (g[f] = g[f] || []).push(k); });
-  return Object.keys(g).sort((a,b)=>!a?1:!b?-1:a.localeCompare(b,"az")).map(f=>({firm:f, idx:g[f]}));
+  o.items.forEach((i,k)=>{ const f = dest(i) || ""; (g[f] = g[f] || []).push(k); });
+  return Object.keys(g).sort((a,b)=>!a?-1:!b?1:isDriver(a)-isDriver(b) || a.localeCompare(b,"az")).map(f=>({firm:f, idx:g[f]}));
 }
+// Hara göndərmək olar: sürücülər + firmalar
+const destOpts = sel => '<option value="">— seçin —</option><optgroup label="Sürücülər (gündəlik)">'+DRIVERS.map(d=>'<option'+(sel===d?" selected":"")+'>'+esc(d)+'</option>').join("")+'</optgroup>'+
+  '<optgroup label="Firmalar">'+S.firms.map(f=>'<option'+(sel===f?" selected":"")+'>'+esc(f)+'</option>').join("")+'</optgroup>'+(sel && !isDriver(sel) && !S.firms.includes(sel)?'<option selected>'+esc(sel)+'</option>':"");
+const etaDraft = {};   // Satınalmanın seçdiyi günlər (səhifə yenilənəndə itməsin)
+const remember = {};
 function acceptBox(o){
-  const G = firmGroups(o);
-  const body = G.length>1
-    ? '<div class="hint"><b>'+G.length+' firma</b> — hər birinə gəliş günü. Sifariş firmalar üzrə bölünəcək.</div>'+
-      G.map((g,k)=>'<div class="fgrp"><div class="pn"><b>'+(g.firm?esc(g.firm):"Firmasız (sürücü alır)")+'</b><span class="meta">'+g.idx.length+' mal: '+esc(g.idx.slice(0,4).map(i=>pname(o.items[i].pid)).join(", "))+(g.idx.length>4?"…":"")+'</span></div>'+
-        '<input type="date" id="geta-'+o.id+'-'+k+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi"></div>').join("")
-    : '<datalist id="flist">'+S.firms.map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
-      '<input id="sup-'+o.id+'" list="flist" placeholder="Firma və ya sürücü" value="'+esc(guessFirm(o))+'"><input type="date" id="eta-'+o.id+'" value="'+(o.eta||plusDays(1))+'" aria-label="Gəliş tarixi">';
-  return '<div class="box"><div class="lbl">Nə vaxt gələcək?</div>'+body+'<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh],o)+'<button class="pri big" data-act="accept" data-id="'+o.id+'">✓ OK · Anbar gözləsin</button></div>';
+  const G = firmGroups(o), none = G.find(g=>!g.firm);
+  const body = G.map(g=>{
+    const key = o.id+"|"+g.firm;
+    const head = !g.firm ? '<b class="rs">⚠ Firması yoxdur · '+g.idx.length+' mal — hər birinə firma və ya sürücü seçin</b>'
+      : '<div class="pn"><b>'+(isDriver(g.firm)?"🚚 ":"")+esc(g.firm)+'</b><span class="meta">'+g.idx.length+' mal</span></div>'+
+        '<input type="date" data-eta="'+esc(key)+'" value="'+(etaDraft[key]||o.eta||(isDriver(g.firm)?today():plusDays(1)))+'" min="'+today()+'" aria-label="Gəliş günü">';
+    return '<div class="fgrp">'+head+g.idx.map(k=>{ const i = o.items[k];
+      return '<div class="rrow"><span class="nm">'+esc(pname(i.pid))+' <span class="meta mono">'+esc(i.qty)+'</span></span><select data-dest="'+o.id+'-'+k+'" style="width:auto;max-width:48%;padding:4px 6px;font-size:13px" aria-label="Hara">'+destOpts(dest(i))+'</select></div>'; }).join("")+'</div>';
+  }).join("");
+  return '<div class="box"><div class="lbl">Kimdən, nə vaxt gələcək?</div><div class="hint">Mallar kataloqa görə avtomatik bölünüb. Malı başqa firmaya və ya sürücüyə vermək üçün yanındakı siyahıdan seçin. Hər qrupun gəliş günü ayrıca.</div>'+body+
+    '<label class="row meta"><input type="checkbox" data-remember="'+o.id+'"'+(remember[o.id]?" checked":"")+' style="width:auto"> Firma dəyişikliyini kataloqda da yadda saxla</label>'+
+    '<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh],o)+
+    '<button class="pri big" data-act="accept" data-id="'+o.id+'"'+(none?" disabled":"")+'>'+(none?"Əvvəl hər mala firma seçin":"✓ OK · "+G.length+" qrup · Anbar gözləsin")+'</button></div>';
 }
 function acceptOrder(o){
   const G = firmGroups(o), parts = [];
-  if (G.length>1){
-    for (let k=0;k<G.length;k++){
-      const eta = ($("geta-"+o.id+"-"+k)||{}).value;
-      if (!eta) return toast((G[k].firm||"Firmasız")+": gəliş gününü seçin");
-      parts.push({ eta, sup:G[k].firm, items:G[k].idx.map(i=>o.items[i]) });
-    }
-  } else {
-    const eta = ($("eta-"+o.id)||{}).value; if (!eta) return toast("Gəliş gününü seçin");
-    parts.push({ eta, sup:(($("sup-"+o.id)||{}).value||"").trim(), items:o.items });
+  const nf = G.find(g=>!g.firm); if (nf) return toast(nf.idx.length+" malın firması seçilməyib");
+  for (const g of G){
+    const el = document.querySelector('[data-eta="'+CSS.escape(o.id+"|"+g.firm)+'"]'), eta = el ? el.value : "";
+    if (!eta) return toast(g.firm+": gəliş gününü seçin");
+    parts.push({ eta, sup:g.firm, items:g.idx.map(i=>o.items[i]) });
   }
   const note0 = (($("spn-"+o.id)||{}).value||"").trim(), to = [...(toSel["a"+o.id]||[])];
   let note = note0;
@@ -924,9 +956,25 @@ function acceptOrder(o){
     return x;
   });
   if (note && to.length){ list.forEach(x=>{ x.noteTo = to; }); notify(to, "note", "#"+o.id+" · Satınalma: "+note, "Gəliş "+list.map(x=>fmtD(x.eta)).join(", ")+" · mal gələndə baxın", [], o.id); }
+  list.filter(x=>isDriver(x.supplier)).forEach(x=>notify([x.supplier], "arr", "Sizə mal verildi · #"+x.id+" · "+fmtD(x.eta), x.wh+" üçün "+x.items.length+" mal", x.items.map(i=>pname(i.pid)+" "+i.qty), x.id));
   notify([o.wh,o.from].filter(r=>!to.includes(r)||!note), "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
-  toast(list.length>1 ? list.length+" firmaya bölündü · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
+  toast(list.length>1 ? list.length+" qrupa bölündü (firmalar və sürücülər) · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
+}
+// Mal gəlməmiş, başqa firmaya/sürücüyə keçir: həmin firmanın eyni gün gələn sifarişinə qoşulur və ya yeni hissə açılır
+function moveItem(key){
+  const [o,i] = itemOf(key), to = ($("mv-"+key)||{}).value, eta = ($("mvd-"+key)||{}).value;
+  if (!to) return toast("Hara keçirəcəyinizi seçin"); if (!eta) return toast("Gəliş gününü seçin");
+  if (to===o.supplier && eta===o.eta) return toast("Mal artıq buradadır");
+  const grp = o.group || o.id, now0 = now();
+  let x = S.orders.find(y=>y.id!==o.id && y.status==="yolda" && y.wh===o.wh && y.supplier===to && y.eta===eta && (y.group||y.id)===grp && !y.items.some(z=>z.qc||z.got!=null));
+  if (!x){ x = Object.assign(JSON.parse(JSON.stringify(o)), { id:nextId(), items:[], supplier:to, eta, group:grp, part:"köçürmə", comments:[], history:[], acceptedAt:now0, last_move:now0 }); S.orders.unshift(x); }
+  o.items.splice(o.items.indexOf(i),1); i.firm = to; x.items.push(i);
+  if (remember[o.id] && !isDriver(to) && prod(i.pid)) prod(i.pid).firm = to;
+  addLog(o,"Mal başqa yerə keçdi",pname(i.pid)+" → "+to+" · #"+x.id); addLog(x,"Mal əlavə olundu",pname(i.pid)+" ("+(o.supplier||"—")+" → "+to+") · "+fmtD(eta));
+  if (!o.items.length){ o.status = "redd"; addLog(o,"Bütün mallar başqa yerə keçdi",""); }
+  notify([o.wh].concat(isDriver(to)?[to]:[]), "ok", "#"+x.id+" · "+pname(i.pid)+" indi "+to+"-dən gələcək", fmtD(eta), [], x.id);
+  delete openAct[key]; save(); render(); toast(pname(i.pid)+" → "+to+" · "+fmtD(eta));
 }
 // ----- Satınalmanın cavabı: problemli mal nə vaxt gələcək və ya əvəzində nə gələcək -----
 // Cavab həmin günə Anbarın "Gözlənilir" siyahısına davam sifarişi kimi düşür (eyni gün üçün bir sifariş).
@@ -1172,8 +1220,8 @@ function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
   const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   return '<div class="card">'+
-    '<div class="meta">'+esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role))+'</div>'+
-    '<div class="hint">Gəliş gününü Satınalma təyin edəcək.</div>'+
+    '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar · mal gələndə əvvəl siz yoxlayırsınız, sonra Anbar qəbul edir':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
+    '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
       '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
@@ -1196,15 +1244,20 @@ function sendOrder(){
   draft.items.forEach(i=>{ if (!i.pid && (i.pname||"").trim() && String(i.qty).trim()){
     i.pid = ensureProd(i.pname, i.firm);
   } });
-  const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>({pid:Number(i.pid),qty:withUnit(i.qty,Number(i.pid))}));
+  const tech = role==="Texnoloq";
+  const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>{ const x = {pid:Number(i.pid),qty:withUnit(i.qty,Number(i.pid))};
+    if (i.firm && !pfirm(x.pid)) x.firm = i.firm;   // Excel-də firma başlığı varsa və kataloqda firma yoxdursa
+    if (tech) x.tech = true; return x; });
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
   const now = new Date().toISOString();
-  const o = { id:nextId(), from:role, wh:role, created:now, items, status:"acik", last_move:now,
+  const o = { id:nextId(), from:role, wh: tech ? "Anbar" : role, techOrder: tech || undefined, created:now, items, status:"acik", last_move:now,
     note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o); save();
   draft = newDraft();
-  tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi");
+  if (tech) notify(["Anbar"], "note", "Texnoloq yeni mal sifariş etdi · #"+o.id, "Satınalma təmin edəcək; mal gələndə əvvəl Texnoloq yoxlayacaq", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
+  const nf = o.items.filter(i=>!dest(i)).length;
+  tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi"+(nf?" · "+nf+" malın firması kataloqda yoxdur, Satınalma seçəcək":""));
 }
 function newDraft(){ return { type:"Gündəlik", items:[{pid:"",qty:""}], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null }; }
 
@@ -1298,7 +1351,9 @@ function vCatalog(){
       '<div class="hint">Şəkil əlavə etmək üçün məhsulun yanındakı 📷 xanasına basın. Məhsulu silmək üçün adın altındakı “Sil” düyməsini iki dəfə basın. Məhsulun adını və ya ölçüsünü dəyişmək üçün siyahıda həmin xanaya basın, düzəldin və Enter basın. Ölçülər addan avtomatik götürülüb, yoxlayın.</div>'+
       '<div class="card mine"><h3>Admin · firmalar ('+S.firms.length+')</h3><div class="row"><input class="grow" id="fN" placeholder="Yeni firmanın adı"><button class="pri" id="fAdd">Firma əlavə et</button></div>'+
       '<div class="firms">'+S.firms.map(f=>'<span class="firm"><button class="linkb" data-catfirm="'+esc(f)+'">'+esc(f)+'</button> <span class="meta">'+P.filter(p=>p.firm===f).length+'</span><button class="badb" data-fmdel="'+esc(f)+'" aria-label="Firmanı sil">×</button></span>').join("")+'</div>'+
-      '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>';
+      '<div class="hint">Firma silinəndə onun məhsulları kataloqda qalır, sadəcə firmasız olur.</div></div>'+
+      '<div class="card mine"><h3>Admin · firma–mal siyahısı (Excel)</h3><div class="hint">Excel-də iki sütun: <b>Mal</b> və <b>Firma</b>. Və ya hər firmanın adı ayrıca sətirdə, altında onun malları. Yüklənəndə mallar firmalara bağlanır, yeni firmalar əlavə olunur. Bundan sonra Anbarın sifarişi firmalara özü bölünür.</div>'+
+      '<div class="row"><label class="btnlink">📥 Firma–mal Excel<input type="file" id="fmXls" accept=".xlsx,.xlsm,.xls,.csv" class="fpick"></label></div>'+(fmReport?'<div class="imp">'+fmReport+'</div>':"")+'</div>';
   } else {
     html += '<div class="hint">Kataloqu yalnız <b>Admin</b> dəyişə bilər: məhsul və firma əlavə etmək, silmək. Siz yalnız baxa bilərsiniz.</div>';
   }
@@ -1330,6 +1385,16 @@ $("main").addEventListener("click", e => {
   if (d.go){ const [tb,f]=d.go.split(":"); tab=tb; if (f){ filter=f; RF=RT=""; } render(); return; }
   if (d.filter){ filter=d.filter; render(); return; }
   if (d.resf){ resF=d.resf; render(); return; }
+  if (d.iact){ const [k,a]=d.iact.split("|"); openAct[k] = openAct[k]===a ? null : a; return keep(()=>{}); }
+  if (d.move) return moveItem(d.move);
+  if (d.unav){ const [o,i]=itemOf(d.unav); const n=(($("un-"+d.unav)||{}).value||"").trim(); if (!n) return toast("Niyə yoxdur — yazın");
+    return keep(()=>{ i.unav = {note:n, at:now()}; delete openAct[d.unav]; addLog(o,"Satınalma: mal yoxdur",pname(i.pid)+" — "+n);
+      notify([o.wh,"Rəhbərlik"], "late", "#"+o.id+" · "+pname(i.pid)+": mal yoxdur", "Satınalma: "+n+" · yeni gün və ya əvəzedici veriləcək", [], o.id); toast("Bildirildi · indi yeni gün və ya əvəzedici verin"); }); }
+  if (d.drv){ const [k,a]=d.drv.split("|"); const [o,i]=itemOf(k);
+    if (a==="ok") return keep(()=>{ i.bought = !i.bought; addLog(o, i.bought?"Sürücü aldı":"Sürücü 'aldım'ı geri aldı", pname(i.pid)); });
+    const n=(($("nf-"+k)||{}).value||"").trim();
+    return keep(()=>{ i.notFound = {note:n, by:role, at:now()}; i.bought = false; delete openAct[k]; addLog(o,"Sürücü tapmadı",pname(i.pid)+(n?" — "+n:""));
+      notify(["Satınalma",o.wh], "late", role+" tapmadı · #"+o.id+": "+pname(i.pid), (n||"")+" · Satınalma yeni gün və ya əvəzedici verməlidir", [], o.id); toast("Satınalmaya bildirildi"); }); }
   if (d.gores){ tab="res"; resF=d.gores; render(); window.scrollTo(0,0); return; }
   if (d.range){ setRange(d.range); rangeOpen=false; render(); return; }
   if (d.dsel){ dSel=d.dsel; render(); return; }
@@ -1400,7 +1465,13 @@ $("main").addEventListener("change", async e => {
   if (el.id==="rTo"){ RT=el.value; render(); return; }
   if (el.id==="dPick"){ if (el.value){ dSel=el.value; render(); } return; }
   if (el.dataset.got){ saveGot(el); return; }
+  if (el.dataset.eta){ etaDraft[el.dataset.eta] = el.value; return; }
+  if (el.dataset.remember){ remember[el.dataset.remember] = el.checked; return; }
+  if (el.dataset.dest){ const [o,i]=itemOf(el.dataset.dest); const v=el.value, y=window.scrollY; i.firm = v;
+    if (remember[o.id] && v && !isDriver(v) && prod(i.pid)){ prod(i.pid).firm = v; S.log.push({by:role,act:"Firma dəyişdirildi",note:pname(i.pid)+" → "+v,at:now()}); }
+    save(); render(); window.scrollTo(0,y); return; }
   if (el.dataset.pphoto){ setPhoto(el); return; }
+  if (el.id==="fmXls"){ if (el.files[0]) importFirmMap(el.files[0]); return; }
   if (el.dataset.ii!=null){ setItem(el); return; }
   if (el.id==="cF"){ catFirm=el.value; render(); return; }
   if (el.dataset.pname && role==="Admin"){ renameProduct(el); return; }
@@ -1466,6 +1537,7 @@ function orderAct(act, id){
     o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
+    if (o.techOrder && o.items.some(i=>techReady(o,i))) notify(["Texnoloq"], "arr", "#"+o.id+" gəldi, Keyfiyyət yoxladı · indi siz yoxlayın", "Siz qərar verəndən sonra Anbar qəbul edəcək", o.items.filter(i=>techReady(o,i)).map(i=>pname(i.pid)+" "+i.qty), o.id);
     const blk = o.items.filter(i=>i.qc==="bad");
     if (blk.length) notify(["Satınalma",o.wh,"Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
     toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
@@ -1492,6 +1564,39 @@ let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (tab==="home") render(); });
 if ("serviceWorker" in navigator && location.protocol==="https:" && !/claude/.test(location.hostname)) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
+// ----- Admin: firma–mal Excel-i -----
+// 1) başlıqda "Firma" və "Mal/Məhsul/Ad/Nomenklatur" sütunları; 2) başlıq yoxdursa: tək xanalı sətir — firma adı, altındakı sətirlər — onun malları
+let fmReport = "";
+async function importFirmMap(file){
+  if (!window.XLSX) return toast("Excel oxuyucu yüklənmədi, internet bağlantısını yoxlayın");
+  let wb; try { wb = XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:"array"}); } catch(e){ return toast("Faylı oxumaq olmadı"); }
+  const pairs = [];
+  wb.SheetNames.forEach(sn=>{
+    const A = XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:false,defval:""}).map(r=>r.map(c=>String(c??"").replace(/\s+/g," ").trim()));
+    let hr = -1, cN = -1, cF = -1;
+    for (let r=0; r<Math.min(A.length,10) && hr<0; r++){
+      const f = A[r].findIndex(c=>/^(firma|təchizatçı|techizatci|tədarükçü|supplier)/i.test(c)), n = A[r].findIndex(c=>/^(mal|məhsul|mehsul|ad|adı|nomenklatur|xammal)/i.test(c));
+      if (f>=0 && n>=0){ hr = r; cF = f; cN = n; }
+    }
+    if (hr>=0){ A.slice(hr+1).forEach(r=>{ if (r[cN] && r[cF]) pairs.push([r[cN], r[cF]]); }); return; }
+    let firm = "";
+    A.forEach(r=>{ const cells = r.filter(Boolean); if (!cells.length) return;
+      if (cells.length===1 && !pidByName(cells[0])){ firm = cells[0]; return; }
+      if (firm) pairs.push([r.find(Boolean), firm]); });
+  });
+  if (!pairs.length){ fmReport = "Faylda firma–mal cütü tapılmadı. Sütun başlıqları <b>Mal</b> və <b>Firma</b> olmalıdır."; render(); return; }
+  let linked = 0, created = 0; const newF = new Set(), firmOf = n => S.firms.find(f=>normName(f)===normName(n)) || findFirm(n);
+  pairs.forEach(([n,f])=>{
+    let firm = firmOf(f); if (!firm){ firm = f; S.firms.push(f); newF.add(f); }
+    let id = pidByName(n);
+    if (!id){ const p = { id:newPid(), name:n, firm, size:guessSize(n), unit:"" }; S.products.push(p); created++; }
+    else { prod(id).firm = firm; delete prod(id).deleted; linked++; }
+  });
+  S.firms.sort((a,b)=>a.localeCompare(b,"az"));
+  S.log.push({by:role,act:"Firma–mal siyahısı yükləndi",note:file.name+" · "+pairs.length+" mal",at:now()});
+  fmReport = "<b>"+esc(file.name)+"</b>: "+pairs.length+" mal firmaya bağlandı"+(created?" (<span class=\"newtag\">"+created+" yeni mal</span> kataloqa əlavə olundu)":"")+(newF.size?" · yeni firmalar: "+[...newF].map(esc).join(", "):"")+".";
+  save(); render(); toast(pairs.length+" mal firmalara bağlandı");
+}
 // ----- Admin: kataloq əməliyyatları -----
 function sure(btn, fn){
   if (btn.dataset.sure) return fn();
