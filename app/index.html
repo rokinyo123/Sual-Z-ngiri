@@ -1394,18 +1394,57 @@ function parseOrderSheet(ws){
         if (q) out.push({name:n, qty:normQty(q), firm});
       }
     });
-  } else {
-    const W = Math.max(0,...A.map(r=>r.length));
-    for (let c=0; c<W; c+=2){
-      let firm = "";
-      A.forEach(row=>{ const n = txt(row[c]), q = txt(row[c+1]);
-        if (!n) return;
-        if (!q){ firm = findFirm(n); return; }
-        out.push({name:n, qty:normQty(q), firm});
-      });
-    }
+    return out;
+  }
+  const h = parseHeader(A); if (h.length) return h;
+  const W = Math.max(0,...A.map(r=>r.length));
+  for (let c=0; c<W; c+=2){
+    let firm = "";
+    A.forEach(row=>{ const n = txt(row[c]), q = txt(row[c+1]);
+      if (!n || SKIPW.test(n) || isNumC(n)) return;
+      if (!q){ firm = findFirm(n); return; }
+      if (!/\d/.test(q)) return;
+      out.push({name:n, qty:normQty(q), firm});
+    });
+  }
+  return out.length ? out : parseRows(A);
+}
+// Başqa formalı vərəq: başlıqda "Mal/Məhsul/Ad" və "Miqdar/Say/Sifariş" sütunları; başlıq yoxdursa —
+// hər sətirdə hərfli ilk xana ad, ondan sonrakı rəqəm miqdar, rəqəmdən sonrakı qısa söz vahiddir
+const SKIPW = /^(№|n|#|cəmi|cemi|toplam|yekun|imza|tarix|sifariş|sifaris|məhsul|mehsul|ad|adı|mal|miqdar|say|vahid|ölçü|olcu|qiymət|qiymet|məbləğ|mebleg)$/i;
+const isNumC = v => /^\d+(?:[.,]\d+)?$/.test(String(v??"").trim().replace(/\s/g,""));
+function parseHeader(A){
+  const txt = v => String(v??"").trim(), out = [], isNum = isNumC, SKIP = SKIPW;
+  let hr = -1, cN = -1, cQ = -1, cU = -1;
+  for (let r=0; r<Math.min(A.length,15) && hr<0; r++){
+    const row = A[r].map(normName);
+    const n = row.findIndex(c=>/^(mal|məhsul|mehsul|ad|adı|adi|nomenklatur|xammal|məhsulun adı|malın adı)/.test(c));
+    const q = row.findIndex(c=>/^(miqdar|say|sifariş|sifaris|kəmiyyət|kemiyyet|lazım|lazim|tələb|teleb)/.test(c));
+    if (n>=0 && q>=0){ hr = r; cN = n; cQ = q; cU = row.findIndex(c=>/^(vahid|ölçü|olcu|ö\/v|ö\\v|ed\.?|əd\.?)/.test(c)); }
+  }
+  if (hr>=0){
+    A.slice(hr+1).forEach(r=>{ const n = txt(r[cN]), q = txt(r[cQ]); if (!n || !q || SKIP.test(n) || isNum(n)) return;
+      out.push({ name:n, qty: normQty(cU>=0 && txt(r[cU]) && isNum(q) ? q+" "+txt(r[cU]) : q), firm:"" }); });
   }
   return out;
+}
+function parseRows(A){
+  const txt = v => String(v??"").trim(), out = [], isNum = isNumC, SKIP = SKIPW;
+  A.forEach(r=>{
+    const cells = r.map(txt); const ni = cells.findIndex(c=>c && /[a-zəıöüçşğ]/i.test(c) && !isNum(c));
+    if (ni<0 || SKIP.test(cells[ni]) || cells[ni].length<2) return;
+    const qi = cells.findIndex((c,k)=>k>ni && isNum(c)); if (qi<0) return;
+    const u = cells[qi+1] && /^[a-zəıöüçşğ.]{1,8}$/i.test(cells[qi+1]) ? " "+cells[qi+1] : "";
+    out.push({ name:cells[ni], qty:normQty(cells[qi]+u), firm:"" });
+  });
+  return out;
+}
+// Ad uyğunlaşdırma: böyük/kiçik hərf, artıq boşluq və ə/e, ı/i, ş/s, ç/c, ğ/g, ö/o, ü/u fərqi nəzərə alınmır
+const foldName = n => normName(n).replace(/[ə]/g,"e").replace(/[ı]/g,"i").replace(/[ş]/g,"s").replace(/[ç]/g,"c").replace(/[ğ]/g,"g").replace(/[ö]/g,"o").replace(/[ü]/g,"u").replace(/[^a-z0-9%]+/g,"");
+function matchPid(name){
+  const ex = pidByName(name); if (ex) return ex;
+  const f = foldName(name); if (!f) return "";
+  const p = live().find(x=>foldName(x.name)===f); return p ? p.id : "";
 }
 function importInfo(){
   return xlsInfo() + ocrInfo();
@@ -1426,7 +1465,11 @@ function xlsInfo(){
   return '<div class="imp">'+
     (names.length>1?'<div class="row"><span class="hint">Vərəq</span><select id="nSheet" class="grow">'+names.slice().reverse().map(n=>'<option'+(n===draft.sheet?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select></div>':"")+
     '<div><b>'+esc(draft.xls.name)+'</b> · “'+esc(draft.sheet)+'” vərəqindən <b>'+imp.length+' məhsul</b> götürüldü'+
-    (miss?': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span> (sifariş göndəriləndə kataloqa “yeni” kimi əlavə olunacaq)':', hamısı kataloqda tapıldı')+'. Aşağıda yoxlayın, lazım olsa düzəldin.</div></div>';
+    (miss?': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span> (sifariş göndəriləndə kataloqa “yeni” kimi əlavə olunacaq)':', hamısı kataloqda tapıldı')+'. Aşağıda yoxlayın, lazım olsa düzəldin.</div>'+
+    (names.length>1 ? '<div class="box" style="background:var(--surface)"><div class="lbl">Fayldakı vərəqlər — hər biri ayrıca sifariş</div>'+
+      names.map(n=>{ const c = draft.xls.counts[n]||0; return '<div class="row"><span class="grow">'+esc(n)+'</span><span class="pill '+(c?"p-ok":"p-mute")+'">'+(c?c+" mal":"mal tapılmadı")+'</span></div>'; }).join("")+
+      (names.filter(n=>draft.xls.counts[n]).length>1 ? '<button class="pri" id="sendSheets">📨 Hər vərəqi ayrıca sifariş göndər ('+names.filter(n=>draft.xls.counts[n]).length+')</button>' : "")+'</div>' : "")+
+    (imp.length ? "" : '<div class="rs">Bu vərəqdə mal tapılmadı. Vərəqdə malın adı və miqdarı ayrı sütunlarda olmalıdır (məs. "Mal | Miqdar"). Faylı mənə göndərin, formasını əlavə edim.</div>')+'</div>';
 }
 async function addDraftFiles(list){
   for (const f of list){
@@ -1437,7 +1480,8 @@ async function addDraftFiles(list){
       try { wb = XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:"array"}); } catch(e){ toast(f.name+": faylı oxumaq olmadı"); continue; }
       draft.wb = wb;
       draft.xls = { name:f.name, size:f.size, sheets:wb.SheetNames.slice() };
-      draft.sheet = wb.SheetNames[wb.SheetNames.length-1]; // ən son vərəq
+      draft.xls.counts = {}; wb.SheetNames.forEach(n=>{ try { draft.xls.counts[n] = parseOrderSheet(wb.Sheets[n]).length; } catch(e){ draft.xls.counts[n] = 0; } });
+      draft.sheet = wb.SheetNames.slice().reverse().find(n=>draft.xls.counts[n]) || wb.SheetNames[wb.SheetNames.length-1]; // malı olan son vərəq
       applySheet();
       continue;
     }
@@ -1449,7 +1493,7 @@ async function addDraftFiles(list){
 function applySheet(){
   const rows = parseOrderSheet(draft.wb.Sheets[draft.sheet]);
   draft.items = draft.items.filter(i=>i.src!=="xls" && (i.pid || (i.pname||"").trim()));
-  rows.forEach(r=>{ const pid = pidByName(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, src:"xls", firm:r.firm}); });
+  rows.forEach(r=>{ const pid = matchPid(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, src:"xls", firm:r.firm}); });
   if (!draft.items.length) draft.items = [{pid:"",qty:""}];
   if (/həftəlik/i.test(draft.sheet)) draft.type = "Həftəlik";
   draft.files = draft.files.filter(x=>!x.xls);
@@ -1543,6 +1587,7 @@ function bindNew(){
   $("nXls").onchange = e => addDraftFiles(e.target.files);
   $("nPhoto").onchange = e => addDraftPhotos(e.target.files);
   if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
+  if ($("sendSheets")) $("sendSheets").onclick = sendSheets;
   $("send").onclick = sendOrder;
 }
 function sendOrder(){
@@ -1554,15 +1599,36 @@ function sendOrder(){
     if (i.firm && !pfirm(x.pid)) x.firm = i.firm;   // Excel-də firma başlığı varsa və kataloqda firma yoxdursa
     if (tech) x.tech = true; return x; });
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
-  const now = new Date().toISOString();
-  const o = { id:nextId(), from:role, wh: tech ? "Anbar" : role, techOrder: tech || undefined, created:now, items, status:"acik", last_move:now,
-    note:draft.note.trim(), photos:draft.photos.slice(), files:draft.files.slice(), comments:[], history:[] };
-  addLog(o,"Sifariş yaradıldı",o.note);
-  S.orders.unshift(o); save();
+  const o = makeOrder(items, draft.note.trim(), draft.photos.slice(), draft.files.slice());
+  save();
   draft = newDraft();
   if (tech) notify(["Anbar"], "note", "Texnoloq yeni mal sifariş etdi · #"+o.id, "Satınalma təmin edəcək; mal gələndə Keyfiyyət yoxlayacaq, Anbar qəbul edəcək, sonra Texnoloq dadına baxacaq", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   const nf = o.items.filter(i=>!dest(i)).length;
   tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi"+(nf?" · "+nf+" malın firması kataloqda yoxdur, Satınalma seçəcək":""));
+}
+function makeOrder(items, note, photos, files){
+  const now = new Date().toISOString(), tech = role==="Texnoloq";
+  const o = { id:nextId(), from:role, wh: tech ? "Anbar" : role, techOrder: tech || undefined, created:now, items, status:"acik", last_move:now,
+    note, photos, files, comments:[], history:[] };
+  addLog(o,"Sifariş yaradıldı",o.note);
+  S.orders.unshift(o);
+  return o;
+}
+// Excel-in hər vərəqi ayrıca sifariş: adlar kataloqla uyğunlaşdırılır, tapılmayan ad kataloqa "yeni" kimi düşür
+function sendSheets(){
+  const tech = role==="Texnoloq", made = [];
+  draft.xls.sheets.forEach(n=>{
+    const rows = parseOrderSheet(draft.wb.Sheets[n]); if (!rows.length) return;
+    const items = rows.map(r=>{ const pid = matchPid(r.name) || ensureProd(r.name, r.firm); const x = { pid:Number(pid), qty:withUnit(r.qty, Number(pid)) };
+      if (r.firm && !pfirm(x.pid)) x.firm = r.firm; if (tech) x.tech = true; return x; });
+    const one = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(one, draft.wb.Sheets[n], n.slice(0,31));
+    const b64 = XLSX.write(one,{type:"base64",bookType:"xlsx"});
+    const file = { name:draft.xls.name.replace(/\.[^.]+$/,"")+" — "+n+".xlsx", size:Math.round(b64.length*3/4), data:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64, xls:true, by:role, at:new Date().toISOString() };
+    made.push(makeOrder(items, [draft.note.trim(), "Excel: "+n].filter(Boolean).join(" · "), draft.photos.slice(), [file]));
+  });
+  if (!made.length) return toast("Vərəqlərdə mal tapılmadı");
+  save(); draft = newDraft(); tab = "home"; render();
+  toast(made.length+" sifariş Satınalmaya göndərildi: "+made.map(o=>"#"+o.id).join(", "));
 }
 function newDraft(){ return { type:"Gündəlik", items:[{pid:"",qty:""}], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null }; }
 
