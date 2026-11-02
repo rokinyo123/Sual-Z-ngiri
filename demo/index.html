@@ -283,6 +283,9 @@ span.thumb.empty{cursor:default}
 .zoom-bar .btnlink{padding:7px 12px;font-size:15px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
+.net{font-size:13px;opacity:.85;min-width:14px;text-align:center}
+.outb{background:var(--brand-2);color:var(--brand-fg);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:5px 10px;font-size:13px}
+.who select:disabled{opacity:1}
 .sday{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding:10px 2px 4px;margin-top:4px}
 .sday b{font-family:var(--display);font-size:16px} .sday span{font-size:12px;color:var(--muted)}
 .sent{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--sunk);color:var(--fg)}
@@ -356,8 +359,12 @@ function seed(){
 
 // ===================== Yaddaş =====================
 const KEY = "almond-anbar-v1";
+// Onlayn rejim: sayt (https) və ya kompüterdə sınaq — məlumat ortaq bazadadır. Claude linkində — demo (yalnız bu cihaz).
+const TEST_API = (()=>{ try { const t = localStorage.getItem("almond-test-api"); return t && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(t) ? t : ""; } catch(e){ return ""; } })();
+const ONLINE = !!TEST_API || (location.protocol==="https:" && !/claude|anthropic/.test(location.hostname));
 let S;
-try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); }
+if (ONLINE) S = { v:5, products:[], firms:[], orders:[], log:[], alerts:[], seq:100, catalogReset:true, reports:{} };
+else { try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ S = seed(); } }
 if (!S.firms) S.firms = FIRMS.slice();
 // Köhnə (Excel-dən avtomatik yığılmış) kataloq bir dəfə təmizlənir: yalnız sifarişlərdə işlənən mallar qalır
 if (!S.catalogReset){
@@ -369,7 +376,9 @@ if (!S.catalogReset){
 S.products.forEach(p=>{ if (p.size===undefined) p.size = guessSize(p.name); });
 // Kataloq Xammal siyahısı ilə əvəz olunur (bir dəfə): siyahıdakı mallar aktiv olur və vahidi yazılır,
 // siyahıda olmayan köhnə adlar gizlənir — keçmiş sifarişlərdə adları ilə qalır
-if (S.catalogV!==2){
+function prepareCatalog(){
+  if (S.catalogV===2) return false;
+  if (!S.firms || !S.firms.length) S.firms = FIRMS.slice();
   const byN = new Map(S.products.map(p=>[p.name.trim().toLowerCase(), p]));
   const keep = new Set();
   CATALOG.forEach(([n,u])=>{ let p = byN.get(n.toLowerCase());
@@ -378,15 +387,189 @@ if (S.catalogV!==2){
     keep.add(p.id); });
   S.products.forEach(p=>{ if (!keep.has(p.id)) p.deleted = true; });
   S.catalogV = 2;
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  return true;
 }
+if (!ONLINE && prepareCatalog()) { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
 if (!DEPTS.includes(role)) role = "Anbar";
 let tab = "home", catFirm = "", catQ = "";
 let draft;
 
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); } }
+function save(){
+  if (ONLINE) return Cloud.queue();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Brauzer yaddaşı doludur, şəkillərin sayını azaldın"); }
+}
+// ===================== Ortaq baza (Supabase) =====================
+// Hər dəyişiklik yerli olaraq dərhal görünür və arxa planda bazaya göndərilir (versiya ilə).
+// Başqalarının dəyişiklikləri hər 15 saniyədən bir və proqram açılanda gəlir.
+const Cloud = (() => {
+  const URL0 = TEST_API || "https://qzvyawuhmqdhzawfihzy.supabase.co", AKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s", DOMAIN = "almond.local", BUCKET = "almond-fayllar";
+  const C = { sess:null, me:null, ver:{}, snap:{}, last:"", timer:null, busy:false, again:false, fails:0 };
+  try { C.sess = JSON.parse(localStorage.getItem("almond-sess")); } catch(e){}
+  const keepSess = () => { try { C.sess ? localStorage.setItem("almond-sess", JSON.stringify(C.sess)) : localStorage.removeItem("almond-sess"); } catch(e){} };
+  async function auth(path, body){
+    const r = await fetch(URL0+"/auth/v1/"+path, { method:"POST", headers:{ apikey:AKEY, "Content-Type":"application/json" }, body:JSON.stringify(body) });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(r.status===400 ? "İstifadəçi adı və ya parol səhvdir" : (j.error_description||j.msg||"Giriş alınmadı"));
+    return { access_token:j.access_token, refresh_token:j.refresh_token, expires_at:Date.now()+(j.expires_in||3600)*1000 };
+  }
+  async function refresh(){ C.sess = await auth("token?grant_type=refresh_token", { refresh_token:C.sess.refresh_token }); keepSess(); }
+  async function req(method, path, body, retry=true){
+    if (C.sess && C.sess.expires_at - Date.now() < 60000) { try { await refresh(); } catch(e){ return out("Sessiya bitib — yenidən daxil olun"); } }
+    const h = { apikey:AKEY, Authorization:"Bearer "+(C.sess ? C.sess.access_token : AKEY), "Accept-Profile":"almond" };
+    if (body!==undefined){ h["Content-Type"] = "application/json"; h["Content-Profile"] = "almond"; }
+    let r; try { r = await fetch(URL0+"/rest/v1/"+path, { method, headers:h, body: body===undefined ? undefined : JSON.stringify(body) }); }
+    catch(e){ throw new Error("İnternet yoxdur"); }
+    if (r.status===401 && retry && C.sess){ try { await refresh(); } catch(e){ return out("Sessiya bitib — yenidən daxil olun"); } return req(method, path, body, false); }
+    const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch(e){ j = t; }
+    if (!r.ok) throw new Error((j && j.message) || ("Xəta "+r.status));
+    return j;
+  }
+  const rpc = (fn, a) => req("POST", "rpc/"+fn, a||{});
+  // data: URL → fayl yerinə (şəkil, Excel); bazada yalnız link qalır
+  async function upload(dataUrl, name){
+    const [h, b64] = dataUrl.split(","), mime = (h.match(/:(.*?);/)||[])[1] || "application/octet-stream";
+    const bin = atob(b64), a = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) a[i] = bin.charCodeAt(i);
+    const ext = (name && name.includes(".") ? name.split(".").pop() : (mime.split("/")[1]||"bin")).replace(/[^a-z0-9]/gi,"").slice(0,5) || "bin";
+    const path = new Date().toISOString().slice(0,7)+"/"+(crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(36).slice(2))+"."+ext;
+    const r = await fetch(URL0+"/storage/v1/object/"+BUCKET+"/"+path, { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+C.sess.access_token, "Content-Type":mime }, body:a });
+    if (!r.ok) throw new Error("Fayl yüklənmədi");
+    return URL0+"/storage/v1/object/public/"+BUCKET+"/"+path;
+  }
+  async function uploads(){
+    const isD = v => typeof v==="string" && v.startsWith("data:");
+    for (const o of S.orders){
+      for (let k=0;k<(o.photos||[]).length;k++) if (isD(o.photos[k])) o.photos[k] = await upload(o.photos[k], "sekil.jpg");
+      for (const f of (o.files||[])) if (isD(f.data)) f.data = await upload(f.data, f.name);
+    }
+    for (const p of S.products) if (isD(p.photo)) p.photo = await upload(p.photo, "mehsul.jpg");
+  }
+  // Yerli vəziyyəti yazılara çevir
+  function records(){
+    const out = [];
+    S.orders.forEach(o=>out.push(["order", String(o.id), o]));
+    S.products.forEach(p=>out.push(["product", String(p.id), p]));
+    (S.alerts||[]).forEach(a=>out.push(["alert", a.id, a]));
+    S.log.forEach(l=>{ if (!l.id) l.id = "l"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); out.push(["log", l.id, l]); });
+    out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
+    return out;
+  }
+  function remap(kind, oldId, newId){
+    const o2 = Number(oldId), n2 = Number(newId);
+    if (kind==="order"){
+      const o = S.orders.find(x=>Number(x.id)===o2); if (o) o.id = n2;
+      S.orders.forEach(x=>{ if (Number(x.parent)===o2) x.parent = n2; if (Number(x.group)===o2) x.group = n2; x.items.forEach(i=>{ if (i.ans && Number(i.ans.follow)===o2) i.ans.follow = n2; }); });
+      (S.alerts||[]).forEach(a=>{ if (Number(a.oid)===o2) a.oid = n2; });
+      S.seq = Math.max(S.seq, n2);
+    } else if (kind==="product"){
+      const p = S.products.find(x=>Number(x.id)===o2); if (p) p.id = n2;
+      S.orders.forEach(x=>x.items.forEach(i=>{ if (Number(i.pid)===o2) i.pid = n2; if (Number(i.was)===o2) i.was = n2; if (i.ans && Number(i.ans.sub)===o2) i.ans.sub = n2; }));
+    }
+  }
+  function apply(row){
+    const k = row.kind+":"+row.id, d = row.data;
+    if ((C.ver[k]||0) >= row.version) return false;
+    C.ver[k] = row.version; C.snap[k] = JSON.stringify(d);
+    const put = (arr, x, eq) => { const i = arr.findIndex(eq); i>=0 ? arr[i] = x : arr.push(x); };
+    if (row.kind==="order") put(S.orders, d, x=>String(x.id)===row.id);
+    else if (row.kind==="product") put(S.products, d, x=>String(x.id)===row.id);
+    else if (row.kind==="alert") put(S.alerts = S.alerts||[], d, x=>x.id===row.id);
+    else if (row.kind==="log") put(S.log, d, x=>x.id===row.id);
+    else if (row.id==="firms") S.firms = d.firms||[];
+    else if (row.id==="reports") S.reports = d.reports||{};
+    else if (row.id==="catalog") S.catalogV = d.catalogV;
+    return true;
+  }
+  async function pull(full){
+    const since = !full && C.last ? "&updated_at=gte."+encodeURIComponent(new Date(new Date(C.last).getTime()-3000).toISOString()) : "";
+    let n = 0, off = 0;
+    for (;;){
+      const rows = await req("GET", "records?select=kind,id,version,data,updated_at&order=updated_at.asc&limit=1000&offset="+off+since);
+      rows.forEach(r=>{ if (apply(r)) n++; if (!C.last || r.updated_at > C.last) C.last = r.updated_at; });
+      if (rows.length < 1000) break; off += 1000;
+    }
+    if (n){ S.alerts.sort((a,b)=>b.at.localeCompare(a.at)); S.log.sort((a,b)=>a.at.localeCompare(b.at)); S.orders.sort((a,b)=>b.id-a.id);
+      S.seq = Math.max(100, ...S.orders.map(o=>Number(o.id)||0)); }
+    return n;
+  }
+  async function push(){
+    if (C.busy){ C.again = true; return; }
+    C.busy = true; net("⟳");
+    try {
+      await uploads();
+      const items = records().filter(([k,id,d])=>JSON.stringify(d)!==C.snap[k+":"+id]).map(([kind,id,data])=>({ kind, id, version:C.ver[kind+":"+id]||0, data:JSON.parse(JSON.stringify(data)) }));
+      const conflicts = [];
+      for (let i=0;i<items.length;i+=200){
+        const part = items.slice(i,i+200), res = await rpc("put_many", { p_items:part });
+        res.forEach((r,j)=>{ const it = part[j], k0 = it.kind+":"+it.id;
+          if (r.conflict){ conflicts.push(it); return; }
+          if (r.new_id){ remap(it.kind, it.id, r.new_id); delete C.snap[k0]; delete C.ver[k0]; it.id = r.new_id; it.data.id = Number(r.new_id); }
+          const k = it.kind+":"+it.id; C.ver[k] = r.version;
+          const cur = records().find(x=>x[0]===it.kind && x[1]===it.id); C.snap[k] = JSON.stringify(cur ? cur[2] : it.data); });
+      }
+      if (conflicts.length){
+        // Başqası eyni anda dəyişib: bazadakı son vəziyyət götürülür; bildirişlərdə "oxudum"lar birləşdirilir
+        const mine = {}; conflicts.forEach(c=>{ mine[c.kind+":"+c.id] = c.data; C.ver[c.kind+":"+c.id] = 0; });
+        await pull(true);
+        let lost = 0;
+        conflicts.forEach(c=>{ if (c.kind==="alert"){ const a = (S.alerts||[]).find(x=>x.id===c.id); if (a) a.seen = [...new Set([...(a.seen||[]), ...(c.data.seen||[])])]; }
+          else if (c.kind==="order") lost++; });
+        if (lost) toast("Bu sifarişi eyni anda başqası da dəyişdi — son vəziyyət göstərilir, lazım olsa təkrar edin");
+        render(); C.busy = false; return push();
+      }
+      if (items.length && remapped(items)) render();
+      C.fails = 0; net("✓");
+    } catch(e){ C.fails++; net("⚠"); if (C.fails===1) toast("Bazaya yazmaq olmadı: "+e.message+" — internet gələndə özü göndəriləcək"); }
+    C.busy = false;
+    if (C.again){ C.again = false; push(); }
+  }
+  const remapped = items => items.some(it=>it.data && it.data.id!=null && String(it.data.id)!==String(it.id));
+  function queue(){ clearTimeout(C.timer); C.timer = setTimeout(push, 400); }
+  function net(t){ const el = $("net"); if (el){ el.textContent = t; el.title = t==="✓" ? "Bazaya yazıldı" : t==="⚠" ? "İnternet yoxdur — sonra göndəriləcək" : "Göndərilir…"; } }
+  function out(msg){ C.sess = null; C.me = null; keepSess(); loginView(msg); throw new Error("stop"); }
+  function loginView(msg){
+    $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true;
+    $("main").innerHTML = '<form class="card" id="lf" style="max-width:380px;margin:8vh auto 0"><h2>Daxil olun</h2>'+
+      '<div class="hint">Şöbənizin istifadəçi adı və parolu ilə.</div>'+
+      '<input id="lu" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="İstifadəçi adı (məs. anbar)">'+
+      '<input id="lp" type="password" autocomplete="current-password" placeholder="Parol">'+
+      '<button class="pri big" id="lb">Daxil ol</button>'+(msg?'<div class="hint rs">'+esc(msg)+'</div>':"")+'</form>';
+    $("lf").onsubmit = async e => { e.preventDefault();
+      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u || !p) return toast("İstifadəçi adı və parolu yazın");
+      $("lb").disabled = true;
+      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:p }); keepSess(); await start(); }
+      catch(err){ if (err.message!=="stop") toast(err.message); $("lb").disabled = false; } };
+  }
+  async function start(){
+    if (!C.sess) return loginView();
+    $("main").innerHTML = '<div class="empty">Yüklənir…</div>';
+    try {
+      C.me = await rpc("me");
+      if (!C.me) return out("Bu hesab proqrama əlavə olunmayıb — Adminə müraciət edin");
+      await pull(true);
+    } catch(e){ if (e.message==="stop") return; $("main").innerHTML = '<div class="empty">Bazaya qoşulmaq olmadı: '+esc(e.message)+' <button id="retry">Yenidən</button></div>'; $("retry").onclick = start; return; }
+    if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
+    let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
+    role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
+    $("role").hidden = false; renderRole(); render();
+    clearInterval(C.poll);
+    C.poll = setInterval(tick, 15000);
+  }
+  async function tick(){
+    if (document.visibilityState!=="visible" || !C.sess || !C.me) return;
+    try {
+      if (records().some(([k,id,d])=>JSON.stringify(d)!==C.snap[k+":"+id])) await push();
+      const n = await pull(false);
+      const f = document.activeElement;
+      if (n && tab!=="new" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))){ const y = window.scrollY; render(); window.scrollTo(0,y); }
+      else if (n) renderTabs();
+    } catch(e){}
+  }
+  document.addEventListener("visibilitychange", tick);
+  function logout(){ fetch(URL0+"/auth/v1/logout", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+(C.sess||{}).access_token } }).catch(()=>{}); C.sess = null; C.me = null; keepSess(); clearInterval(C.poll); location.reload(); }
+  return { start, queue, logout, me: () => C.me, push };
+})();
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
 const pfirm = id => prod(id) ? prod(id).firm : "";
@@ -400,7 +583,7 @@ const num = v => parseFloat(String(v).replace(",",".")) || 0;
 const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
 const live = () => S.products.filter(p=>!p.deleted);
 const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc([p.unit,p.firm].filter(Boolean).join(" · "))+'</option>').join("")+'</datalist>';
-const nextId = () => ++S.seq;
+const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.map(o=>Number(o.id)||0)) + 1);
 const newPid = () => Math.max(0,...S.products.map(x=>x.id))+1;
 // Sifarişdə yazılan ad kataloqda yoxdursa, kataloqa "yeni" kimi əlavə olunur — Admin sonra düzəldir
 function ensureProd(name, firm){
@@ -483,6 +666,7 @@ function finishReceive(o, by, note){
 }
 // Gəliş günü keçib, heç kim heç nə qeyd etməyibsə — hamısı "gəlmədi" sayılır və xəbərdarlıq çıxır
 function autoMissing(){
+  if (ONLINE && !(role==="Satınalma" || (Cloud.me()||{}).is_admin)) return;   // ortaq bazada bir dəfə işləsin
   let n = 0;
   S.orders.forEach(o=>{
     if (o.status!=="yolda" || !o.eta || daysTo(o.eta)>=0 || o.items.some(i=>i.qc||i.got!=null)) return;
@@ -646,7 +830,11 @@ function tabsFor(r){
   return t;
 }
 function renderRole(){
-  $("role").innerHTML = DEPTS.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
+  const me = ONLINE ? Cloud.me() : null;
+  const list = me && !me.is_admin ? [me.dept] : DEPTS;
+  $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
+  $("role").disabled = list.length < 2;
+  if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="out" class="outb" title="Çıxış">Çıx</button>'); $("out").onclick = () => Cloud.logout(); }
 }
 function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = "home";
@@ -696,7 +884,7 @@ function vHome(){
   }
   html += upcoming();
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button></div>';
+  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Məlumatlar ortaq bazada saxlanılır':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1084,6 +1272,7 @@ function statsHtml(a,b){
 }
 // Bazar günü — həftəlik, ayın son günü — aylıq hesabat Rəhbərliyə (bir dəfə). Keçmiş, göndərilməmiş dövr də göndərilir.
 function reportSignals(){
+  if (ONLINE && !(role==="Rəhbərlik" || (Cloud.me()||{}).is_admin)) return;
   S.reports = S.reports || {}; const t = today(); let n = 0;
   const send = (key, a, b, title) => { if (S.reports[key]) return; const s = stats(a,b); if (!s.items && !s.orders) { S.reports[key] = 1; return; }
     S.reports[key] = 1; n++;
@@ -1770,7 +1959,7 @@ function delFirm(f){
 // Saat keçdikcə vaxt nişanlarını yenilə (yazı yazılarkən yox)
 setInterval(()=>{ const f=document.activeElement; if (tab!=="new" && tab!=="catalog" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))) render(); }, 60000);
 draft = newDraft();
-renderRole(); render();
+if (ONLINE) Cloud.start(); else { renderRole(); render(); }
 </script>
 </body>
 </html>
