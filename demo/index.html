@@ -283,6 +283,10 @@ span.thumb.empty{cursor:default}
 .zoom-bar .btnlink{padding:7px 12px;font-size:15px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
+.sday{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding:10px 2px 4px;margin-top:4px}
+.sday b{font-family:var(--display);font-size:16px} .sday span{font-size:12px;color:var(--muted)}
+.sent{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--sunk);color:var(--fg)}
+.sent.new{background:var(--wait-bg);color:var(--wait)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -305,8 +309,9 @@ span.thumb.empty{cursor:default}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===================== Əsas siyahılar =====================
-const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Keyfiyyət","Texnoloq","Sürücü Yusif","Sürücü Ceyhun","İstehsalat","Çeşidləmə","Satış","Rəhbərlik","Admin"];
-// Gündəlik malları (Sədərək, meyvə, salat) Satınalma iki sürücüyə bölür
+const DEPTS = ["Anbar","Anbar (İnqilab)","Satınalma","Keyfiyyət","Texnoloq","İstehsalat","Çeşidləmə","Satış","Rəhbərlik","Admin"];
+// Gündəlik malları (Sədərək, meyvə, salat) Satınalma iki sürücüyə bölür. Sürücülər proqrama yazmır:
+// nə gəldiyini, nə gəlmədiyini Anbar qeyd edir, Keyfiyyət yoxlayır, gəlməyənə Satınalma cavab verir.
 const DRIVERS = ["Sürücü Yusif","Sürücü Ceyhun"];
 const isDriver = s => DRIVERS.includes(s);
 const WAREHOUSES = ["Anbar","Anbar (İnqilab)"];
@@ -377,6 +382,7 @@ if (S.catalogV!==2){
 }
 let role = "Anbar";
 try { role = localStorage.getItem(KEY+"-role") || role; } catch(e){}
+if (!DEPTS.includes(role)) role = "Anbar";
 let tab = "home", catFirm = "", catQ = "";
 let draft;
 
@@ -548,6 +554,15 @@ const shortT = d => pad(d.getDate())+"."+pad(d.getMonth()+1)+" "+pad(d.getHours(
 // Vaxtı keçən: Satınalma 1 gündə gün təyin etməyib, və ya təyin olunan gün keçib, mal gəlməyib
 const overdue = o => (o.status==="acik" && Date.now()-new Date(o.created).getTime() > DAY) || (o.status==="yolda" && o.eta && daysTo(o.eta)<0);
 const odate = o => o.eta || o.created.slice(0,10);
+// Sifarişin göndərildiyi gün: "Bu gün", "Dünən", "3 gün əvvəl"
+function relDay(d){ const n = -daysTo(d); return n===0 ? "Bu gün" : n===1 ? "Dünən" : n>1 ? n+" gün əvvəl" : fmtD(d); }
+const sentDay = o => dstr(new Date(o.created));
+// Siyahını göndərilmə gününə görə bölmələrə ayırır (ən təzə yuxarıda)
+function bySent(list, sub){
+  const days = [...new Set(list.map(sentDay))].sort().reverse();
+  return days.map(d=>{ const os = list.filter(o=>sentDay(o)===d).sort((a,b)=>b.created.localeCompare(a.created)||b.id-a.id);
+    return '<div class="sday"><b>📝 '+relDay(d)+' göndərilib</b><span>'+fmtD(d)+' · '+wday(d)+' · '+os.length+' sifariş</span></div>'+os.map(o=>orderCard(o)).join(""); }).join("");
+}
 const WD = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"];
 const wday = d => WD[new Date(d+"T00:00:00").getDay()];
 function guessFirm(o){
@@ -650,7 +665,7 @@ function render(){
 }
 
 // ----- Bu gün -----
-const WORK_TITLE = { "Sürücü Yusif":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Sürücü Ceyhun":"Bu gün alınacaqlar — aldıqca “✓ Aldım”, tapmasanız “✗ Tapmadım”", "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"Anbara qəbul olunan mallar · dadına və bişirildikdən sonrakı prosesə baxın", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
+const WORK_TITLE = { "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"Anbara qəbul olunan mallar · dadına və bişirildikdən sonrakı prosesə baxın", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
 function pipe(){
   const c = k => S.orders.filter(o=>stage(o).k===k && (k!=="ok" || daysTo(odate(o))>=-7)).length;
   return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="orders:'+k+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
@@ -660,7 +675,7 @@ function vHome(){
   let html = alertsHtml() + pipe();
   if (WORK_TITLE[role] || work.length){
     html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>' + (WORK_TITLE[role]?'<div class="hint">'+WORK_TITLE[role]+'</div>':"");
-    html += work.length ? work.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Hazırda iş yoxdur</div>';
+    html += work.length ? (role==="Satınalma" ? bySent(work) : work.map(o=>orderCard(o)).join("")) : '<div class="empty">✓ Hazırda iş yoxdur</div>';
   }
   if (role==="Satınalma"){
     html += waitingBlock("Cavab verin");
@@ -670,7 +685,7 @@ function vHome(){
     // Əsas səhifədə yalnız hələ gəlməmiş sifarişlər; qəbul olunanlar "Nəticələr"ə keçir
     const ids = new Set(work.map(o=>o.id));
     const mine = S.orders.filter(o=>o.wh===role && !ids.has(o.id) && isOpen(o)).sort((a,b)=>odate(a).localeCompare(odate(b)));
-    if (mine.length) html += '<h2>Gözlənilir <span class="cnt">'+mine.length+'</span></h2>' + mine.map(o=>orderCard(o)).join("");
+    if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine);
     html += waitingBlock("Satınalmanın cavabı gözlənilir");
     html += resSummary();
   } else if (role==="Rəhbərlik"){
@@ -731,7 +746,8 @@ function orderCard(o){
     const late = o.status==="yolda" && daysTo(o.eta)<0;
     promise = '<span>🚚 <b>'+etaTxt(o)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+(late?' <span class="pill p-bad">günü keçib</span>':"")+'</span>';
   }
-  const need = '<span>📝 '+shortT(new Date(o.created))+(o.status==="acik"?' · <span class="meta">gəliş gününü Satınalma təyin edəcək</span>'+(overdue(o)?' <span class="pill p-bad">1 gündür gözləyir</span>':""):"")+'</span>';
+  const sd = sentDay(o), rd = relDay(sd);
+  const need = '<span><span class="sent'+(rd==="Bu gün"?" new":"")+'">📝 '+rd+' · '+shortT(new Date(o.created)).slice(-5)+'</span> <span class="meta">'+fmtD(sd)+'</span>'+(o.status==="acik"?' · <span class="meta">gəliş gününü Satınalma təyin edəcək</span>'+(overdue(o)?' <span class="pill p-bad">'+Math.floor((Date.now()-new Date(o.created).getTime())/DAY)+' gündür gözləyir</span>':""):"")+'</span>';
   const sts = o.items.map(i=>itemState(o,i)), cnt = {ok:0,warn:0,bad:0,wait:0}; sts.forEach(s=>cnt[itemCat(s)]++);
   const bar = accepted ? '<div class="bar">'+["ok","warn","bad","wait"].map(k=>cnt[k]?'<i class="b-'+k+'" style="flex:'+cnt[k]+'"></i>':"").join("")+'</div>' : "";
   const extra = [o.group?"#"+o.group+" · hissə "+o.part:"", o.parent?"#"+o.parent+" sifarişinin davamı":""].filter(Boolean).join(" · ");
@@ -786,12 +802,6 @@ function itemRow(o,i,k,st){
       (op==="move" ? '<div class="dt" style="flex:1 1 100%"><select id="mv-'+key+'">'+destOpts("")+'</select><input type="date" id="mvd-'+key+'" value="'+(o.eta && daysTo(o.eta)>=0?o.eta:plusDays(1))+'" min="'+today()+'"></div><button class="pri" data-move="'+key+'">Keçir</button>' : "")+
       (op==="unav" ? '<input id="un-'+key+'" placeholder="Niyə yoxdur? (məs. firmada qurtarıb)" style="flex:1 1 100%"><button class="badb" data-unav="'+key+'">Bildir → Anbar və Rəhbərlik görsün</button>' : "")+'</div>');
   }
-  // Sürücü: aldım / tapmadım
-  if (role===o.supplier && isDriver(role) && o.status==="yolda"){
-    cells.push('<div class="cell"><span class="cl">Sürücü</span>'+(i.notFound?'<span class="pill p-bad">✗ tapılmadı</span>':
-      '<button class="sm'+(i.bought?" okb":"")+'" data-drv="'+key+'|ok">✓ Aldım</button><button class="sm badb" data-iact="'+key+'|nf">✗ Tapmadım</button>'+
-      (openAct[key]==="nf" ? '<input id="nf-'+key+'" placeholder="Qeyd (məs. bazarda yoxdur)" style="flex:1 1 100%"><button class="badb" data-drv="'+key+'|nf">Bildir → Satınalma</button>' : ""))+'</div>');
-  } else if (i.bought || i.notFound) cells.push('<div class="cell"><span class="cl">Sürücü</span>'+(i.notFound?'<span class="pill p-bad">✗ tapmadı</span>':'<span class="pill p-ok">✓ aldı</span>')+'</div>');
   // Satınalmanın cavabı
   const pr = problem(o,i);
   if (pr){
@@ -955,7 +965,6 @@ function acceptOrder(o){
     return x;
   });
   if (note && to.length){ list.forEach(x=>{ x.noteTo = to; }); notify(to, "note", "#"+o.id+" · Satınalma: "+note, "Gəliş "+list.map(x=>fmtD(x.eta)).join(", ")+" · mal gələndə baxın", [], o.id); }
-  list.filter(x=>isDriver(x.supplier)).forEach(x=>notify([x.supplier], "arr", "Sizə mal verildi · #"+x.id+" · "+fmtD(x.eta), x.wh+" üçün "+x.items.length+" mal", x.items.map(i=>pname(i.pid)+" "+i.qty), x.id));
   notify([o.wh,o.from].filter(r=>!to.includes(r)||!note), "ok", "Satınalma #"+o.id+" sifarişini təsdiqlədi", list.map(x=>fmtD(x.eta)+" · "+(x.supplier||"Firmasız")).join(" | ")+(note?" · “"+note+"”":""), [], o.id);
   save(); render();
   toast(list.length>1 ? list.length+" qrupa bölündü (firmalar və sürücülər) · "+o.wh+" gözləyir" : o.wh+" gözləyir · "+fmtD(list[0].eta));
@@ -972,7 +981,7 @@ function moveItem(key){
   if (remember[o.id] && !isDriver(to) && prod(i.pid)) prod(i.pid).firm = to;
   addLog(o,"Mal başqa yerə keçdi",pname(i.pid)+" → "+to+" · #"+x.id); addLog(x,"Mal əlavə olundu",pname(i.pid)+" ("+(o.supplier||"—")+" → "+to+") · "+fmtD(eta));
   if (!o.items.length){ o.status = "redd"; addLog(o,"Bütün mallar başqa yerə keçdi",""); }
-  notify([o.wh].concat(isDriver(to)?[to]:[]), "ok", "#"+x.id+" · "+pname(i.pid)+" indi "+to+"-dən gələcək", fmtD(eta), [], x.id);
+  notify([o.wh], "ok", "#"+x.id+" · "+pname(i.pid)+" indi "+to+"-dən gələcək", fmtD(eta), [], x.id);
   delete openAct[key]; save(); render(); toast(pname(i.pid)+" → "+to+" · "+fmtD(eta));
 }
 // ----- Satınalmanın cavabı: problemli mal nə vaxt gələcək və ya əvəzində nə gələcək -----
@@ -1031,7 +1040,7 @@ function vArch(){
       Object.keys(by).sort((a,b)=>isDriver(a)-isDriver(b)||a.localeCompare(b,"az")).map(sup=>'<div class="oc s-'+(by[sup].some(o=>o.items.some(i=>itemOutcome(o,i)[1]!=="p-ok"))?"bad":"ok")+'"><div class="oc-h"><span class="route">'+(isDriver(sup)?"🚚 ":"🏢 ")+esc(sup)+'</span>'+by[sup].map(o=>'<button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button>').join(" ")+'</div>'+
         '<div class="tbl"><table><thead><tr><th>Mal</th><th class="num">Sifariş</th><th class="num">Gəldi</th><th>Nəticə</th></tr></thead><tbody>'+
         by[sup].flatMap(o=>o.items.map(i=>{ const r = itemOutcome(o,i);
-          return '<tr class="'+rowCls(r)+'"><td>'+esc(pname(i.pid))+' <span class="meta">→ '+esc(o.wh)+'</span>'+(i.ans?'<div class="meta">→ '+(i.ans.sub?'əvəzinə '+esc(pname(i.ans.sub))+' · ':'')+fmtD(i.ans.date)+'</div>':"")+'</td><td class="num">'+esc(i.qty)+'</td><td class="num">'+fmtN(i.got||0)+'</td><td><span class="pill '+r[1]+'">'+esc(r[0])+'</span>'+(isDriver(sup)&&i.bought?' <span class="meta">aldı</span>':"")+'</td></tr>'; })).join("")+
+          return '<tr class="'+rowCls(r)+'"><td>'+esc(pname(i.pid))+' <span class="meta">→ '+esc(o.wh)+'</span>'+(i.ans?'<div class="meta">→ '+(i.ans.sub?'əvəzinə '+esc(pname(i.ans.sub))+' · ':'')+fmtD(i.ans.date)+'</div>':"")+'</td><td class="num">'+esc(i.qty)+'</td><td class="num">'+fmtN(i.got||0)+'</td><td><span class="pill '+r[1]+'">'+esc(r[0])+'</span>'+'</td></tr>'; })).join("")+
         '</tbody></table></div></div>').join("");
   }).join("")+(days.length>arDays?'<button data-armore="1">Daha əvvəlki günlər</button>':"");
 }
@@ -1067,7 +1076,7 @@ function statsHtml(a,b){
      ["Satınalmanın cavabı",s.ans+" (əvəzedici: "+s.subs+")"],["Cavabsız qalan",s.open.length],["Texnoloq: qəbul / rədd",s.techOk+" / "+s.tech.length],["Kataloqa yeni mal",s.newp.length]]
       .map(([l,v])=>'<tr><td>'+l+'</td><td class="num">'+v+'</td></tr>').join("")+'</tbody></table></div>'+
     '<h3>Firmalar və sürücülər</h3><div class="tbl card"><table><thead><tr><th></th><th class="num">Mal</th><th class="num">Tam</th><th class="num">Problem</th><th class="num">Keyf. ✗</th></tr></thead><tbody>'+
-    sups.map(k=>{ const x = s.sup[k]; return '<tr><td>'+(isDriver(k)?"🚚 ":"")+esc(k)+(isDriver(k)?'<div class="meta">aldı '+x.bought+' · tapmadı '+x.nf+'</div>':"")+'</td><td class="num">'+x.n+'</td><td class="num">'+x.full+'</td><td class="num">'+x.bad+'</td><td class="num">'+x.qc+'</td></tr>'; }).join("")+'</tbody></table></div>'+
+    sups.map(k=>{ const x = s.sup[k]; return '<tr><td>'+(isDriver(k)?"🚚 ":"")+esc(k)+'</td><td class="num">'+x.n+'</td><td class="num">'+x.full+'</td><td class="num">'+x.bad+'</td><td class="num">'+x.qc+'</td></tr>'; }).join("")+'</tbody></table></div>'+
     list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?'→ '+fmtD(r.i.ans.date).slice(0,5):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
     list("🔍 Keyfiyyət bəyənmədi", s.qc, r=>'<tr><td>'+esc(pname(r.i.pid))+'<div class="meta">'+esc(r.o.supplier||"Firmasız")+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.qcWhy||"")+'</td></tr>')+
     list("🧪 Texnoloq qəbul etmədi", s.tech, r=>'<tr><td>'+esc(pname(r.i.pid))+'</td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.techNote||"")+'</td></tr>')+
@@ -1115,10 +1124,10 @@ function vOrders(){
   const F = [["all","Hamısı"]].concat(STAGES).concat([["mine","Mənim"]]);
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
   const list = base.filter(o=> filter==="all" ? true : filter==="mine" ? (o.from===role || holder(o)===role) : stage(o).k===filter).filter(hit)
-    .sort((a,b)=> filter==="ok"||filter==="bad" ? odate(b).localeCompare(odate(a))||b.id-a.id : odate(a).localeCompare(odate(b))||a.id-b.id);
+    .sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
   return '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
     '<div class="seg">'+F.map(([k,l])=>'<button class="f-'+k+(filter===k?" on":"")+'" data-filter="'+k+'">'+l+(k!=="mine"?'<span class="k">'+cnt(k)+'</span>':"")+'</button>').join("")+'</div>'+
-    rangeBar() + (list.length ? list.map(o=>orderCard(o)).join("") : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
+    rangeBar() + (list.length ? bySent(list) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
 }
 
 // ----- Gəlişlər: həftə zolağı → seçilən günün hər malı -----
