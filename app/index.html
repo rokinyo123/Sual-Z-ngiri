@@ -458,6 +458,7 @@ const Cloud = (() => {
   function records(){
     const out = [];
     S.orders.forEach(o=>out.push(["order", String(o.id), o]));
+    (S.trash||[]).forEach(o=>out.push(["order", String(o.id), o]));
     S.products.forEach(p=>out.push(["product", String(p.id), p]));
     (S.alerts||[]).forEach(a=>out.push(["alert", a.id, a]));
     S.log.forEach(l=>{ if (!l.id) l.id = "l"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); out.push(["log", l.id, l]); });
@@ -481,7 +482,11 @@ const Cloud = (() => {
     if ((C.ver[k]||0) >= row.version) return false;
     C.ver[k] = row.version; C.snap[k] = JSON.stringify(d);
     const put = (arr, x, eq) => { const i = arr.findIndex(eq); i>=0 ? arr[i] = x : arr.push(x); };
-    if (row.kind==="order") put(S.orders, d, x=>String(x.id)===row.id);
+    if (row.kind==="order"){
+      S.trash = S.trash || [];
+      const del = (arr) => { const i = arr.findIndex(x=>String(x.id)===row.id); if (i>=0) arr.splice(i,1); };
+      if (d.deleted){ del(S.orders); put(S.trash, d, x=>String(x.id)===row.id); } else { del(S.trash); put(S.orders, d, x=>String(x.id)===row.id); }
+    }
     else if (row.kind==="product") put(S.products, d, x=>String(x.id)===row.id);
     else if (row.kind==="alert") put(S.alerts = S.alerts||[], d, x=>x.id===row.id);
     else if (row.kind==="log") put(S.log, d, x=>x.id===row.id);
@@ -598,7 +603,18 @@ const num = v => parseFloat(String(v).replace(",",".")) || 0;
 const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(n).trim().toLowerCase()); return p ? p.id : ""; };
 const live = () => S.products.filter(p=>!p.deleted);
 const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc([p.unit,p.firm].filter(Boolean).join(" · "))+'</option>').join("")+'</datalist>';
-const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.map(o=>Number(o.id)||0)) + 1);
+const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.concat(S.trash||[]).map(o=>Number(o.id)||0)) + 1);
+const isAdminUser = () => ONLINE ? !!(Cloud.me()||{}).is_admin : role==="Admin";
+// Admin sifarişi silir: hamının ekranından çıxır, bazada "silinib" qeydi ilə qalır (geri qaytarmaq olar)
+function deleteOrder(id){
+  if (!isAdminUser()) return toast("Sifarişi yalnız Admin silə bilər");
+  const k = S.orders.findIndex(o=>o.id===id); if (k<0) return;
+  const o = S.orders[k];
+  addLog(o, "Admin sifarişi sildi", "");
+  o.deleted = { by: role, at: new Date().toISOString() };
+  S.orders.splice(k,1); (S.trash = S.trash || []).push(o);
+  save(); render(); toast("Sifariş #"+id+" silindi");
+}
 const newPid = () => Math.max(0,...S.products.map(x=>x.id))+1;
 // Sifarişdə yazılan ad kataloqda yoxdursa, kataloqa "yeni" kimi əlavə olunur — Admin sonra düzəldir
 function ensureProd(name, firm){
@@ -1046,7 +1062,8 @@ function more(o){
     '<input id="c-'+o.id+'" placeholder="Şərh yazın">'+whoChips("c"+o.id,[],o)+'<div class="row"><button class="pri" data-act="comment" data-id="'+o.id+'">Şərhi göndər</button>'+
     '<label class="btnlink">📷<input type="file" accept="image/*" data-photo="'+o.id+'" class="fpick"></label>'+
     '<label class="btnlink">📎<input type="file" data-file="'+o.id+'" class="fpick"></label>'+
-    (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+'</div>'+
+    (role==="Rəhbərlik" && isOpen(o) ? '<button class="sm badb" data-act="cancel" data-id="'+o.id+'">Ləğv et</button>' : "")+
+    (isAdminUser() ? '<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sifarişi sil</button>' : "")+'</div>'+
     '<div class="log">'+o.history.map(x=>'<div><span class="meta">'+fmtT(x.at)+'</span> · <b>'+esc(x.by)+'</b> — '+esc(x.act)+(x.note?': '+esc(x.note):"")+'</div>').join("")+'</div></div></details>';
 }
 document.addEventListener("toggle", e => { const d=e.target; if (d.dataset && d.dataset.more){ const id=Number(d.dataset.more); d.open ? openMore.add(id) : openMore.delete(id); } }, true);
@@ -1834,6 +1851,7 @@ $("main").addEventListener("click", e => {
   if (t.id==="install"){ installEvt && installEvt.prompt(); return; }
   if (t.id==="notif"){ try { Notification.requestPermission().then(()=>render()); } catch(e){} return; }
   if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Bütün sifarişlər silindi"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
+  if (d.act==="del") return sure(t, ()=>deleteOrder(Number(d.id)));
   if (d.act) orderAct(d.act, Number(d.id));
 });
 $("main").addEventListener("change", async e => {
@@ -1976,8 +1994,8 @@ async function importFirmMap(file){
 // ----- Admin: kataloq əməliyyatları -----
 function sure(btn, fn){
   if (btn.dataset.sure) return fn();
-  btn.dataset.sure = 1; btn.textContent = "Əminsiniz?";
-  setTimeout(()=>{ if (btn.isConnected){ delete btn.dataset.sure; btn.textContent = btn.dataset.pdel ? "Sil" : "×"; } }, 4000);
+  btn.dataset.sure = 1; btn.textContent = btn.dataset.act==="del" ? "Əminsiniz? Yenidən basın" : "Əminsiniz?";
+  setTimeout(()=>{ if (btn.isConnected){ delete btn.dataset.sure; btn.textContent = btn.dataset.act==="del" ? "🗑 Sifarişi sil" : btn.dataset.pdel ? "Sil" : "×"; } }, 4000);
 }
 const now = () => new Date().toISOString();
 function addProduct(){
