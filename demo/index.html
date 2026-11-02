@@ -284,9 +284,10 @@ span.thumb.empty{cursor:default}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
 .net{font-size:13px;opacity:.85;min-width:14px;text-align:center}
-.outb{background:var(--brand-2);color:var(--brand-fg);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:5px 10px;font-size:13px}
+.outb{background:var(--brand-fg);color:var(--brand);border:none;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 .who select:disabled{opacity:1}
 #role[hidden]{display:none}
+@media (max-width:420px){.who select{max-width:128px;padding:6px 8px} .brand b{font-size:19px}}
 .sday{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding:10px 2px 4px;margin-top:4px}
 .sday b{font-family:var(--display);font-size:16px} .sday span{font-size:12px;color:var(--muted)}
 .sent{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--sunk);color:var(--fg)}
@@ -841,7 +842,7 @@ function renderRole(){
   const list = me && !me.is_admin ? [me.dept] : DEPTS;
   $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
   $("role").disabled = list.length < 2;
-  if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="out" class="outb" title="Çıxış">Çıx</button>'); $("out").onclick = () => Cloud.logout(); }
+  if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="out" class="outb" title="Hesabdan çıxış">🚪 Çıxış</button>'); $("out").onclick = () => Cloud.logout(); }
 }
 function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = "home";
@@ -891,7 +892,7 @@ function vHome(){
   }
   html += upcoming();
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Məlumatlar ortaq bazada saxlanılır':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · Məlumatlar ortaq bazada saxlanılır':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1756,6 +1757,7 @@ $("main").addEventListener("click", e => {
   if (d.fmdel) return sure(t, ()=>delFirm(d.fmdel));
   if (t.id==="fAdd") return addFirm();
   if (t.id==="pAdd") return addProduct();
+  if (t.id==="out2"){ Cloud.logout(); return; }
   if (t.id==="install"){ installEvt && installEvt.prompt(); return; }
   if (t.id==="notif"){ try { Notification.requestPermission().then(()=>render()); } catch(e){} return; }
   if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Bütün sifarişlər silindi"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
