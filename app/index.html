@@ -535,16 +535,16 @@ const Cloud = (() => {
   function out(msg){ C.sess = null; C.me = null; keepSess(); loginView(msg); throw new Error("stop"); }
   // Giriş siyahısı: şöbə adı → istifadəçi adı (Supabase-də <ad>@almond.local)
   const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["admin","Admin"]];
-  const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || "anbar"; } catch(e){ return "anbar"; } };
+  const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || ""; } catch(e){ return ""; } };
   function loginView(msg){
     $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true;
     $("main").innerHTML = '<form class="card" id="lf" style="max-width:380px;margin:8vh auto 0"><h2>Daxil olun</h2>'+
       '<div class="hint">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>'+
-      '<select id="lu" aria-label="Şöbə">'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>'+
+      '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>'+
       '<input id="lp" type="password" inputmode="numeric" autocomplete="current-password" placeholder="4 rəqəmli parol">'+
       '<button class="pri big" id="lb">Daxil ol</button>'+(msg?'<div class="hint rs">'+esc(msg)+'</div>':"")+'</form>';
     $("lf").onsubmit = async e => { e.preventDefault();
-      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u || !p) return toast("Parolu yazın");
+      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u) return toast("Şöbəni seçin"); if (!p) return toast("Parolu yazın");
       try { localStorage.setItem("almond-last-login", u); } catch(e){}
       $("lb").disabled = true;
       // 4 rəqəmli PIN → Supabase parolu "almond"+PIN (Supabase ən az 6 simvol istəyir)
