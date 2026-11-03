@@ -233,6 +233,9 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .opts button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
 .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 104px 34px;gap:6px;align-items:center}
+.it .depsel{grid-column:1 / 3}
+.it.nodep{border-left:3px solid #c0392b;padding-left:4px}
+.deptag{display:inline-block;font-size:12px;font-weight:600;color:#5C2E0E;background:#F3E6D6;border-radius:8px;padding:1px 7px;white-space:nowrap}
 .it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
 .imp{background:var(--wait-bg);border-radius:9px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
 .checks{display:flex;flex-wrap:wrap;gap:6px}
@@ -605,6 +608,12 @@ const pidByName = n => { const p = live().find(x=>x.name.toLowerCase()===String(
 const live = () => S.products.filter(p=>!p.deleted);
 const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc([p.unit,p.firm].filter(Boolean).join(" · "))+'</option>').join("")+'</datalist>';
 const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.concat(S.trash||[]).map(o=>Number(o.id)||0)) + 1);
+// Əsas Anbar sifarişində hər mal hansı istehsal şöbəsinə veriləcək
+const SOBELER = ["Mayalı","Mətbəx","Krem biskvit","Xüsusi","Desert","Ballı napolyon","Yığım","Kruassan","İlkin emal","Dekor","Dondurma"];
+const needDep = () => role==="Anbar";
+const depTag = i => i.dep ? ' <span class="deptag">→ '+esc(i.dep)+'</span>' : "";
+const depSel = (attr, v, ph) => '<select class="depsel" '+attr+' aria-label="Hansı şöbəyə"><option value="">'+(ph||"— Hansı şöbəyə? —")+'</option>'+SOBELER.map(d=>'<option'+(v===d?" selected":"")+'>'+d+'</option>').join("")+'</select>';
+const depOf = n => { const f = foldName(n); return SOBELER.find(d=>f.includes(foldName(d))) || ""; };
 const isAdminUser = () => ONLINE ? !!(Cloud.me()||{}).is_admin : role==="Admin";
 // Admin sifarişi silir: hamının ekranından çıxır, bazada "silinib" qeydi ilə qalır (geri qaytarmaq olar)
 // Göndərən şöbə öz sifarişini Satınalma qəbul edənə qədər silə və düzəldə bilər
@@ -976,7 +985,7 @@ function orderCard(o){
   const sts = o.items.map(i=>itemState(o,i)), cnt = {ok:0,warn:0,bad:0,wait:0}; sts.forEach(s=>cnt[itemCat(s)]++);
   const bar = accepted ? '<div class="bar">'+["ok","warn","bad","wait"].map(k=>cnt[k]?'<i class="b-'+k+'" style="flex:'+cnt[k]+'"></i>':"").join("")+'</div>' : "";
   const extra = [o.group?"#"+o.group+" · hissə "+o.part:"", o.parent?"#"+o.parent+" sifarişinin davamı":""].filter(Boolean).join(" · ");
-  const rows = o.status==="acik" ? '<div class="chips">'+o.items.map(i=>'<span class="ic">'+thumb(i.pid,1)+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <b>'+esc(i.qty)+'</b>'+(i.added?' <span class="addtag">+</span>':"")+'</span>').join("")+'</div>'
+  const rows = o.status==="acik" ? '<div class="chips">'+o.items.map(i=>'<span class="ic">'+thumb(i.pid,1)+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <b>'+esc(i.qty)+'</b>'+depTag(i)+(i.added?' <span class="addtag">+</span>':"")+'</span>').join("")+'</div>'
     : role==="Texnoloq" && o.items.some(i=>i.tech) ? '<div class="irows">'+o.items.map((i,k)=>i.tech?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+(o.items.some(i=>!i.tech)?'<div class="meta">+ '+o.items.filter(i=>!i.tech).length+' başqa mal (Texnoloqa aid deyil)</div>':"")
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
@@ -1034,7 +1043,7 @@ function itemRow(o,i,k,st){
     else if (role==="Satınalma" && canAnswer(o,i)) cells.push('<div class="cell ans"><span class="cl">Satınalmanın cavabı</span>'+ansForm(key,i)+'</div>');
     else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir'+(canAnswer(o,i)?"":" · "+waitWhy(o,i))+'</span></div>');
   }
-  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
+  return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+depTag(i)+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
 }
 const ansForm = (key,i) => '<div class="dt"><input type="date" id="ad-'+key+'" value="'+plusDays(1)+'" min="'+today()+'" aria-label="Nə vaxt gələcək"><input id="aq-'+key+'" value="'+esc(remainQty(i))+'" aria-label="Miqdar"></div>'+
   '<input id="as-'+key+'" list="plist" placeholder="🔄 Əvəzində başqa mal (istəyə görə)">'+datalistOnce()+
@@ -1148,8 +1157,8 @@ function addSend(id){
 const editDraft = {};
 function editBox(o){
   const d = editDraft[o.id];
-  return '<div class="box"><h3>Sifarişi düzəlt</h3>'+datalist()+
-    d.map((r,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adı" data-ed="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ed="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'"><button class="sm badb" data-edrow="'+o.id+'-'+k+'" aria-label="Malı sil">✕</button></div>').join("")+
+  return '<div class="box items-edit"><h3>Sifarişi düzəlt</h3>'+datalist()+
+    d.map((r,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adı" data-ed="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ed="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'"><button class="sm badb" data-edrow="'+o.id+'-'+k+'" aria-label="Malı sil">✕</button>'+(o.from==="Anbar"?depSel('data-ed="'+o.id+'-'+k+'-dep"', r.dep||""):"")+'</div>').join("")+
     '<div class="row"><button class="sm" data-edmore="'+o.id+'">+ Sətir</button></div>'+
     '<div class="row"><button class="pri" data-edsave="'+o.id+'">Yadda saxla</button><button data-edcancel="'+o.id+'">Ləğv et</button></div></div>';
 }
@@ -1160,10 +1169,10 @@ function editSave(id){
   if (rows.some(r=>!r.n.trim())) return toast("Malın adını yazın");
   const noQ = rows.find(r=>!r.q.trim()); if (noQ) return toast(noQ.n+": miqdarı yazın");
   if (!rows.length) return toast("Heç bir mal qalmadı — sifarişi silmək üçün “🗑 Sil” basın");
-  const old = o.items.slice(), before = old.map(i=>pname(i.pid)+" "+i.qty).join(", ");
+  const old = o.items.slice(), before = old.map(i=>pname(i.pid)+" "+i.qty+(i.dep?" → "+i.dep:"")).join(", ");
   o.items = rows.map(r=>{ const pid = ensureProd(r.n), k = old.findIndex(i=>i.pid===pid), base = k>=0 ? old.splice(k,1)[0] : {};
-    return Object.assign({}, base, {pid, qty:withUnit(r.q,pid)}); });
-  const after = o.items.map(i=>pname(i.pid)+" "+i.qty).join(", ");
+    const x = Object.assign({}, base, {pid, qty:withUnit(r.q,pid)}); if (r.dep) x.dep = r.dep; else delete x.dep; return x; });
+  const after = o.items.map(i=>pname(i.pid)+" "+i.qty+(i.dep?" → "+i.dep:"")).join(", ");
   delete editDraft[id];
   if (after!==before){ o.last_move = new Date().toISOString(); addLog(o,"Sifariş düzəldildi",after); save(); toast("Sifariş #"+id+" yeniləndi"); }
   render();
@@ -1618,14 +1627,14 @@ async function addDraftPhotos(list){
 const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button>'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'</div>').join("");
   return '<div class="card">'+
     '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar → Keyfiyyət → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
     '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
       '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
-      importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
+      importInfo()+(needDep()?'<div class="row"><span class="meta">Hər malın altında hansı şöbəyə veriləcəyini seçin. Hamısı eyni şöbəyədirsə:</span>'+depSel('id="depAll" style="width:auto"',"","Hamısına bir şöbə seç…")+'</div>':"")+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
     '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
     '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map((p,k)=>'<span class="ph"><img src="'+p+'" alt="" data-big="d-'+k+'"><button class="phx" data-phdel="d-'+k+'" aria-label="Şəkli sil">✕</button></span>').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
     '<button class="pri big" id="send">Satınalmaya göndər</button><div class="hint" id="nErr"></div>'+
@@ -1640,13 +1649,18 @@ function bindNew(){
   if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   if ($("sendSheets")) $("sendSheets").onclick = sendSheets;
   $("send").onclick = sendOrder;
+  if ($("depAll")) $("depAll").onchange = e => { const v = e.target.value; if (!v) return; draft.items.forEach(i=>{ if (!i.dep) i.dep = v; }); render(); toast("Şöbə seçilməyən mallara: "+v); };
 }
 function sendOrder(){
   draft.items.forEach(i=>{ if (!i.pid && (i.pname||"").trim() && String(i.qty).trim()){
     i.pid = ensureProd(i.pname, i.firm);
   } });
   const tech = role==="Texnoloq";
+  if (needDep()){ const nd = draft.items.filter(i=>i.pid && String(i.qty).trim() && !i.dep);
+    if (nd.length){ document.querySelectorAll(".items-edit .it").forEach((r,k)=>{ const i = draft.items[k]; if (i && i.pid && String(i.qty).trim() && !i.dep) r.classList.add("nodep"); });
+      return $("nErr").textContent = nd.length+" mal üçün hansı şöbəyə veriləcəyini seçin: "+nd.slice(0,3).map(i=>pname(i.pid)).join(", ")+(nd.length>3?"…":""); } }
   const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>{ const x = {pid:Number(i.pid),qty:withUnit(i.qty,Number(i.pid))};
+    if (i.dep) x.dep = i.dep;
     if (i.firm && !pfirm(x.pid)) x.firm = i.firm;   // Excel-də firma başlığı varsa və kataloqda firma yoxdursa
     if (tech) x.tech = true; return x; });
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
@@ -1671,7 +1685,7 @@ function sendSheets(){
   draft.xls.sheets.forEach(n=>{
     const rows = parseOrderSheet(draft.wb.Sheets[n]); if (!rows.length) return;
     const items = rows.map(r=>{ const pid = matchPid(r.name) || ensureProd(r.name, r.firm); const x = { pid:Number(pid), qty:withUnit(r.qty, Number(pid)) };
-      if (r.firm && !pfirm(x.pid)) x.firm = r.firm; if (tech) x.tech = true; return x; });
+      if (r.firm && !pfirm(x.pid)) x.firm = r.firm; if (tech) x.tech = true; if (needDep() && depOf(n)) x.dep = depOf(n); return x; });
     const one = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(one, draft.wb.Sheets[n], n.slice(0,31));
     const b64 = XLSX.write(one,{type:"base64",bookType:"xlsx"});
     const file = { name:draft.xls.name.replace(/\.[^.]+$/,"")+" — "+n+".xlsx", size:Math.round(b64.length*3/4), data:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64, xls:true, by:role, at:new Date().toISOString() };
@@ -1861,7 +1875,7 @@ $("main").addEventListener("click", e => {
   if (d.nt){ draft.type=d.nt; render(); return; }
   if (d.del){ draft.items.splice(Number(d.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
   // Sifarişə əlavə
-  if (d.editopen){ const o = S.orders.find(x=>x.id===Number(d.editopen)); if (canOwnEdit(o)){ editDraft[o.id] = o.items.map(i=>({n:pname(i.pid), q:String(i.qty)})); render(); } return; }
+  if (d.editopen){ const o = S.orders.find(x=>x.id===Number(d.editopen)); if (canOwnEdit(o)){ editDraft[o.id] = o.items.map(i=>({n:pname(i.pid), q:String(i.qty), dep:i.dep||""})); render(); } return; }
   if (d.edmore){ editDraft[d.edmore].push({n:"",q:""}); render(); return; }
   if (d.edrow){ const [id,k]=d.edrow.split("-"); editDraft[id].splice(Number(k),1); if (!editDraft[id].length) editDraft[id].push({n:"",q:""}); render(); return; }
   if (d.edcancel){ delete editDraft[d.edcancel]; render(); return; }
@@ -1929,6 +1943,7 @@ function setItem(el){
   const it = draft.items[Number(el.dataset.ii)];
   if (el.dataset.f==="pname"){ it.pname = el.value; it.pid = pidByName(el.value);
     const q = el.parentNode.querySelector('[data-f="qty"]'); if (q) q.placeholder = it.pid && punit(it.pid) ? punit(it.pid) : "15 kq"; }
+  else if (el.dataset.f==="dep"){ it.dep = el.value; el.closest(".it").classList.remove("nodep"); }
   else it.qty = el.value;
 }
 // Yazan kimi rəng: tam — yaşıl, az — sarı, 0 — qırmızı
