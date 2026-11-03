@@ -232,8 +232,10 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .opts button{border-radius:999px;padding:5px 12px;font-size:13px;background:var(--surface)}
 .opts button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
 .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
-.items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 104px 34px;gap:6px;align-items:center}
-.items-edit .it.wdep{grid-template-columns:minmax(0,2fr) 46px minmax(0,1fr) 28px;gap:4px}
+.items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 110px 34px;gap:6px;align-items:center}
+.items-edit .it.wdep{grid-template-columns:minmax(0,1.5fr) 82px minmax(0,1fr) 28px;gap:4px}
+.items-edit .it [data-f=qty],.items-edit .it [data-ed$="-q"]{text-align:center;font-weight:600}
+.blkh{font-size:13px;font-weight:700;color:var(--muted);border-top:2px dashed var(--line);padding-top:6px;margin-top:2px}
 .it.wdep input,.it.wdep select{padding-left:6px;padding-right:4px}
 .it .depsel{min-width:0;font-size:13px}
 .it.nodep{border-left:3px solid #c0392b;padding-left:4px}
@@ -611,7 +613,7 @@ const live = () => S.products.filter(p=>!p.deleted);
 const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+esc(p.name)+'">'+esc([p.unit,p.firm].filter(Boolean).join(" · "))+'</option>').join("")+'</datalist>';
 const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.concat(S.trash||[]).map(o=>Number(o.id)||0)) + 1);
 // Əsas Anbar sifarişində hər mal hansı istehsal şöbəsinə veriləcək
-const SOBELER = ["Mayalı","Mətbəx","Krem biskvit","Xüsusi","Desert","Ballı napolyon","Yığım","Kruassan","İlkin emal","Dekor","Dondurma"];
+const SOBELER = ["Mayalı","Mətbəx","Krem biskvit","Xüsusi","Desert","Ballı napolyon","Yığım","Kruassan","İlkin emal","Dekor","Dondurma","Quru"];
 const needDep = () => role==="Anbar";
 const depTag = i => i.dep ? ' <span class="deptag">→ '+esc(i.dep)+'</span>' : "";
 const depSel = (attr, v, ph) => '<select class="depsel" '+attr+' aria-label="Hansı şöbəyə"><option value="">'+(ph||"Şöbə…")+'</option>'+SOBELER.map(d=>'<option'+(v===d?" selected":"")+'>'+d+'</option>').join("")+'</select>';
@@ -1441,19 +1443,24 @@ function vDays(){
 const normName = n => String(n).toLowerCase().replace(/i̇/g,"i").replace(/\s+/g," ").trim();
 const normQty = q => String(q).trim().replace(/^(\d+(?:[.,]\d+)?)\s*([^\d\s.,].*)$/,"$1 $2");
 const findFirm = h => { const n = normName(h); return n ? S.firms.find(f=>normName(f).startsWith(n) || n.startsWith(normName(f))) || "" : ""; };
+// Exceldə boş sətirlə ayrılmış mal dəstələri ayrı-ayrı sifariş olur (məs. tərəvəz bir yerdən, süd məhsulları başqa yerdən)
+const ord = n => n+"-"+(["cu","ci","ci","cü","cü","ci","cı","ci","ci","cu"][n%10]);
+function blocker(out){ let b = 0, used = false;
+  return { cut(){ if (used){ b++; used = false; } }, push(x){ x.blk = b; used = true; out.push(x); } }; }
 function parseOrderSheet(ws){
-  const A = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
+  const A = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:"",blankrows:true});
   const txt = v => String(v??"").trim();
-  const out = [];
+  const out = [], B = blocker(out);
   const heads = [];
   A.forEach((row,r)=>row.forEach((v,c)=>{ if (normName(v)==="məhsul") heads.push([r,c]); }));
   if (heads.length){
     heads.forEach(([r,c])=>{
-      const firm = findFirm(txt((A[r-1]||[])[c]));
-      for (let rr=r+1; A[rr] && txt(A[rr][c]); rr++){
+      const firm = findFirm(txt((A[r-1]||[])[c])); B.cut();
+      for (let rr=r+1; A[rr]; rr++){
         const n = txt(A[rr][c]), q = txt(A[rr][c+1]);
         if (normName(n)==="məhsul") break;
-        if (q) out.push({name:n, qty:normQty(q), firm});
+        if (!n || !q){ B.cut(); continue; }
+        B.push({name:n, qty:normQty(q), firm});
       }
     });
     return out;
@@ -1461,12 +1468,13 @@ function parseOrderSheet(ws){
   const h = parseHeader(A); if (h.length) return h;
   const W = Math.max(0,...A.map(r=>r.length));
   for (let c=0; c<W; c+=2){
-    let firm = "";
+    let firm = ""; B.cut();
     A.forEach(row=>{ const n = txt(row[c]), q = txt(row[c+1]);
+      if (!n && !q){ B.cut(); return; }
       if (!n || SKIPW.test(n) || isNumC(n)) return;
-      if (!q){ firm = findFirm(n); return; }
+      if (!q){ firm = findFirm(n); B.cut(); return; }
       if (!/\d/.test(q)) return;
-      out.push({name:n, qty:normQty(q), firm});
+      B.push({name:n, qty:normQty(q), firm});
     });
   }
   return out.length ? out : parseRows(A);
@@ -1484,20 +1492,21 @@ function parseHeader(A){
     const q = row.findIndex(c=>/^(miqdar|say|sifariş|sifaris|kəmiyyət|kemiyyet|lazım|lazim|tələb|teleb)/.test(c));
     if (n>=0 && q>=0){ hr = r; cN = n; cQ = q; cU = row.findIndex(c=>/^(vahid|ölçü|olcu|ö\/v|ö\\v|ed\.?|əd\.?)/.test(c)); }
   }
+  const B = blocker(out);
   if (hr>=0){
-    A.slice(hr+1).forEach(r=>{ const n = txt(r[cN]), q = txt(r[cQ]); if (!n || !q || SKIP.test(n) || isNum(n)) return;
-      out.push({ name:n, qty: normQty(cU>=0 && txt(r[cU]) && isNum(q) ? q+" "+txt(r[cU]) : q), firm:"" }); });
+    A.slice(hr+1).forEach(r=>{ const n = txt(r[cN]), q = txt(r[cQ]); if (!n && !q){ B.cut(); return; } if (!n || !q || SKIP.test(n) || isNum(n)) return;
+      B.push({ name:n, qty: normQty(cU>=0 && txt(r[cU]) && isNum(q) ? q+" "+txt(r[cU]) : q), firm:"" }); });
   }
   return out;
 }
 function parseRows(A){
-  const txt = v => String(v??"").trim(), out = [], isNum = isNumC, SKIP = SKIPW;
+  const txt = v => String(v??"").trim(), out = [], isNum = isNumC, SKIP = SKIPW, B = blocker(out);
   A.forEach(r=>{
-    const cells = r.map(txt); const ni = cells.findIndex(c=>c && /[a-zəıöüçşğ]/i.test(c) && !isNum(c));
+    const cells = r.map(txt); if (!cells.some(Boolean)){ B.cut(); return; } const ni = cells.findIndex(c=>c && /[a-zəıöüçşğ]/i.test(c) && !isNum(c));
     if (ni<0 || SKIP.test(cells[ni]) || cells[ni].length<2) return;
     const qi = cells.findIndex((c,k)=>k>ni && isNum(c)); if (qi<0) return;
     const u = cells[qi+1] && /^[a-zəıöüçşğ.]{1,8}$/i.test(cells[qi+1]) ? " "+cells[qi+1] : "";
-    out.push({ name:cells[ni], qty:normQty(cells[qi]+u), firm:"" });
+    B.push({ name:cells[ni], qty:normQty(cells[qi]+u), firm:"" });
   });
   return out;
 }
@@ -1555,7 +1564,7 @@ async function addDraftFiles(list){
 function applySheet(){
   const rows = parseOrderSheet(draft.wb.Sheets[draft.sheet]);
   draft.items = draft.items.filter(i=>i.src!=="xls" && (i.pid || (i.pname||"").trim()));
-  rows.forEach(r=>{ const pid = matchPid(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, src:"xls", firm:r.firm}); });
+  rows.forEach(r=>{ const pid = matchPid(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, imp:true, src:"xls", firm:r.firm, blk:r.blk}); });
   if (!draft.items.length) draft.items = [{pid:"",qty:""}];
   if (/həftəlik/i.test(draft.sheet)) draft.type = "Həftəlik";
   draft.files = draft.files.filter(x=>!x.xls);
@@ -1629,7 +1638,8 @@ async function addDraftPhotos(list){
 const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const nb = new Set(draft.items.map(i=>i.blk||0)).size;
+  const items = datalist() + draft.items.map((it,k)=>(nb>1 && (k===0 || (draft.items[k-1].blk||0)!==(it.blk||0)) ? '<div class="blkh">'+ord((it.blk||0)+1)+' dəstə · ayrıca sifariş</div>' : "")+'<div class="it'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   return '<div class="card">'+
     '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar → Keyfiyyət → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
     '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>'+
@@ -1644,7 +1654,7 @@ function vNew(){
 }
 function bindNew(){
   $("nNote").oninput = e => draft.note = e.target.value;
-  $("addItem").onclick = () => { draft.items.push({pid:"",qty:""}); render(); };
+  $("addItem").onclick = () => { const l = draft.items[draft.items.length-1]; draft.items.push({pid:"",qty:"",blk:l?l.blk:0}); render(); };
   $("nFile").onchange = e => addDraftFiles(e.target.files);
   $("nXls").onchange = e => addDraftFiles(e.target.files);
   $("nPhoto").onchange = e => addDraftPhotos(e.target.files);
@@ -1661,13 +1671,17 @@ function sendOrder(){
     if (nd.length){ document.querySelectorAll(".items-edit .it").forEach((r,k)=>{ const i = draft.items[k]; if (i && i.pid && String(i.qty).trim() && !i.dep) r.classList.add("nodep"); });
       return $("nErr").textContent = nd.length+" mal üçün hansı şöbəyə veriləcəyini seçin: "+nd.slice(0,3).map(i=>pname(i.pid)).join(", ")+(nd.length>3?"…":""); } }
   const items = draft.items.filter(i=>i.pid && String(i.qty).trim()).map(i=>{ const x = {pid:Number(i.pid),qty:withUnit(i.qty,Number(i.pid))};
-    if (i.dep) x.dep = i.dep;
+    if (i.dep) x.dep = i.dep; x.blk = i.blk||0;
     if (i.firm && !pfirm(x.pid)) x.firm = i.firm;   // Excel-də firma başlığı varsa və kataloqda firma yoxdursa
     if (tech) x.tech = true; return x; });
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
-  const o = makeOrder(items, draft.note.trim(), draft.photos.slice(), draft.files.slice());
+  const blks = [...new Set(items.map(i=>i.blk))].sort((a,b)=>a-b);
+  const made = blks.map((b,n)=>{ const its = items.filter(i=>i.blk===b); its.forEach(i=>delete i.blk);
+    return makeOrder(its, [draft.note.trim(), blks.length>1?ord(n+1)+" dəstə":""].filter(Boolean).join(" · "), draft.photos.slice(), draft.files.slice()); });
+  const o = made[0];
   save();
   draft = newDraft();
+  if (made.length>1){ tab = "home"; render(); return toast(made.length+" sifariş Satınalmaya göndərildi: "+made.map(x=>"#"+x.id).join(", ")); }
   if (tech) notify(["Anbar"], "note", "Texnoloq yeni mal sifariş etdi · #"+o.id, "Satınalma təmin edəcək; mal gələndə Keyfiyyət yoxlayacaq, Anbar qəbul edəcək, sonra Texnoloq dadına baxacaq", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   const nf = o.items.filter(i=>!dest(i)).length;
   tab = "home"; render(); toast("Sifariş #"+o.id+" Satınalmaya göndərildi"+(nf?" · "+nf+" malın firması kataloqda yoxdur, Satınalma seçəcək":""));
@@ -1684,13 +1698,16 @@ function makeOrder(items, note, photos, files){
 function sendSheets(){
   const tech = role==="Texnoloq", made = [];
   draft.xls.sheets.forEach(n=>{
-    const rows = parseOrderSheet(draft.wb.Sheets[n]); if (!rows.length) return;
+    const all = parseOrderSheet(draft.wb.Sheets[n]); if (!all.length) return;
+    const bl = [...new Set(all.map(r=>r.blk||0))];
+    bl.forEach((b,bi)=>{ const rows = all.filter(r=>(r.blk||0)===b);
     const items = rows.map(r=>{ const pid = matchPid(r.name) || ensureProd(r.name, r.firm); const x = { pid:Number(pid), qty:withUnit(r.qty, Number(pid)) };
       if (r.firm && !pfirm(x.pid)) x.firm = r.firm; if (tech) x.tech = true; if (needDep() && depOf(n)) x.dep = depOf(n); return x; });
     const one = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(one, draft.wb.Sheets[n], n.slice(0,31));
     const b64 = XLSX.write(one,{type:"base64",bookType:"xlsx"});
     const file = { name:draft.xls.name.replace(/\.[^.]+$/,"")+" — "+n+".xlsx", size:Math.round(b64.length*3/4), data:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+b64, xls:true, by:role, at:new Date().toISOString() };
-    made.push(makeOrder(items, [draft.note.trim(), "Excel: "+n].filter(Boolean).join(" · "), draft.photos.slice(), [file]));
+    made.push(makeOrder(items, [draft.note.trim(), "Excel: "+n+(bl.length>1?" · "+ord(bi+1)+" dəstə":"")].filter(Boolean).join(" · "), draft.photos.slice(), [file]));
+    });
   });
   if (!made.length) return toast("Vərəqlərdə mal tapılmadı");
   save(); draft = newDraft(); tab = "home"; render();
