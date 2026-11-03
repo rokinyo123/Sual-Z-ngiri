@@ -233,7 +233,9 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .opts button.on{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
 .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .items-edit .it{display:grid;grid-template-columns:minmax(0,1fr) 104px 34px;gap:6px;align-items:center}
-.it .depsel{grid-column:1 / 3}
+.items-edit .it.wdep{grid-template-columns:minmax(0,2fr) 46px minmax(0,1fr) 28px;gap:4px}
+.it.wdep input,.it.wdep select{padding-left:6px;padding-right:4px}
+.it .depsel{min-width:0;font-size:13px}
 .it.nodep{border-left:3px solid #c0392b;padding-left:4px}
 .deptag{display:inline-block;font-size:12px;font-weight:600;color:#5C2E0E;background:#F3E6D6;border-radius:8px;padding:1px 7px;white-space:nowrap}
 .it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
@@ -612,7 +614,7 @@ const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.concat(S.trash||[]).ma
 const SOBELER = ["Mayalı","Mətbəx","Krem biskvit","Xüsusi","Desert","Ballı napolyon","Yığım","Kruassan","İlkin emal","Dekor","Dondurma"];
 const needDep = () => role==="Anbar";
 const depTag = i => i.dep ? ' <span class="deptag">→ '+esc(i.dep)+'</span>' : "";
-const depSel = (attr, v, ph) => '<select class="depsel" '+attr+' aria-label="Hansı şöbəyə"><option value="">'+(ph||"— Hansı şöbəyə? —")+'</option>'+SOBELER.map(d=>'<option'+(v===d?" selected":"")+'>'+d+'</option>').join("")+'</select>';
+const depSel = (attr, v, ph) => '<select class="depsel" '+attr+' aria-label="Hansı şöbəyə"><option value="">'+(ph||"Şöbə…")+'</option>'+SOBELER.map(d=>'<option'+(v===d?" selected":"")+'>'+d+'</option>').join("")+'</select>';
 const depOf = n => { const f = foldName(n); return SOBELER.find(d=>f.includes(foldName(d))) || ""; };
 const isAdminUser = () => ONLINE ? !!(Cloud.me()||{}).is_admin : role==="Admin";
 // Admin sifarişi silir: hamının ekranından çıxır, bazada "silinib" qeydi ilə qalır (geri qaytarmaq olar)
@@ -1158,7 +1160,7 @@ const editDraft = {};
 function editBox(o){
   const d = editDraft[o.id];
   return '<div class="box items-edit"><h3>Sifarişi düzəlt</h3>'+datalist()+
-    d.map((r,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adı" data-ed="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ed="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'"><button class="sm badb" data-edrow="'+o.id+'-'+k+'" aria-label="Malı sil">✕</button>'+(o.from==="Anbar"?depSel('data-ed="'+o.id+'-'+k+'-dep"', r.dep||""):"")+'</div>').join("")+
+    d.map((r,k)=>'<div class="it'+(o.from==="Anbar"?" wdep":"")+'"><input list="plist" placeholder="Məhsulun adı" data-ed="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ed="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'">'+(o.from==="Anbar"?depSel('data-ed="'+o.id+'-'+k+'-dep"', r.dep||""):"")+'<button class="sm badb" data-edrow="'+o.id+'-'+k+'" aria-label="Malı sil">✕</button></div>').join("")+
     '<div class="row"><button class="sm" data-edmore="'+o.id+'">+ Sətir</button></div>'+
     '<div class="row"><button class="pri" data-edsave="'+o.id+'">Yadda saxla</button><button data-edcancel="'+o.id+'">Ləğv et</button></div></div>';
 }
@@ -1627,14 +1629,14 @@ async function addDraftPhotos(list){
 const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
-  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><button class="sm" data-del="'+k+'" aria-label="Sil">×</button>'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'</div>').join("");
+  const items = datalist() + draft.items.map((it,k)=>'<div class="it'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
   return '<div class="card">'+
     '<div class="meta">'+(role==="Texnoloq"?'Texnoloq → Satınalma → Anbar → Keyfiyyət → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
     '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>'+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
       '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
-      importInfo()+(needDep()?'<div class="row"><span class="meta">Hər malın altında hansı şöbəyə veriləcəyini seçin. Hamısı eyni şöbəyədirsə:</span>'+depSel('id="depAll" style="width:auto"',"","Hamısına bir şöbə seç…")+'</div>':"")+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
+      importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
     '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
     '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map((p,k)=>'<span class="ph"><img src="'+p+'" alt="" data-big="d-'+k+'"><button class="phx" data-phdel="d-'+k+'" aria-label="Şəkli sil">✕</button></span>').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
     '<button class="pri big" id="send">Satınalmaya göndər</button><div class="hint" id="nErr"></div>'+
@@ -1649,7 +1651,6 @@ function bindNew(){
   if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   if ($("sendSheets")) $("sendSheets").onclick = sendSheets;
   $("send").onclick = sendOrder;
-  if ($("depAll")) $("depAll").onchange = e => { const v = e.target.value; if (!v) return; draft.items.forEach(i=>{ if (!i.dep) i.dep = v; }); render(); toast("Şöbə seçilməyən mallara: "+v); };
 }
 function sendOrder(){
   draft.items.forEach(i=>{ if (!i.pid && (i.pname||"").trim() && String(i.qty).trim()){
