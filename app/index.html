@@ -771,6 +771,8 @@ const STAGES = [["buy","Satınalmada"],["wait","Gözlənilir"],["chk","Yoxlanır
 const etaTxt = o => o.eta ? fmtD(o.eta) : "";
 const shortT = d => pad(d.getDate())+"."+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes());
 // Vaxtı keçən: Satınalma 1 gündə gün təyin etməyib, və ya təyin olunan gün keçib, mal gəlməyib
+// Satınalma sifarişə göndəriləndən sonra 24 saat ərzində baxmalıdır
+const leftTxt = o => { const m = Math.max(0, Math.round((new Date(o.created).getTime()+DAY-Date.now())/60000)); return m>=60 ? Math.floor(m/60)+" saat"+(m%60?" "+(m%60)+" dəq":"") : m+" dəq"; };
 const overdue = o => (o.status==="acik" && Date.now()-new Date(o.created).getTime() > DAY) || (o.status==="yolda" && o.eta && daysTo(o.eta)<0);
 const odate = o => o.eta || o.created.slice(0,10);
 // Sifarişin göndərildiyi gün: "Bu gün", "Dünən", "3 gün əvvəl"
@@ -970,7 +972,7 @@ function orderCard(o){
     promise = '<span>🚚 <b>'+etaTxt(o)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+(late?' <span class="pill p-bad">günü keçib</span>':"")+'</span>';
   }
   const sd = sentDay(o), rd = relDay(sd);
-  const need = '<span><span class="sent'+(rd==="Bu gün"?" new":"")+'">📝 '+rd+' · '+shortT(new Date(o.created)).slice(-5)+'</span> <span class="meta">'+fmtD(sd)+'</span>'+(o.status==="acik"?' · <span class="meta">gəliş gününü Satınalma təyin edəcək</span>'+(overdue(o)?' <span class="pill p-bad">'+Math.floor((Date.now()-new Date(o.created).getTime())/DAY)+' gündür gözləyir</span>':""):"")+'</span>';
+  const need = '<span><span class="sent'+(rd==="Bu gün"?" new":"")+'">📝 '+rd+' · '+shortT(new Date(o.created)).slice(-5)+'</span> <span class="meta">'+fmtD(sd)+'</span>'+(o.status==="acik"?' · <span class="meta">gəliş gününü Satınalma təyin edəcək</span>'+(overdue(o)?' <span class="pill p-bad">24 saat keçib · '+Math.floor((Date.now()-new Date(o.created).getTime())/DAY)+' gündür gözləyir</span>':' <span class="pill p-mute">⏳ Satınalmaya '+leftTxt(o)+' qalıb</span>'):"")+'</span>';
   const sts = o.items.map(i=>itemState(o,i)), cnt = {ok:0,warn:0,bad:0,wait:0}; sts.forEach(s=>cnt[itemCat(s)]++);
   const bar = accepted ? '<div class="bar">'+["ok","warn","bad","wait"].map(k=>cnt[k]?'<i class="b-'+k+'" style="flex:'+cnt[k]+'"></i>':"").join("")+'</div>' : "";
   const extra = [o.group?"#"+o.group+" · hissə "+o.part:"", o.parent?"#"+o.parent+" sifarişinin davamı":""].filter(Boolean).join(" · ");
