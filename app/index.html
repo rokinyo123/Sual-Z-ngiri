@@ -607,11 +607,14 @@ const datalist = () => '<datalist id="plist">'+live().map(p=>'<option value="'+e
 const nextId = () => (S.seq = Math.max(S.seq, ...S.orders.concat(S.trash||[]).map(o=>Number(o.id)||0)) + 1);
 const isAdminUser = () => ONLINE ? !!(Cloud.me()||{}).is_admin : role==="Admin";
 // Admin sifarişi silir: hamının ekranından çıxır, bazada "silinib" qeydi ilə qalır (geri qaytarmaq olar)
+// Göndərən şöbə öz sifarişini Satınalma qəbul edənə qədər silə və düzəldə bilər
+const canOwnEdit = o => !!o && o.from===role && o.status==="acik";
+const canDelete = o => isAdminUser() || canOwnEdit(o);
 function deleteOrder(id){
-  if (!isAdminUser()) return toast("Sifarişi yalnız Admin silə bilər");
   const k = S.orders.findIndex(o=>o.id===id); if (k<0) return;
   const o = S.orders[k];
-  addLog(o, "Admin sifarişi sildi", "");
+  if (!canDelete(o)) return toast("Satınalma qəbul edibsə, sifarişi yalnız Admin silə bilər");
+  addLog(o, (isAdminUser()?"Admin":role)+" sifarişi sildi", "");
   o.deleted = { by: role, at: new Date().toISOString() };
   S.orders.splice(k,1); (S.trash = S.trash || []).push(o);
   save(); render(); toast("Sifariş #"+id+" silindi");
@@ -975,11 +978,11 @@ function orderCard(o){
     : role==="Texnoloq" && o.items.some(i=>i.tech) ? '<div class="irows">'+o.items.map((i,k)=>i.tech?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+(o.items.some(i=>!i.tech)?'<div class="meta">+ '+o.items.filter(i=>!i.tech).length+' başqa mal (Texnoloqa aid deyil)</div>':"")
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
-    '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(isAdminUser()?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
+    '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'" title="Sifarişi düzəlt">✏️ Düzəlt</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
     '<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
-    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + rows + footActions(o) + addBox(o) + more(o) + '</article>';
+    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + '</article>';
 }
 const openAct = {};
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
@@ -1137,6 +1140,31 @@ function addSend(id){
   } else addLog(o,"Sifarişə əlavə edildi",note);
   delete addDraft[id]; save(); render();
   toast(rows.length+" mal əlavə olundu → Satınalma");
+}
+
+// ----- Göndərən sifarişi düzəldir (Satınalma qəbul edənə qədər): miqdar, ad, sil, əlavə -----
+const editDraft = {};
+function editBox(o){
+  const d = editDraft[o.id];
+  return '<div class="box"><h3>Sifarişi düzəlt</h3>'+datalist()+
+    d.map((r,k)=>'<div class="it"><input list="plist" placeholder="Məhsulun adı" data-ed="'+o.id+'-'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 5 kq" data-ed="'+o.id+'-'+k+'-q" value="'+esc(r.q)+'"><button class="sm badb" data-edrow="'+o.id+'-'+k+'" aria-label="Malı sil">✕</button></div>').join("")+
+    '<div class="row"><button class="sm" data-edmore="'+o.id+'">+ Sətir</button></div>'+
+    '<div class="row"><button class="pri" data-edsave="'+o.id+'">Yadda saxla</button><button data-edcancel="'+o.id+'">Ləğv et</button></div></div>';
+}
+function editSave(id){
+  const o = S.orders.find(x=>x.id===id), d = editDraft[id] || [];
+  if (!canOwnEdit(o)) { delete editDraft[id]; render(); return toast("Satınalma artıq qəbul edib — dəyişmək olmaz"); }
+  const rows = d.filter(r=>r.n.trim() || r.q.trim());
+  if (rows.some(r=>!r.n.trim())) return toast("Malın adını yazın");
+  const noQ = rows.find(r=>!r.q.trim()); if (noQ) return toast(noQ.n+": miqdarı yazın");
+  if (!rows.length) return toast("Heç bir mal qalmadı — sifarişi silmək üçün “🗑 Sil” basın");
+  const old = o.items.slice(), before = old.map(i=>pname(i.pid)+" "+i.qty).join(", ");
+  o.items = rows.map(r=>{ const pid = ensureProd(r.n), k = old.findIndex(i=>i.pid===pid), base = k>=0 ? old.splice(k,1)[0] : {};
+    return Object.assign({}, base, {pid, qty:withUnit(r.q,pid)}); });
+  const after = o.items.map(i=>pname(i.pid)+" "+i.qty).join(", ");
+  delete editDraft[id];
+  if (after!==before){ o.last_move = new Date().toISOString(); addLog(o,"Sifariş düzəldildi",after); save(); toast("Sifariş #"+id+" yeniləndi"); }
+  render();
 }
 
 // ----- Satınalma: sifarişi qəbul edir, gəliş günü təyin edir -----
@@ -1831,6 +1859,11 @@ $("main").addEventListener("click", e => {
   if (d.nt){ draft.type=d.nt; render(); return; }
   if (d.del){ draft.items.splice(Number(d.del),1); if(!draft.items.length) draft.items=[{pid:"",qty:""}]; render(); return; }
   // Sifarişə əlavə
+  if (d.editopen){ const o = S.orders.find(x=>x.id===Number(d.editopen)); if (canOwnEdit(o)){ editDraft[o.id] = o.items.map(i=>({n:pname(i.pid), q:String(i.qty)})); render(); } return; }
+  if (d.edmore){ editDraft[d.edmore].push({n:"",q:""}); render(); return; }
+  if (d.edrow){ const [id,k]=d.edrow.split("-"); editDraft[id].splice(Number(k),1); if (!editDraft[id].length) editDraft[id].push({n:"",q:""}); render(); return; }
+  if (d.edcancel){ delete editDraft[d.edcancel]; render(); return; }
+  if (d.edsave) return editSave(Number(d.edsave));
   if (d.addopen){ addDraft[d.addopen] = [{n:"",q:""}]; render(); return; }
   if (d.addmore){ addDraft[d.addmore].push({n:"",q:""}); render(); return; }
   if (d.addrow){ const [id,k]=d.addrow.split("-"); addDraft[id].splice(Number(k),1); if (!addDraft[id].length) addDraft[id].push({n:"",q:""}); render(); return; }
@@ -1883,6 +1916,7 @@ $("main").addEventListener("change", async e => {
 $("main").addEventListener("input", e => {
   const el=e.target;
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
+  if (el.dataset.ed){ const [id,k,f]=el.dataset.ed.split("-"); editDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.got) paintGot(el);
   if (el.dataset.ii!=null) setItem(el);
