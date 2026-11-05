@@ -135,6 +135,12 @@ button.big{width:100%;padding:11px;font-size:16px}
 .seg3 button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
 .seg3 button.on.none{background:var(--arch);border-color:var(--arch);color:#fff}
 .qw{border-color:var(--bad)}
+.qcf{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;flex:1 1 100%}
+.qcf label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.qcf input,.qcf select{font-size:15px}
+.qcf .tmp input{border-color:var(--wait)}
+.qcf .qby{grid-column:1 / -1}
+.qci{font-size:12px}
 .whin{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .whin input{width:84px}
 .who{border:1px solid var(--line);cursor:pointer;background:var(--surface)}
@@ -656,7 +662,20 @@ function addLog(o, act, note, by){
 // İnqilab:     Keyfiyyət və Texnoloq yoxdur — Gözlənilir → İnqilab qeyd edir → bağlanır.
 // status: acik (Satınalmada) · yolda (Gözlənilir) · anbar (Anbar qeyd edir) · bagli · redd
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
-const hasQC = o => o.wh==="Anbar";                                   // Keyfiyyət yalnız əsas Anbarda
+const hasQC = o => o.wh==="Anbar";
+// Keyfiyyət: yoxlayan şəxs, istehsal / son istifadə tarixi, riskli mallarda temperatur
+const QC_PEOPLE = ["Məcidli Məsumə","Məmmədzadə Aysun"];
+const RISKY = /s[üu]d|sosis|kolbas|sucu|qaym|xama|k[əe]smik|pendir|qat[ıi]q|ayran|k[əe]r[əe]\s*ya|ya[ğg]\s*k[əe]r|\b[əe]t\b|[əe]t\s|toyuq|bal[ıi]q|yumurta|dondurma|ma[sş]karpon|mocarel|mozzarel|krem\s*[şs]anti|slivk|sliv|qaymaq|kefir|smetan/i;
+const isRisky = i => RISKY.test(pname(i.pid)) || !!(prod(i.pid)||{}).temp;
+const fmtDT = v => { const d = String(v||"").replace(/\D/g,"").slice(0,8); return d.length>4 ? d.slice(0,2)+"."+d.slice(2,4)+"."+d.slice(4) : d.length>2 ? d.slice(0,2)+"."+d.slice(2) : d; };
+const dtISO = v => { const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v||""); return m ? m[3]+"-"+m[2]+"-"+m[1] : ""; };
+function qcInfo(i){
+  const a = [];
+  if (i.mfg || i.exp) a.push('📅 '+esc(i.mfg||"?")+' – '+esc(i.exp||"?")+(dtISO(i.exp) && dtISO(i.exp)<today() ? ' <span class="pill p-bad">vaxtı keçib</span>' : ""));
+  if (i.temp!=null && i.temp!=="") a.push('🌡 '+esc(i.temp)+'°C');
+  if (i.qcBy) a.push('👤 '+esc(i.qcBy));
+  return a.length ? ' <span class="meta qci">'+a.join(" · ")+'</span>' : "";
+}                                   // Keyfiyyət yalnız əsas Anbarda
 const arrived = o => o.status==="anbar";                              // Anbar "Gəldi" basıb
 const dueNow = o => o.status==="yolda" && o.eta && daysTo(o.eta)<=0;   // bu gün (və ya keçmiş) gəlməlidir
 const qcDone = o => o.items.every(i=>i.qc);
@@ -873,6 +892,7 @@ function myWork(){
 // Hər şöbə yalnız ona lazım olan bölmələri görür
 function tabsFor(r){
   const t = [["home","🏠","Bu gün"],["orders","📦","Sifarişlər"]];
+  if (r==="Keyfiyyət") t.push(["qcin","📥","Gəldi"]);
   if (WAREHOUSES.includes(r) || r==="Texnoloq") t.push(["new","➕","Sifariş"]);
   if (["Satınalma","Rəhbərlik","Anbar","Anbar (İnqilab)","İstehsalat","Admin"].includes(r)) t.push(["days","🗓","Gəlişlər"]);
   if (["Satınalma","Rəhbərlik","Anbar","Anbar (İnqilab)","Admin"].includes(r)) t.push(["res","📋","Nəticələr"]);
@@ -892,15 +912,25 @@ function renderTabs(){
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
   const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0);
   $("tabs").style.gridTemplateColumns = "repeat("+T.length+",1fr)";
-  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : 0;
+  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qcin" ? myWork().length : 0;
     return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("");
 }
 function render(){
   autoMissing(); reportSignals(); pushNotify(); dlDone = false;
   renderTabs();
-  $("main").innerHTML = { home:vHome, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
+  $("main").innerHTML = { home:vHome, qcin:vQcIn, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
+}
+
+// ----- Keyfiyyət: Anbar "Gəldi" basan mallar — yoxlama vaxtıdır -----
+function vQcIn(){
+  const w = myWork();
+  const done = S.orders.filter(o=>hasQC(o) && o.qcAt && daysTo(o.qcAt.slice(0,10))>=-7).sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
+  return '<h2>Gəldi · yoxlama vaxtıdır <span class="cnt">'+w.length+'</span></h2>'+
+    '<div class="hint">Anbar “📦 Gəldi” basıb. Hər mal üçün <b>✓ Uyğun</b> və ya <b>✗ Uyğun deyil</b> seçin, istehsal və son istifadə tarixini yazın, riskli mallarda (süd, sosiska və s.) temperaturu qeyd edin və kimin yoxladığını seçin.</div>'+
+    (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
+    (done.length ? '<h2>Son 7 gündə yoxlananlar <span class="cnt">'+done.length+'</span></h2>'+done.map(o=>orderCard(o)).join("") : "");
 }
 
 // ----- Bu gün -----
@@ -1012,9 +1042,15 @@ function itemRow(o,i,k,st){
         '<button class="'+(i.qc==="ok"?"on ok":"")+'" data-qc="'+key+'" data-v="ok">✓ Uyğun</button>'+
         '<button class="'+(i.qc==="bad"?"on bad":"")+'" data-qc="'+key+'" data-v="bad">✗ Uyğun deyil</button>'+
         '</div>'+
-        (i.qc==="bad" ? '<input class="qw" data-qcw="'+key+'" value="'+esc(i.qcWhy||"")+'" placeholder="Şərh: niyə uyğun deyil? (məs. vaxtı keçib, etiket yoxdur)">' : "")+'</div>');
+        (i.qc==="bad" ? '<input class="qw" data-qcw="'+key+'" value="'+esc(i.qcWhy||"")+'" placeholder="Şərh: niyə uyğun deyil? (məs. vaxtı keçib, etiket yoxdur)">' : "")+
+        '<div class="qcf">'+
+          '<label><span>İstehsal tarixi</span><input inputmode="numeric" placeholder="gün.ay.il" maxlength="10" data-qf="'+key+'|mfg" value="'+esc(i.mfg||"")+'"></label>'+
+          '<label><span>Son istifadə</span><input inputmode="numeric" placeholder="gün.ay.il" maxlength="10" data-qf="'+key+'|exp" value="'+esc(i.exp||"")+'"'+(dtISO(i.exp)&&dtISO(i.exp)<today()?' class="qw"':"")+'></label>'+
+          (isRisky(i) ? '<label class="tmp"><span>🌡 Temperatur °C</span><input inputmode="decimal" placeholder="məs. 4" data-qf="'+key+'|temp" value="'+esc(i.temp??"")+'"></label>' : "")+
+          '<label class="qby"><span>Yoxlayan</span><select data-qf="'+key+'|qcBy"><option value="">— seçin —</option>'+QC_PEOPLE.map(n=>'<option'+(i.qcBy===n?" selected":"")+'>'+n+'</option>').join("")+'</select></label>'+
+        '</div></div>');
     } else if (i.qc){
-      cells.push('<div class="cell"><span class="cl">Keyfiyyət</span>'+(i.qc==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.qc==="bad"?'<span class="pill p-bad">✗ '+esc(i.qcWhy||"uyğun deyil")+'</span>':'<span class="pill p-bad">gəlmədi</span>')+'</div>');
+      cells.push('<div class="cell"><span class="cl">Keyfiyyət</span>'+(i.qc==="ok"?'<span class="pill p-ok">✓ uyğun</span>':i.qc==="bad"?'<span class="pill p-bad">✗ '+esc(i.qcWhy||"uyğun deyil")+'</span>':'<span class="pill p-bad">gəlmədi</span>')+qcInfo(i)+'</div>');
     } else if (accepted && arrived(o)) cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><span class="meta">yoxlayır…</span></div>');
   }
   // Anbar / İnqilab
@@ -1951,6 +1987,11 @@ $("main").addEventListener("change", async e => {
 $("main").addEventListener("input", e => {
   const el=e.target;
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
+  if (el.dataset.qf){ const [k,f] = el.dataset.qf.split("|"), [o,i] = itemOf(k);
+    if (f==="mfg"||f==="exp"){ const v = fmtDT(el.value); if (v!==el.value) el.value = v; i[f] = v; el.classList.toggle("qw", f==="exp" && !!dtISO(v) && dtISO(v)<today()); }
+    else if (f==="temp") i.temp = el.value.replace(",",".").trim();
+    else if (f==="qcBy"){ i.qcBy = el.value; if (el.value) o.items.forEach(x=>{ if (!x.qcBy) x.qcBy = el.value; }); save(); render(); return; }
+    save(); return; }
   if (el.dataset.ed){ const [id,k,f]=el.dataset.ed.split("-"); editDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.got) paintGot(el);
@@ -2002,10 +2043,16 @@ function orderAct(act, id){
   else if (act==="qcdone"){
     const nw = o.items.find(i=>i.qc==="bad" && !(i.qcWhy||"").trim());
     if (nw) return toast(pname(nw.pid)+": niyə uyğun olmadığını yazın");
+    const nb = o.items.find(i=>(i.qc==="ok"||i.qc==="bad") && !i.qcBy);
+    if (nb) return toast(pname(nb.pid)+": kimin yoxladığını seçin");
+    const nt = o.items.find(i=>i.qc==="ok" && isRisky(i) && (i.temp==null || String(i.temp).trim()===""));
+    if (nt) return toast(pname(nt.pid)+": temperaturu yazın");
+    const nd = o.items.find(i=>(i.mfg && !dtISO(i.mfg)) || (i.exp && !dtISO(i.exp)));
+    if (nd) return toast(pname(nd.pid)+": tarixi gün.ay.il kimi yazın (məs. 01.05.2026)");
     o.items.forEach(i=>{ if (!i.qc) i.qc = "none"; });
     o.qcAt = o.last_move = new Date().toISOString();
     const bad = o.items.filter(i=>i.qc!=="ok");
-    addLog(o,"Keyfiyyət yoxladı", bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur");
+    addLog(o,"Keyfiyyət yoxladı", (bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur")+" · Yoxlayan: "+[...new Set(o.items.map(i=>i.qcBy).filter(Boolean))].join(", "));
     const blk = o.items.filter(i=>i.qc==="bad");
     if (blk.length) notify(["Satınalma",o.wh,"Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
     toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
