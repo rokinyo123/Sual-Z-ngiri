@@ -417,8 +417,9 @@ function save(){
 const Cloud = (() => {
   const URL0 = TEST_API || "https://qzvyawuhmqdhzawfihzy.supabase.co", AKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s", DOMAIN = "almond.local", BUCKET = "almond-fayllar";
   const C = { sess:null, me:null, ver:{}, snap:{}, last:"", timer:null, busy:false, again:false, fails:0 };
-  try { C.sess = JSON.parse(localStorage.getItem("almond-sess")); } catch(e){}
-  const keepSess = () => { try { C.sess ? localStorage.setItem("almond-sess", JSON.stringify(C.sess)) : localStorage.removeItem("almond-sess"); } catch(e){} };
+  // Giriş yadda saxlanmır: link açılanda və ya yenilənəndə hər dəfə şöbə + parol soruşulur
+  try { localStorage.removeItem("almond-sess"); } catch(e){}
+  const keepSess = () => {};
   async function auth(path, body){
     const r = await fetch(URL0+"/auth/v1/"+path, { method:"POST", headers:{ apikey:AKEY, "Content-Type":"application/json" }, body:JSON.stringify(body) });
     const j = await r.json().catch(()=>({}));
