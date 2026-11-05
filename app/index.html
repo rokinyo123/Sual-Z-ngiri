@@ -1070,6 +1070,8 @@ function applyNote(o, key, to){
 const toLine = to => to && to.length ? ' <span class="meta">→ '+to.map(esc).join(", ")+'</span>' : "";
 const QC_WHY = ["Vaxtı keçib","Etiket yoxdur","Azərbaycanca yazı yoxdur","Tarix yazılmayıb"];
 function itemCat(st){ return st[1]==="p-ok"?"ok":st[1]==="p-warn"?"warn":st[1]==="p-bad"?"bad":"wait"; }
+// "Problem" bölməsində kartda yalnız problemli mallar göstərilir
+let onlyProb = false;
 function orderCard(o){
   const st = stage(o);
   const act = myWork().some(x=>x.id===o.id);
@@ -1086,6 +1088,7 @@ function orderCard(o){
   const extra = [o.group?"#"+o.group+" · hissə "+o.part:"", o.parent?"#"+o.parent+" sifarişinin davamı":""].filter(Boolean).join(" · ");
   const rows = o.status==="acik" ? '<div class="chips">'+o.items.map(i=>'<span class="ic">'+thumb(i.pid,1)+esc(pname(i.pid))+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <b>'+esc(i.qty)+'</b>'+depTag(i)+(i.added?' <span class="addtag">+</span>':"")+'</span>').join("")+'</div>'
     : role==="Texnoloq" && o.items.some(i=>i.tech) ? '<div class="irows">'+o.items.map((i,k)=>i.tech?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+(o.items.some(i=>!i.tech)?'<div class="meta">+ '+o.items.filter(i=>!i.tech).length+' başqa mal (Texnoloqa aid deyil)</div>':"")
+    : onlyProb && o.items.some(i=>problem(o,i)) ? '<div class="irows">'+o.items.map((i,k)=>problem(o,i)?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+((n=>n?'<div class="meta">+ '+n+' mal qaydasındadır (gəlib) — burada göstərilmir</div>':"")(o.items.filter(i=>!problem(o,i)).length))
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span><span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'" title="Sifarişi düzəlt">✏️ Düzəlt</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
@@ -1512,7 +1515,8 @@ function vOrders(){
     .sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
   return '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
     '<div class="seg">'+F.map(([k,l])=>'<button class="f-'+k+(filter===k?" on":"")+'" data-filter="'+k+'">'+l+'<span class="k">'+cnt(k)+'</span></button>').join("")+'</div>'+
-    rangeBar() + (list.length ? bySent(list) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
+    rangeBar() + (filter==="bad" ? '<div class="hint">Burada yalnız problemli mallar göstərilir: gəlməyən, az gələn, qəbul olunmayan.</div>' : "") +
+    (list.length ? (onlyProb = filter==="bad", (h=>(onlyProb=false,h))(bySent(list))) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
 }
 
 // ----- Gəlişlər: həftə zolağı → seçilən günün hər malı -----
