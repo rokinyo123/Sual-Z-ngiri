@@ -298,6 +298,10 @@ span.thumb.empty{cursor:default}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .foot{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
 .net{font-size:13px;opacity:.85;min-width:14px;text-align:center}
+.rfb{padding:6px 10px;font-size:15px}
+@media (max-width:430px){ .outb .tx{display:none} .outb{padding:6px 9px} }
+.rfb.spin{animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
 .outb{background:var(--brand-fg);color:var(--brand);border:none;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 .who select:disabled{opacity:1}
 #role[hidden]{display:none}
@@ -440,7 +444,7 @@ const Cloud = (() => {
     if (C.sess && C.sess.expires_at - Date.now() < 60000) { try { await refresh(); } catch(e){ return out("Sessiya bitib — yenidən daxil olun"); } }
     const h = { apikey:AKEY, Authorization:"Bearer "+(C.sess ? C.sess.access_token : AKEY), "Accept-Profile":"almond" };
     if (body!==undefined){ h["Content-Type"] = "application/json"; h["Content-Profile"] = "almond"; }
-    let r; try { r = await fetch(URL0+"/rest/v1/"+path, { method, headers:h, body: body===undefined ? undefined : JSON.stringify(body) }); }
+    let r; try { r = await fetch(URL0+"/rest/v1/"+path, { method, headers:h, body: body===undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined }); }
     catch(e){ throw new Error("İnternet yoxdur"); }
     if (r.status===401 && retry && C.sess){ try { await refresh(); } catch(e){ return out("Sessiya bitib — yenidən daxil olun"); } return req(method, path, body, false); }
     const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch(e){ j = t; }
@@ -602,8 +606,14 @@ const Cloud = (() => {
     } catch(e){}
   }
   document.addEventListener("visibilitychange", tick);
+  // 🔄 Yenilə: hesabdan çıxmadan göndərilməmişləri göndərir, bazadan hər şeyi yenidən götürür
+  async function sync(){
+    C.busy = false; C.again = false; net("⟳");
+    try { await push(); await pull(true); net("✓"); return true; }
+    catch(e){ net("⚠"); return false; }
+  }
   function logout(){ fetch(URL0+"/auth/v1/logout", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+(C.sess||{}).access_token } }).catch(()=>{}); C.sess = null; C.me = null; keepSess(); clearInterval(C.poll); location.reload(); }
-  return { start, queue, logout, me: () => C.me, push };
+  return { start, queue, logout, me: () => C.me, push, sync };
 })();
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
@@ -900,12 +910,24 @@ function tabsFor(r){
   if (r==="Admin") t.push(["catalog","📚","Kataloq"]);
   return t;
 }
+// Donma olanda: açıq qutuları bağlayır, bazadan son vəziyyəti götürür, proqramın yeni versiyasını yoxlayır — hesabdan çıxmır
+async function hardRefresh(){
+  const b = $("rf"); if (b){ if (b.disabled) return; b.disabled = true; b.classList.add("spin"); }
+  Object.keys(addDraft).forEach(k=>delete addDraft[k]); Object.keys(editDraft).forEach(k=>delete editDraft[k]);
+  try { navigator.serviceWorker && navigator.serviceWorker.getRegistration().then(r=>r && r.update()).catch(()=>{}); } catch(e){}
+  let ok = true;
+  if (ONLINE) ok = await Cloud.sync(); else { try { S = JSON.parse(localStorage.getItem(KEY)) || S; } catch(e){} }
+  render(); window.scrollTo(0,0);
+  if (b){ b.disabled = false; b.classList.remove("spin"); }
+  toast(ok ? "Yeniləndi ✓" : "İnternet yoxdur — bağlantını yoxlayın");
+}
 function renderRole(){
   const me = ONLINE ? Cloud.me() : null;
   const list = me && !me.is_admin ? [me.dept] : DEPTS;
   $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
   $("role").disabled = list.length < 2;
-  if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="out" class="outb" title="Hesabdan çıxış">🚪 Çıxış</button>'); $("out").onclick = () => Cloud.logout(); }
+  if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="rf" class="outb rfb" title="Yenilə">🔄</button><button id="out" class="outb" title="Hesabdan çıxış">🚪<span class="tx"> Çıxış</span></button>'); $("out").onclick = () => Cloud.logout(); $("rf").onclick = hardRefresh; }
+  if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
 function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = "home";
