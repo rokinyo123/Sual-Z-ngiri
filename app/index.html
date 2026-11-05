@@ -135,6 +135,7 @@ button.big{width:100%;padding:11px;font-size:16px}
 .seg3 button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
 .seg3 button.on.none{background:var(--arch);border-color:var(--arch);color:#fff}
 .qw{border-color:var(--bad)}
+.ansopt{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--line);border-radius:10px;padding:8px;margin-top:6px}
 .stk{background:var(--bad-bg,#fde8e8);color:var(--bad,#b42318);border-radius:8px;padding:6px 10px;font-size:13px;margin:4px 0}
 .qcf{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;flex:1 1 100%}
 .qcf label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
@@ -714,6 +715,8 @@ function problem(o,i){
   if (itemMissing(i)) return "Az gəldi · "+fmtN(num(i.qty)-i.got)+" əskik";
   return "";
 }
+// Satınalmanın cavabının qısa mətni: yeni tarix / əvəzedici / tapılmır
+const ansTxt = i => !i.ans ? "" : i.ans.none ? "✗ Mal tapılmır" : (i.ans.sub ? "əvəzinə "+pname(i.ans.sub)+" · " : "")+fmtD(i.ans.date)+" gələcək";
 const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 // Sifariş indi kimdə gözləyir və nə qədərdir; vaxt həddini keçibsə — "ilişib"
 function waitOn(o){
@@ -784,7 +787,7 @@ function autoMissing(){
     if (o.status!=="yolda" || !o.eta || daysTo(o.eta)>=0 || o.items.some(i=>i.qc||i.got!=null)) return;
     o.items.forEach(i=>{ i.qc = hasQC(o) ? "none" : i.qc; });
     finishReceive(o,"Sistem","Gəliş günü keçdi, heç nə qeyd olunmayıb"); n++;
-    notify([o.wh,o.from,"Satınalma","Rəhbərlik"], "late", fmtD(o.eta)+" gəlməli olan "+o.items.length+" mal gəlmədi", (o.supplier||"Firmasız")+" → "+o.wh+" · #"+o.id+" · Satınalma cavab verməlidir", o.items.map(i=>pname(i.pid)+" ("+i.qty+")"), o.id);
+    notify([o.wh,o.from,"Satınalma","Rəhbərlik"], "late", o.wh+" malı gözləyir · "+fmtD(o.eta)+" gəlməli olan "+o.items.length+" mal gəlmədi", (o.supplier||"Firmasız")+" → "+o.wh+" · #"+o.id+" · Satınalma: səbəbini yazın — gələcəksə yeni tarix verin, gəlməyəcəksə “Mal tapılmır” seçin", o.items.map(i=>pname(i.pid)+" ("+i.qty+")"), o.id);
   });
   S.orders.forEach(o=>o.items.forEach(i=>{
     if (!techReady(o,i) || !i.techDue || daysTo(i.techDue)>=0 || i.techLate) return;
@@ -891,8 +894,8 @@ function resRow(r){
   let label, cls;
   if (r.cat==="ok"){ const g = gotState(i.qty,i.got||0); label = g[1]==="p-ok" ? "Tam gəldi" : fmtN(i.got)+" gəldi"; cls = "okr";
     if (techReady(o,i)) label += " · Texnoloqda"; else if (i.tech && i.techRes==="ok") label += " · Texnoloq ✓"; }
-  else { label = i.ans ? "Cavab verildi" : "Cavab gözlənilir"; cls = i.ans ? "warnr" : "miss"; }
-  const ans = i.ans ? '<div class="spn">📋 <b>Satınalma:</b> '+(i.ans.sub?'əvəzinə '+esc(pname(i.ans.sub))+' · ':'')+fmtD(i.ans.date)+' gələcək'+(i.ans.note?' · '+esc(i.ans.note):"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>' : "";
+  else { label = i.ans ? (i.ans.none ? "Tapılmadı" : "Cavab verildi") : "Cavab gözlənilir"; cls = i.ans ? "warnr" : "miss"; }
+  const ans = i.ans ? '<div class="spn">📋 <b>Satınalma:</b> '+esc(ansTxt(i))+(i.ans.note?' · '+esc(i.ans.note):"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>' : "";
   const form = r.cat==="ok" || i.ans ? "" : role==="Satınalma" && canAnswer(o,i) ? '<div class="cell ans"><span class="cl">Cavabınız</span>'+ansForm(key,i)+'</div>' : !canAnswer(o,i) ? '<div class="meta">'+waitWhy(o,i)+'</div>' : "";
   return '<div class="irow '+cls+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(r.cat==="ok"?"p-ok":i.ans?"p-warn":"p-bad")+' st">'+esc(label)+'</span></div>'+
     '<div class="rmeta"><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · '+fmtD(rDate(r))+'</div>'+
@@ -1136,15 +1139,17 @@ function itemRow(o,i,k,st){
   // Satınalmanın cavabı
   const pr = problem(o,i);
   if (pr){
-    if (i.ans) cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="pill p-info">'+(i.ans.sub?'🔄 əvəzinə '+esc(pname(i.ans.sub)):'📅 '+fmtD(i.ans.date)+' gələcək')+'</span>'+(i.ans.sub?' <span class="meta">'+fmtD(i.ans.date)+'</span>':"")+(i.ans.note?' <span class="meta">'+esc(i.ans.note)+'</span>':"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>');
+    if (i.ans) cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="pill '+(i.ans.none?'p-bad':'p-info')+'">'+(i.ans.none?'✗ Mal tapılmır':i.ans.sub?'🔄 əvəzinə '+esc(pname(i.ans.sub)):'📅 '+fmtD(i.ans.date)+' gələcək')+'</span>'+(i.ans.sub?' <span class="meta">'+fmtD(i.ans.date)+'</span>':"")+(i.ans.note?' <span class="meta">'+esc(i.ans.note)+'</span>':"")+(i.ans.follow?' <button class="linkb mono" data-goorder="'+i.ans.follow+'">#'+i.ans.follow+'</button>':"")+'</div>');
     else if (role==="Satınalma" && canAnswer(o,i)) cells.push('<div class="cell ans"><span class="cl">Satınalmanın cavabı</span>'+ansForm(key,i)+'</div>');
     else cells.push('<div class="cell"><span class="cl">Satınalma</span><span class="meta">cavab gözlənilir'+(canAnswer(o,i)?"":" · "+waitWhy(o,i))+'</span></div>');
   }
   return '<div class="irow '+rowCls(st)+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span>'+depTag(i)+(i.added?' <span class="addtag">+</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+cells.join("")+'</div>';
 }
-const ansForm = (key,i) => '<div class="dt"><input type="date" id="ad-'+key+'" value="'+plusDays(1)+'" min="'+today()+'" aria-label="Nə vaxt gələcək"><input id="aq-'+key+'" value="'+esc(remainQty(i))+'" aria-label="Miqdar"></div>'+
+const ansForm = (key,i) => '<input id="an-'+key+'" class="qw" placeholder="Açıqlama (məcburi): niyə gəlmədi? məs. firmada qurtarıb, maşın gecikdi">'+
+  '<div class="ansopt"><div class="lbl">📅 Gələcəksə — yeni tarix</div><div class="dt"><input type="date" id="ad-'+key+'" value="'+plusDays(1)+'" min="'+today()+'" aria-label="Nə vaxt gələcək"><input id="aq-'+key+'" value="'+esc(remainQty(i))+'" aria-label="Miqdar"></div>'+
   '<input id="as-'+key+'" list="plist" placeholder="🔄 Əvəzində başqa mal (istəyə görə)">'+datalistOnce()+
-  '<input id="an-'+key+'" placeholder="Qeyd (istəyə görə)"><button class="pri" data-answer="'+key+'">Cavab ver → Anbar gözləsin</button>';
+  '<button class="pri" data-answer="'+key+'">Yeni tarixlə gələcək → Anbar gözləsin</button></div>'+
+  '<div class="ansopt"><div class="lbl">Gəlməyəcəksə</div><button class="badb" data-ansnone="'+key+'">✗ Mal tapılmır → bu mal bağlansın</button></div>';
 const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="bad" ? fmtN(num(i.qty)-i.got)+String(i.qty).replace(/^[\d.,\s]+/," ") : i.qty;
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
 // Kartın altındakı ümumi düymə (şöbənin addımını bitirmək)
@@ -1346,9 +1351,19 @@ function moveItem(key){
 }
 // ----- Satınalmanın cavabı: problemli mal nə vaxt gələcək və ya əvəzində nə gələcək -----
 // Cavab həmin günə Anbarın "Gözlənilir" siyahısına davam sifarişi kimi düşür (eyni gün üçün bir sifariş).
+function answerNone(key){
+  const [oid,k] = key.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k];
+  const note = $("an-"+key).value.trim();
+  if (!note){ $("an-"+key).focus(); return toast("Açıqlamanı yazın: niyə tapılmır?"); }
+  i.ans = { none:true, note, by:role, at:new Date().toISOString() };
+  addLog(o, "Satınalma: mal tapılmır", pname(i.pid)+" — "+note);
+  notify([o.wh, o.from, "Rəhbərlik"], "res", "#"+o.id+" · "+pname(i.pid)+" tapılmır", "Satınalma: "+note, [], o.id);
+  save(); render(); toast("Bildirildi → "+o.wh+" və Rəhbərlik");
+}
 function answerItem(key){
   const [oid,k] = key.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o.items[k];
   const date = $("ad-"+key).value, subN = $("as-"+key).value.trim(), qty = $("aq-"+key).value.trim() || i.qty, note = $("an-"+key).value.trim();
+  if (!note){ $("an-"+key).focus(); return toast("Açıqlamanı yazın: niyə gəlmədi?"); }
   if (!date) return toast("Nə vaxt gələcəyini seçin");
   const sub = subN ? ensureProd(subN) : "";
   let f = S.orders.find(x=>x.parent===o.id && x.eta===date && x.status==="yolda" && !x.items.some(y=>y.qc||y.got!=null));
@@ -1374,6 +1389,7 @@ const archived = o => o.status!=="redd" && !!o.recvDone && !needsAnswer(o) && !t
 let arM = "arch", arW = monday(today()), arMon = today().slice(0,7), arDays = 14;
 const iDate = o => o.eta || o.created.slice(0,10);
 function itemOutcome(o,i){
+  if (i.ans && i.ans.none) return ["Tapılmadı"+(i.ans.note?": "+i.ans.note:""),"p-bad"];
   if (i.unav) return ["Satınalma: yoxdur","p-bad"];
   if (i.notFound) return ["Sürücü tapmadı","p-bad"];
   if (i.qc==="bad") return ["Keyfiyyət: "+(i.qcWhy||"uyğun deyil"),"p-bad"];
@@ -1400,7 +1416,7 @@ function vArch(){
       Object.keys(by).sort((a,b)=>isDriver(a)-isDriver(b)||a.localeCompare(b,"az")).map(sup=>'<div class="oc s-'+(by[sup].some(o=>o.items.some(i=>itemOutcome(o,i)[1]!=="p-ok"))?"bad":"ok")+'"><div class="oc-h"><span class="route">'+(isDriver(sup)?"🚚 ":"🏢 ")+esc(sup)+'</span>'+by[sup].map(o=>'<button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button>').join(" ")+'</div>'+
         '<div class="tbl"><table><thead><tr><th>Mal</th><th class="num">Sifariş</th><th class="num">Gəldi</th><th>Nəticə</th></tr></thead><tbody>'+
         by[sup].flatMap(o=>o.items.map(i=>{ const r = itemOutcome(o,i);
-          return '<tr class="'+rowCls(r)+'"><td>'+esc(pname(i.pid))+' <span class="meta">→ '+esc(o.wh)+'</span>'+(i.ans?'<div class="meta">→ '+(i.ans.sub?'əvəzinə '+esc(pname(i.ans.sub))+' · ':'')+fmtD(i.ans.date)+'</div>':"")+'</td><td class="num">'+esc(i.qty)+'</td><td class="num">'+fmtN(i.got||0)+'</td><td><span class="pill '+r[1]+'">'+esc(r[0])+'</span>'+'</td></tr>'; })).join("")+
+          return '<tr class="'+rowCls(r)+'"><td>'+esc(pname(i.pid))+' <span class="meta">→ '+esc(o.wh)+'</span>'+(i.ans?'<div class="meta">→ '+esc(ansTxt(i))+'</div>':"")+'</td><td class="num">'+esc(i.qty)+'</td><td class="num">'+fmtN(i.got||0)+'</td><td><span class="pill '+r[1]+'">'+esc(r[0])+'</span>'+'</td></tr>'; })).join("")+
         '</tbody></table></div></div>').join("");
   }).join("")+(days.length>arDays?'<button data-armore="1">Daha əvvəlki günlər</button>':"");
 }
@@ -1437,7 +1453,7 @@ function statsHtml(a,b){
       .map(([l,v])=>'<tr><td>'+l+'</td><td class="num">'+v+'</td></tr>').join("")+'</tbody></table></div>'+
     '<h3>Firmalar və sürücülər</h3><div class="tbl card"><table><thead><tr><th></th><th class="num">Mal</th><th class="num">Tam</th><th class="num">Problem</th><th class="num">Keyf. ✗</th></tr></thead><tbody>'+
     sups.map(k=>{ const x = s.sup[k]; return '<tr><td>'+(isDriver(k)?"🚚 ":"")+esc(k)+'</td><td class="num">'+x.n+'</td><td class="num">'+x.full+'</td><td class="num">'+x.bad+'</td><td class="num">'+x.qc+'</td></tr>'; }).join("")+'</tbody></table></div>'+
-    list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?'→ '+fmtD(r.i.ans.date).slice(0,5):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
+    list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?(r.i.ans.none?'✗ tapılmır':'→ '+fmtD(r.i.ans.date).slice(0,5)):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
     list("🔍 Keyfiyyət bəyənmədi", s.qc, r=>'<tr><td>'+esc(pname(r.i.pid))+'<div class="meta">'+esc(r.o.supplier||"Firmasız")+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.qcWhy||"")+'</td></tr>')+
     list("🧪 Texnoloq qəbul etmədi", s.tech, r=>'<tr><td>'+esc(pname(r.i.pid))+'</td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.techNote||"")+'</td></tr>')+
     (s.newp.length?'<h3>🆕 Kataloqa yeni mallar · '+s.newp.length+'</h3><div class="chips">'+s.newp.map(n=>'<span class="ic">'+esc(n)+'</span>').join("")+'</div>':"");
@@ -1528,7 +1544,7 @@ function vDays(){
     const st = stage(o);
     const its = o.items.map(i=>({i,s:itemState(o,i)})).filter(r=>jf==="all"||itemCat(r.s)===jf);
     return '<div class="oc s-'+st.k+'"><div class="oc-h"><span class="route">'+esc(o.supplier||"Firmasız")+' <i>→</i> '+esc(o.wh)+'</span><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
-      '<div class="tbl"><table><tbody>'+its.map(r=>'<tr class="'+rowCls(r.s)+'"><td><div class="pn">'+thumb(r.i.pid,1)+'<span>'+esc(pname(r.i.pid))+(r.i.ans?'<div class="meta">→ '+(r.i.ans.sub?'əvəzinə '+esc(pname(r.i.ans.sub))+' · ':'')+fmtD(r.i.ans.date)+'</div>':"")+'</span></div></td><td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.s[1]+'">'+r.s[0]+'</span></td></tr>').join("")+'</tbody></table></div></div>';
+      '<div class="tbl"><table><tbody>'+its.map(r=>'<tr class="'+rowCls(r.s)+'"><td><div class="pn">'+thumb(r.i.pid,1)+'<span>'+esc(pname(r.i.pid))+(r.i.ans?'<div class="meta">→ '+esc(ansTxt(r.i))+'</div>':"")+'</span></div></td><td class="num">'+esc(r.i.qty)+'</td><td class="num">'+(r.i.got!=null?fmtN(r.i.got):"—")+'</td><td><span class="pill '+r.s[1]+'">'+r.s[0]+'</span></td></tr>').join("")+'</tbody></table></div></div>';
   }).join("");
 }
 
@@ -1981,6 +1997,7 @@ $("main").addEventListener("click", e => {
       toast(d.v==="ok" ? "Qəbul olundu · Satınalma və Anbar gördü" : "Qəbul olunmadı · Satınalmaya getdi"); }); }
   // Satınalma
   if (d.answer) return answerItem(d.answer);
+  if (d.ansnone) return sure(t, ()=>answerNone(d.ansnone));
   // Yeni sifariş
   if (d.nh){ draft.deadline=Number(d.nh); render(); return; }
   if (d.nt){ draft.type=d.nt; render(); return; }
