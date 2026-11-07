@@ -37,15 +37,35 @@
  },
  {
   "t0": 19.2,
-  "t1": 20.38,
-  "rate": 5.96,
-  "text": "Mâliki... yəni sahib."
+  "t1": 21.38,
+  "rate": 3.21,
+  "text": "Mâliki... yəni sahib.",
+  "words": {
+   "Mâliki": [
+    19.2,
+    20.38
+   ],
+   "yəni sahib": [
+    20.7,
+    21.38
+   ]
+  }
  },
  {
-  "t0": 20.7,
+  "t0": 21.66,
   "t1": 22.74,
-  "rate": 3.43,
-  "text": "Məliki... yəni hökmdar."
+  "rate": 6.48,
+  "text": "Məliki... yəni hökmdar.",
+  "words": {
+   "Məliki": [
+    21.66,
+    22.1
+   ],
+   "yəni hökmdar": [
+    22.1,
+    22.74
+   ]
+  }
  },
  {
   "t0": 23.06,
