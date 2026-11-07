@@ -153,14 +153,28 @@
  },
  {
   "t0": 64.95,
-  "t1": 70.07,
-  "rate": 4.88,
-  "text": "Quranın son surəsində də eyni sıra var: Rəbbin-nas... Məlikin-nas... İlahin-nas."
+  "t1": 71.47,
+  "rate": 3.83,
+  "text": "Quranın son surəsində də eyni sıra var: Rəbbin-nas... Məlikin-nas... İlahin-nas.",
+  "words": {
+   "Rəbbin-nas": [
+    67.55,
+    68.65
+   ],
+   "Məlikin-nas": [
+    68.94,
+    70.06
+   ],
+   "İlahin-nas": [
+    70.34,
+    71.47
+   ]
+  }
  },
  {
-  "t0": 70.34,
-  "t1": 75.66,
-  "rate": 4.13,
+  "t0": 71.8,
+  "t1": 75.65,
+  "rate": 5.71,
   "text": "Yəni Quran eyni sıra ilə açılır, eyni sıra ilə bağlanır."
  },
  {
