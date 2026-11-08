@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="az"><head><meta charset="utf-8"><title>Ayənin sirri 4 · Söz sırası</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+@font-face{font-family:'Amiri';src:url(fonts/Amiri.ttf)}
+html,body{margin:0;background:#0d1422;color:#F6F5EE;font-family:Montserrat,sans-serif}
+#wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px}
+canvas{height:min(78vh,1920px);aspect-ratio:9/16;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.4);max-width:calc(100vw - 32px)}
+#bar{display:flex;gap:10px;align-items:center;width:min(440px,calc(100vw - 32px))}
+button{background:#4667FF;color:#fff;border:0;border-radius:8px;padding:8px 12px;font:700 14px Montserrat;cursor:pointer}
+input[type=range]{flex:1}
+#tm{font:500 13px Montserrat;min-width:84px;text-align:right}
+body.capture #bar{display:none} body.capture #wrap{padding:0} body.capture canvas{height:auto;width:1080px;border-radius:0;box-shadow:none;max-width:none}
+</style></head>
+<body><div id="wrap"><canvas id="c" width="1080" height="1920"></canvas>
+<div id="bar"><button id="pp">▶</button><button id="rs">⟲</button><input id="sk" type="range" min="0" max="30" step="0.01" value="0"><span id="tm">0.0 / 30.0</span><a href="out/final.mp4" download><button>MP4</button></a></div></div>
+<script src="anim.js"></script>
+</body></html>
