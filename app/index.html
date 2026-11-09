@@ -38,7 +38,7 @@
   --bad:#FF7070; --bad-bg:#44191A; --warn:#F5C451; --warn-bg:#3A2E10; --qc:#A991FF; --qc-bg:#2A2147; --arch:#A0A7AE; --arch-bg:#2A2D30;
   --info:#5AB0FF; --info-bg:#132B42; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.4}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
 .wrap{max-width:860px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
 header{background:var(--brand);color:var(--brand-fg);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 2px 12px rgba(40,15,0,.18)}
@@ -59,11 +59,11 @@ header{background:var(--brand);color:var(--brand-fg);position:sticky;top:env(saf
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:1 0 66px;white-space:nowrap}
 .tabs button{background:transparent;border:none;color:var(--brand-fg);opacity:.75;border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;font-weight:600;position:relative}
-.tabs button i{font-style:normal;font-size:18px;line-height:1.1}
+.tabs button i{font-style:normal;font-size:17px;line-height:1.1}
 .tabs button.on{opacity:1;background:rgba(255,255,255,.14)}
 .tabs .n{position:absolute;top:2px;right:calc(50% - 24px);min-width:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px}
-main.wrap{padding-block:14px 48px;display:flex;flex-direction:column;gap:12px}
-h2{font-family:var(--display);font-size:19px;margin:6px 0 0;display:flex;align-items:center;gap:8px;text-wrap:balance}
+main.wrap{padding-block:10px 40px;display:flex;flex-direction:column;gap:8px}
+h2{font-family:var(--display);font-size:16px;margin:8px 0 0;display:flex;align-items:center;gap:8px;text-wrap:balance}
 h2 .cnt{font-family:var(--mono);font-size:13px;background:var(--sunk);color:var(--muted);border-radius:999px;padding:1px 9px}
 h3{font-size:15px;margin:0}
 input,select,textarea,button{font:inherit;color:inherit}
@@ -79,25 +79,25 @@ button.sm{padding:4px 9px;font-size:13px}
 button.big{width:100%;padding:11px;font-size:16px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .grow{flex:1 1 150px;min-width:0}
-.hint{font-size:13px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted)}
 .meta{font-size:12px;color:var(--muted)}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:10px;text-align:center;color:var(--muted);font-size:14px}
 /* stage colours */
 .pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--wait-bg);color:var(--wait)} .p-mute{background:var(--sunk);color:var(--muted)}
 .c-buy{background:var(--buy-bg);color:var(--buy)} .c-wait{background:var(--wait-bg);color:var(--wait)} .c-ok{background:var(--ok-bg);color:var(--ok)} .c-bad{background:var(--bad-bg);color:var(--bad)} .c-qc{background:var(--qc-bg);color:var(--qc)} .c-arch{background:var(--arch-bg);color:var(--arch)}
 /* pipeline */
 .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.pipe button{border:none;border-radius:12px;padding:10px 8px;text-align:left;display:flex;flex-direction:column;gap:2px;color:#fff}
-.pipe b{font-family:var(--mono);font-size:24px;line-height:1}
+.pipe button{border:none;border-radius:10px;padding:6px 8px;text-align:left;display:flex;flex-direction:column;gap:2px;color:#fff}
+.pipe b{font-family:var(--mono);font-size:19px;line-height:1}
 .pipe span{font-size:12px;font-weight:600;opacity:.95}
 .pipe .buy{background:var(--buy)} .pipe .wait{background:var(--wait)} .pipe .bad{background:var(--bad)} .pipe .ok{background:var(--ok)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pipe button{color:#160d06}}
 :root[data-theme="dark"] .pipe button{color:#160d06}
 /* order card */
-.oc{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--arch);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.oc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--arch);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;min-width:0}
 .oc.s-buy{border-left-color:var(--buy)} .oc.s-wait{border-left-color:var(--wait)} .oc.s-ok{border-left-color:var(--ok)} .oc.s-bad{border-left-color:var(--bad)} .oc.s-qc{border-left-color:var(--qc)}
 .oc.act{box-shadow:0 0 0 2px var(--brand) inset, 0 4px 14px rgba(60,25,5,.08)}
 .oc-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -118,7 +118,7 @@ button.big{width:100%;padding:11px;font-size:16px}
 .ic.d-bad{background:var(--bad-bg)} .ic.d-bad .dot{background:var(--bad)}
 .ic.d-wait .dot{background:var(--wait)}
 .irows{display:flex;flex-direction:column;gap:6px}
-.irow{border:1px solid var(--line);border-radius:10px;padding:7px 9px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.irow{border:1px solid var(--line);border-radius:9px;padding:5px 8px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
 .irow.okr{background:var(--ok-bg);border-color:transparent} .irow.warnr{background:var(--warn-bg);border-color:transparent} .irow.miss{background:var(--bad-bg);border-color:transparent}
 .irow .in{flex-wrap:wrap;gap:6px}
 .irow .q{font-size:13px}
@@ -132,7 +132,7 @@ button.big{width:100%;padding:11px;font-size:16px}
 .tdec .seg3 button.badb{background:var(--surface);border-color:var(--bad);color:var(--bad);font-weight:600}
 .alert.note{background:var(--warn-bg);border-color:var(--warn)} .alert.note .al-t{color:var(--fg)}
 .alert.res{background:var(--ok-bg);border-color:var(--ok)} .alert.res .al-t{color:var(--ok)}
-.cell{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.cell{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding-top:4px;border-top:1px dashed var(--line)}
 .cell.ans{flex-direction:column;align-items:stretch}
 .cl{flex:0 0 100%;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .cell.ans .cl{flex:none}
@@ -142,6 +142,15 @@ button.big{width:100%;padding:11px;font-size:16px}
 .seg3 button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
 .seg3 button.on.none{background:var(--arch);border-color:var(--arch);color:#fff}
 .qw{border-color:var(--bad)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.dcard{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:7px 10px}
+.dcard.warn{border-left-color:var(--warn)} .dcard.bad{border-left-color:var(--bad)}
+.dcard summary{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}
+.dcard summary::-webkit-details-marker{display:none}
+.dcard .dn{font-weight:700;flex:1}
+.dl{margin-top:6px;font-size:13px}
+.dli{display:flex;flex-direction:column;gap:2px;margin:3px 0 0 6px;font-size:12px;color:var(--muted)}
+.alh{display:flex;align-items:center;justify-content:space-between;font-size:13px}
 .logl{display:flex;flex-direction:column;gap:6px;font-size:13px}
 .lg{border-bottom:1px dashed var(--line);padding-bottom:5px}
 .ic.bad{border-color:var(--bad)}
@@ -218,7 +227,7 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .tlf{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 .chipb{text-align:left;background:var(--wait-bg);border:none;border-radius:9px;padding:4px 9px;font-size:13px;color:var(--fg)}
 .chipb b{color:var(--wait)}
-.alert{background:var(--bad-bg);border:1px solid var(--bad);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.alert{background:var(--bad-bg);border:1px solid var(--bad);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;gap:4px}
 .al-t{color:var(--bad);font-size:15px}
 .al-m{font-size:13px;color:var(--fg)}
 .al-i{font-size:13px;color:var(--muted)}
@@ -738,11 +747,11 @@ const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 function waitOn(o){
   if (o.status==="redd" || o.deleted) return null;
   let w = null;
-  if (o.status==="acik") w = { who:"Satınalma", what:"gəliş günü təyin etməlidir", since:o.created, lim:24 };
-  else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:3 };
-  else if (o.status==="anbar") w = { who:o.wh, what:"qəbulu bitirməlidir", since:o.qcAt||o.arrivedAt||o.last_move, lim:3 };
-  else if (lateNeedsAns(o)) w = { who:"Satınalma", what:"gecikmənin səbəbini və yeni tarixi yazmalıdır", since:o.eta+"T23:59:00", lim:ANS_H };
-  else if (needsAnswer(o)) w = { who:"Satınalma", what:"gəlməyən / qəbul olunmayan mallara cavab verməlidir", since:o.items.filter(i=>problem(o,i)&&!i.ans).map(i=>ansSince(o,i)).sort()[0]||o.last_move, lim:ANS_H };
+  if (o.status==="acik") w = { who:"Satınalma", neg:"Satınalma qəbul etməyib", what:"gəliş günü təyin etməlidir", since:o.created, lim:24 };
+  else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", neg:"Keyfiyyət yoxlamayıb", what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:3 };
+  else if (o.status==="anbar") w = { who:o.wh, neg:o.wh+" qəbulu bitirməyib", what:"qəbulu bitirməlidir", since:o.qcAt||o.arrivedAt||o.last_move, lim:3 };
+  else if (lateNeedsAns(o)) w = { who:"Satınalma", neg:"Satınalma açıqlama verməyib", what:"gecikmənin səbəbini və yeni tarixi yazmalıdır", since:o.eta+"T23:59:00", lim:ANS_H };
+  else if (needsAnswer(o)) w = { who:"Satınalma", neg:"Satınalma cavab verməyib", what:"gəlməyən / qəbul olunmayan mallara cavab verməlidir", since:o.items.filter(i=>problem(o,i)&&!i.ans).map(i=>ansSince(o,i)).sort()[0]||o.last_move, lim:ANS_H };
   if (!w || !w.since) return w;
   w.h = Math.max(0,(Date.now()-new Date(w.since).getTime())/HOUR); w.stuck = w.h > w.lim;
   return w;
@@ -753,7 +762,7 @@ const hTxt = h => h<1 ? Math.max(1,Math.round(h*60))+" dəq" : h<48 ? Math.floor
 const stuck = o => { const w = waitOn(o); return !!(w && w.stuck); };
 function waitPill(o){
   const w = waitOn(o); if (!w || o.status==="acik") return "";
-  return w.stuck ? '<div class="stk">⚠ <b>'+esc(inWho(w.who))+'</b> ilişib · '+hTxt(w.h)+' — '+esc(w.what)+'</div>'
+  return w.stuck ? '<div class="stk">⚠ <b>'+esc(w.neg||inWho(w.who)+" ilişib")+'</b> · '+hTxt(w.h)+'</div>'
     : '<div class="meta">⏳ İndi <b>'+esc(w.who)+'</b> gözlənilir · '+hTxt(w.h)+'</div>';
 }
 // İlişən sifariş haqqında Rəhbərliyə və həmin şöbəyə bir dəfə xəbər
@@ -764,7 +773,7 @@ function stuckSignals(){
     const key = w.who+"|"+o.status+"|"+(o.qcAt?1:0); if (o.stuckN===key) return;
     o.stuckN = key; n++;
     const toProb = w.who==="Satınalma" && (needsAnswer(o) || lateNeedsAns(o));
-    notify(["Rəhbərlik", w.who], "late", toProb ? "#"+o.id+" · Satınalma "+ANS_H+" saatda cavab vermədi → Problemlər" : "#"+o.id+" "+inWho(w.who)+" ilişib · "+hTxt(w.h), w.who+" "+w.what, [], o.id);
+    notify(["Rəhbərlik", w.who], "late", toProb ? "#"+o.id+" · Satınalma "+ANS_H+" saatda cavab vermədi → Problemlər" : "#"+o.id+" · "+(w.neg||inWho(w.who)+" ilişib")+" · "+hTxt(w.h), w.who+" "+w.what, [], o.id);
   });
   if (n) save();
 }
@@ -823,14 +832,17 @@ function notify(to, kind, title, sub, items, oid){
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
 const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
+let alAll = false;
 function alertsHtml(){
-  return myAlerts().map(a=>{
+  const A = myAlerts(); if (!A.length) return "";
+  const shown = alAll ? A : A.slice(0,3);
+  return '<div class="alh"><b>🔔 Bildirişlər · '+A.length+'</b><button class="sm linkb" data-seenall="1">Hamısını oxudum</button></div>'+shown.map(a=>{
     const [ic,cl] = ALK[a.kind||"late"] || ALK.late;
     const title = a.title || (fmtD(a.eta)+" gəlməli olan "+a.items.length+" mal gəlmədi");
     const sub = a.sub || ((a.supplier||"Firmasız")+" → "+a.wh+" · #"+a.oid+" · Satınalma cavab verməlidir");
     return '<div class="'+cl+'"><div class="al-t">'+ic+' <b>'+esc(title)+'</b></div><div class="al-m">'+esc(sub)+'</div>'+
       ((dec=>(a.items.length && !dec.includes("data-techres")?'<div class="al-i">'+a.items.map(esc).join(" · ")+'</div>':"")+dec)(techDecide(a)))+'</div>';
-  }).join("");
+  }).join("")+(A.length>3 ? '<button class="sm linkb" data-alall="1">'+(alAll?"▴ Az göstər":"▾ Daha "+(A.length-3)+" bildiriş")+'</button>' : "");
 }
 // Texnoloq: mal Anbara qəbul olunandan sonra xəbərdə hər mal üçün "Qəbul olundu / Qəbul olunmadı"
 const dueTxt = i => i.techDue ? (daysTo(i.techDue)<0 ? '<span class="pill p-bad">cavab günü '+fmtD(i.techDue)+' · keçib</span>' : daysTo(i.techDue)===0 ? '<span class="pill p-warn">cavab günü bu gündür</span>' : '<span class="pill p-qc">cavab günü '+fmtD(i.techDue)+'</span>') : "";
@@ -940,8 +952,8 @@ function vRes(){
   const all = resultRows(), from = plusDays(-30);
   const sec = (c, t, hint) => { const rs = all.filter(r=>r.cat===c && (!r.i.ans || rDate(r)>=from)).sort((a,b)=> (!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)) || b.o.id-a.o.id);
     return rs.length ? '<h2 id="rs-'+c+'">'+t+' <span class="cnt">'+rs.length+'</span></h2>'+(hint?'<div class="hint">'+hint+'</div>':"")+'<div class="irows">'+rs.map(resRow).join("")+'</div>' : (c==="miss"?'<h2>'+t+'</h2><div class="empty">✓ Gəlməyən mal yoxdur</div>':""); };
-  return sec("miss","⛔ Gəlməyən / əskik gələn mallar","Satınalma hər birinə "+ANS_H+" saat ərzində cavab verməlidir: yeni tarix və ya “Mal tapılmır”. Son 30 gün.")+
-    sec("qc","🔍 Keyfiyyətin qəbul etmədiyi mallar","Ayrıca siyahı — bu mallar gəlib, amma Keyfiyyətdən keçməyib.")+
+  return sec("miss","⛔ Gəlməyən / əskik gələn mallar","")+
+    sec("qc","🔍 Keyfiyyətin qəbul etmədiyi mallar","")+
     sec("tech","🧪 Texnoloqun qəbul etmədiyi mallar","");
 }
 
@@ -963,7 +975,8 @@ function myWork(){
 function tabsFor(r){
   const t = [["home","🏠","Bu gün"]];
   if (WAREHOUSES.includes(r) || r==="Texnoloq") t.push(["new","➕","Sifariş"]);
-  t.push(["orders","📦","Sifarişlər"],["buy","🛒","Satınalma"],["qc","🔍","Keyfiyyət"],["days","🚚","Gələcək mallar"],["res","⛔","Gəlməyənlər"],["prob","⚠","Problemlər"],["arch","🗄","Arxiv"]);
+  t.push(["orders","📦","Sifarişlər"],["buy","🛒","Satınalma"],["qc","🔍","Keyfiyyət"],["days","🚚","Gələcək mallar"],["res","⛔","Gəlməyənlər"],["prob","⚠","Problemlər"]);
+  if (r==="Rəhbərlik" || r==="Admin") t.push(["arch","📊","Statistika"]);
   if (r==="Admin") t.push(["catalog","📚","Kataloq"]);
   return t;
 }
@@ -1017,7 +1030,7 @@ function vBuy(){
     (todo ? "" : '<div class="empty">✓ Satınalmanın gözləyən işi yoxdur</div>')+
     (acc.length ? '<h3>📥 Qəbul edilməli sifarişlər · '+acc.length+'</h3>'+acc.map(o=>me?orderCard(o):orderBrief(o)).join("") : "")+
     (late.length ? '<h3>⏰ Vaxtında gəlmədi — açıqlama və yeni tarix · '+late.length+'</h3>'+late.map(o=>me?orderCard(o):orderBrief(o)).join("") : "")+
-    (ans.length ? '<h3>📋 Gəlməyən / qəbul olunmayan mallara cavab · '+ans.length+'</h3><div class="hint">Cavab '+ANS_H+' saat ərzində verilməlidir, əks halda mal “Problemlər”ə keçir.</div><div class="irows">'+ans.map(resRow).join("")+'</div>' : "")+
+    (ans.length ? '<h3>📋 Gəlməyən / qəbul olunmayan mallara cavab · '+ans.length+'</h3><div class="irows">'+ans.map(resRow).join("")+'</div>' : "")+
     '<h2>Satınalmanın etdikləri · son 7 gün <span class="cnt">'+done.length+'</span></h2>'+
     (done.length ? '<div class="card"><div class="logl">'+done.map(({o,h})=>'<div class="lg"><span class="meta">'+shortT(new Date(h.at))+'</span> <button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> <b>'+esc(h.act)+'</b>'+(h.note?' <span class="meta">'+esc(h.note)+'</span>':"")+'</div>').join("")+'</div></div>' : '<div class="empty">Son 7 gündə qeyd yoxdur</div>');
 }
@@ -1027,7 +1040,7 @@ function vQc(){
   const rej = resultRows().filter(r=>r.cat==="qc" && (!r.i.ans || rDate(r)>=plusDays(-30))).sort((a,b)=>(!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)));
   const done = S.orders.filter(o=>hasQC(o) && o.qcAt && daysTo(o.qcAt.slice(0,10))>=-7).sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
   return '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
-    (role==="Keyfiyyət" ? '<div class="hint">Anbar “📦 Gəldi” basıb. Hər mal üçün <b>✓ Uyğun</b> və ya <b>✗ Uyğun deyil</b> seçin, tarixləri yazın, riskli mallarda temperaturu qeyd edin və kimin yoxladığını seçin.</div>' : '<div class="hint">Yalnız əsas Anbara gələn mallar (İnqilabda Keyfiyyət yoxdur).</div>')+
+    
     (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
     '<h2>🔍 Keyfiyyətin qəbul etmədiyi mallar <span class="cnt">'+rej.length+'</span></h2>'+
     (rej.length ? '<div class="irows">'+rej.map(resRow).join("")+'</div>' : '<div class="empty">Son 30 gündə yoxdur</div>')+
@@ -1040,7 +1053,7 @@ const probCount = () => probRows().length + probLate().length;
 function vProb(){
   const rs = probRows().sort((a,b)=>ansLeftH(a.o,a.i)-ansLeftH(b.o,b.i)), ls = probLate();
   return '<h2>Problemlər <span class="cnt">'+(rs.length+ls.length)+'</span></h2>'+
-    '<div class="hint">Gəlməyən və ya Keyfiyyətin qəbul etmədiyi mallar — Satınalma '+ANS_H+' saat ərzində cavab verməyib. Cavab veriləndə buradan çıxır.</div>'+
+    '<div class="meta">Satınalma '+ANS_H+' saat ərzində cavab verməyib</div>'+
     (rs.length+ls.length ? "" : '<div class="empty">✓ Problem yoxdur</div>')+
     (ls.length ? '<h3>⏰ Gəlmədi, Satınalma açıqlama verməyib · '+ls.length+'</h3>'+ls.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
     (rs.length ? '<h3>📋 Cavabsız mallar · '+rs.length+'</h3><div class="irows">'+rs.map(resRow).join("")+'</div>' : "");
@@ -1050,35 +1063,24 @@ function vProb(){
 const WORK_TITLE = { "Satınalma":"Qəbul ediləcək sifarişlər və cavab gözləyən mallar", "Keyfiyyət":"Anbara gələn mallar · yoxlayın", "Texnoloq":"Anbara qəbul olunan mallar · dadına və bişirildikdən sonrakı prosesə baxın", "Anbar":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın", "Anbar (İnqilab)":"Mal gələndə “📦 Gəldi” basın, sonra gələn miqdarı yazın" };
 function pipe(){
   const c = k => S.orders.filter(o=>stage(o).k===k && (k!=="ok" || daysTo(odate(o))>=-7)).length;
-  return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="'+({buy:"buy",wait:"days",chk:"qc",bad:"res",ok:"arch"}[k])+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
+  return '<div class="pipe">'+STAGES.map(([k,l])=>'<button class="'+k+'" data-go="'+({buy:"buy",wait:"days",chk:"qc",bad:"res",ok:"orders"}[k])+'"><b>'+c(k)+'</b><span>'+l+'</span></button>').join("")+'</div>';
 }
 function vHome(){
   const work = myWork();
-  let html = alertsHtml() + pipe();
+  let html = alertsHtml();
+  if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (WORK_TITLE[role] || work.length){
-    html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>' + (WORK_TITLE[role]?'<div class="hint">'+WORK_TITLE[role]+'</div>':"");
+    html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>';
     html += work.length ? (role==="Satınalma" ? bySent(work) : work.map(o=>orderCard(o)).join("")) : '<div class="empty">✓ Hazırda iş yoxdur</div>';
   }
-  if (role==="Satınalma"){
-    html += waitingBlock("Cavab verin");
-    const w = S.orders.filter(o=>o.status==="yolda" && !lateNeedsAns(o)).sort((a,b)=>odate(a).localeCompare(odate(b)));
-    if (w.length) html += '<h2>Gözlənilir <span class="cnt">'+w.length+'</span></h2>' + w.map(o=>orderCard(o)).join("");
-  } else if (WAREHOUSES.includes(role)){
-    // Əsas səhifədə yalnız hələ gəlməmiş sifarişlər; qəbul olunanlar "Nəticələr"ə keçir
+  if (role==="Satınalma") html += waitingBlock("Cavab verin");
+  else if (WAREHOUSES.includes(role)){
     const ids = new Set(work.map(o=>o.id));
     const mine = S.orders.filter(o=>o.wh===role && !ids.has(o.id) && isOpen(o)).sort((a,b)=>odate(a).localeCompare(odate(b)));
-    if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine);
-    html += waitingBlock("Satınalmanın cavabı gözlənilir");
-    html += resSummary();
-  } else if (role==="Rəhbərlik"){
-    const late = S.orders.filter(o=>overdue(o) || stuck(o));
-    if (late.length) html += '<h2>İlişib qalanlar <span class="cnt">'+late.length+'</span></h2><div class="hint">Kimdə və nə qədər vaxtdır ilişib — həmin şöbə ilə əlaqə saxlayın.</div>' + late.map(o=>orderCard(o)).join("");
-    html += waitingBlock("Satınalmanın cavabı gözlənilir");
-    html += resSummary();
+    if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
-  html += upcoming();
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · Məlumatlar ortaq bazada saxlanılır':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1462,8 +1464,33 @@ function itemOutcome(o,i){
   if (i.techRes==="bad") return ["Texnoloq qəbul etmədi","p-bad"];
   const g = gotState(i.qty, i.got||0); return i.tech && i.techRes==="ok" ? [g[0]+" · Texnoloq ✓", g[1]] : g;
 }
+// Şöbələr üzrə: kim nəyi etməyib, nə qədər problem var (Rəhbərlik üçün)
+function deptBoard(){
+  const L = (o,t) => '<button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> '+t;
+  const D = [];
+  const acc = S.orders.filter(o=>o.status==="acik"), lt = S.orders.filter(lateNeedsAns);
+  const un = unanswered().filter(r=>canAnswer(r.o,r.i));
+  D.push(["🛒","Satınalma",[
+    [acc.length+" sifariş qəbul edilməyib", acc.filter(stuck).length, acc.map(o=>L(o,esc(o.from)+" · "+hTxt((Date.now()-new Date(o.created))/HOUR)))],
+    [lt.length+" gecikən sifarişə açıqlama verməyib", lt.filter(o=>(Date.now()-new Date(o.eta+"T23:59:00"))/HOUR>ANS_H).length, lt.map(o=>L(o,esc(o.supplier||"Firmasız")+" · "+fmtD(o.eta)))],
+    [un.length+" gəlməyən / qəbul olunmayan mala cavab verməyib", un.filter(r=>ansLeftH(r.o,r.i)<0).length, un.map(r=>L(r.o,esc(pname(r.i.pid))+" · "+(ansLeftH(r.o,r.i)<0?'<b class="rs">'+hTxt(-ansLeftH(r.o,r.i))+' gecikir</b>':hTxt(ansLeftH(r.o,r.i))+" qalıb")))] ]]);
+  const qc = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt);
+  D.push(["🔍","Keyfiyyət",[[qc.length+" sifarişi yoxlamayıb", qc.filter(stuck).length, qc.map(o=>L(o,esc(o.supplier||"")+" · "+hTxt((Date.now()-new Date(o.arrivedAt||o.last_move))/HOUR)+" əvvəl gəlib"))]]]);
+  WAREHOUSES.forEach(wh=>{
+    const rc = S.orders.filter(o=>o.wh===wh && o.status==="anbar" && (!hasQC(o) || o.qcAt)), wt = S.orders.filter(o=>o.wh===wh && lateOpen(o));
+    D.push([wh==="Anbar"?"🏬":"🏪", wh, [[rc.length+" sifarişin qəbulunu bitirməyib", rc.filter(stuck).length, rc.map(o=>L(o,esc(o.supplier||"")))],
+      [wt.length+" sifariş gecikir (mal gəlməyib)", 0, wt.map(o=>L(o,esc(o.supplier||"Firmasız")+" · "+fmtD(o.eta)))]]]);
+  });
+  const tp = S.orders.filter(techPending);
+  D.push(["🧪","Texnoloq",[[tp.length+" sifarişdə dad/bişirmə cavabı verməyib", tp.filter(o=>o.items.some(i=>techReady(o,i) && i.techDue && daysTo(i.techDue)<0)).length, tp.map(o=>L(o,o.items.filter(i=>techReady(o,i)).map(i=>esc(pname(i.pid))).join(", ")))]]]);
+  return '<div class="dgrid">'+D.map(([ic,name,lines])=>{
+    const tot = lines.reduce((a,l)=>a+l[2].length,0), bad = lines.reduce((a,l)=>a+l[1],0);
+    return '<details class="dcard'+(bad?" bad":tot?" warn":"")+'"><summary><span class="dn">'+ic+' '+esc(name)+'</span>'+(bad?'<span class="pill p-bad">⚠ '+bad+' gecikir</span>':"")+'<span class="pill '+(tot?"p-warn":"p-ok")+'">'+(tot?tot+" iş":"✓")+'</span></summary>'+
+      (tot ? lines.filter(l=>l[2].length).map(l=>'<div class="dl"><b>'+l[0]+'</b>'+(l[1]?' <span class="rs">('+l[1]+'-i vaxtı keçib)</span>':"")+'<div class="dli">'+l[2].map(x=>'<div>'+x+'</div>').join("")+'</div></div>').join("") : '<div class="meta">Gözləyən işi yoxdur</div>')+'</details>';
+  }).join("")+'</div>';
+}
 function vArch(){
-  const seg = '<div class="seg">'+[["arch","🗄 Arxiv"],["week","📊 Həftəlik"],["month","📅 Aylıq"]].map(([k,l])=>'<button class="'+(arM===k?"on":"")+'" data-arm="'+k+'">'+l+'</button>').join("")+'</div>';
+  const seg = '<h2>Şöbələr</h2>'+deptBoard()+'<h2>Statistika</h2><div class="seg">'+[["arch","🗄 Arxiv"],["week","📊 Həftəlik"],["month","📅 Aylıq"]].map(([k,l])=>'<button class="'+(arM===k?"on":"")+'" data-arm="'+k+'">'+l+'</button>').join("")+'</div>';
   if (arM==="week"){ const b = addD(arW,6), done = b<today();
     return seg+'<div class="calh"><button class="nav" data-arw="-1" aria-label="Əvvəlki həftə">‹</button><b>'+fmtD(arW).slice(0,5)+' – '+fmtD(b)+'</b><button class="nav" data-arw="1" aria-label="Növbəti həftə"'+(arW>=monday(today())?" disabled":"")+'>›</button></div>'+
       (done?"":'<div class="hint">Həftə hələ bitməyib — rəqəmlər bu günə qədərdir. Bazar günü hesabat Rəhbərliyə göndəriləcək.</div>')+statsHtml(arW,b); }
@@ -1536,7 +1563,7 @@ function reportSignals(){
   const send = (key, a, b, title) => { if (S.reports[key]) return; const s = stats(a,b); if (!s.items && !s.orders) { S.reports[key] = 1; return; }
     S.reports[key] = 1; n++;
     notify(["Rəhbərlik"], "res", title+" hazırdır · "+fmtD(a).slice(0,5)+"–"+fmtD(b).slice(0,5),
-      s.items+" mal · "+s.full+" tam · "+s.part+" az · "+s.miss+" gəlmədi · Keyfiyyət ✗ "+s.qc.length+" · Texnoloq ✗ "+s.tech.length+(s.lates.length?" · "+s.lates.length+" gecikmə"+(s.lateNoAns?" ("+s.lateNoAns+"-nə Satınalma açıqlama verməyib)":""):"")+(s.open.length?" · "+s.open.length+" cavabsız":"")+" — Arxiv → Statistika", [], null); };
+      s.items+" mal · "+s.full+" tam · "+s.part+" az · "+s.miss+" gəlmədi · Keyfiyyət ✗ "+s.qc.length+" · Texnoloq ✗ "+s.tech.length+(s.lates.length?" · "+s.lates.length+" gecikmə"+(s.lateNoAns?" ("+s.lateNoAns+"-nə Satınalma açıqlama verməyib)":""):"")+(s.open.length?" · "+s.open.length+" cavabsız":"")+" — 📊 Statistika", [], null); };
   const wEnd = addD(monday(t), 6);
   if (t===wEnd) send("w"+monday(t), monday(t), t, "📊 Həftəlik hesabat");
   const pw = addD(monday(t), -7); if (S.orders.length) send("w"+pw, pw, addD(pw,6), "📊 Həftəlik hesabat");
@@ -1586,7 +1613,7 @@ function vOrders(){
   const fit = k => k==="all" ? ()=>true : (o=>o.from===k);
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
   const list = base.filter(fit(ofrom)).filter(hit).sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
-  return '<h2>Sifarişlər</h2><div class="hint">Kim nə sifariş edib. Satınalmanın, Keyfiyyətin və Anbarın etdiklərini görmək üçün kartda “Ətraflı” basın.</div>'+
+  return '<h2>Sifarişlər</h2>'+
     '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
     '<div class="seg">'+F.map(([k,l])=>'<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+base.filter(fit(k)).length+'</span></button>').join("")+'</div>'+
     rangeBar() + (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
@@ -2055,6 +2082,8 @@ $("main").addEventListener("click", e => {
   if (d.jf){ jf=d.jf; render(); return; }
   if (d.goorder){ tab="orders"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); fullSet.add(Number(d.goorder)); render(); window.scrollTo(0,0); return; }
   if (d.full){ const id = Number(d.full); fullSet.has(id) ? fullSet.delete(id) : fullSet.add(id); render(); const el=$("o-"+id); if (el) el.scrollIntoView({block:"start"}); return; }
+  if (d.seenall){ myAlerts().forEach(a=>{ if (role!=="Texnoloq" || !techDecide(a).includes("data-techres")) a.seen.push(role); }); alAll=false; save(); render(); return; }
+  if (d.alall){ alAll=!alAll; render(); return; }
   if (d.seen){ const a=(S.alerts||[]).find(x=>x.id===d.seen); if (a){ a.seen.push(role); save(); render(); } return; }
   // Keyfiyyət
   if (d.qc){ const [o,i]=itemOf(d.qc); keep(()=>{ i.qc = i.qc===d.v ? null : d.v; if (i.qc!=="bad") delete i.qcWhy; });
