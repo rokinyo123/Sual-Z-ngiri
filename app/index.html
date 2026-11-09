@@ -617,14 +617,17 @@ const Cloud = (() => {
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
   }
+  let hiddenTicks = 0;
   async function tick(){
-    if (document.visibilityState!=="visible" || !C.sess || !C.me) return;
+    if (!C.sess || !C.me) return;
+    // proqram arxa fondadırsa da (açıq, amma başqa pəncərə) dəqiqədə bir yoxlayır ki, bildiriş gəlsin
+    if (document.visibilityState!=="visible"){ if (++hiddenTicks % 4) return; } else hiddenTicks = 0;
     try {
       if (records().some(([k,id,d])=>JSON.stringify(d)!==C.snap[k+":"+id])) await push();
       const n = await pull(false);
       const f = document.activeElement;
       if (n && tab!=="new" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))){ const y = window.scrollY; render(); window.scrollTo(0,y); }
-      else if (n) renderTabs();
+      else if (n){ renderTabs(); pushNotify(); }
     } catch(e){}
   }
   document.addEventListener("visibilitychange", tick);
@@ -861,12 +864,16 @@ function techDecide(a){
   if (role==="Texnoloq" && o && o.items.some(i=>i.tech && !i.techRes)) return '<div class="hint">Mal Anbara qəbul olunandan sonra burada “Qəbul olundu / Qəbul olunmadı” çıxacaq.</div><div class="row"><button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
   return '<div class="row">'+(a.oid?'<button class="sm" data-goorder="'+a.oid+'">Bax</button>':/hesabat/.test(a.title||"")?'<button class="sm" data-gostat="'+(/Aylıq/.test(a.title)?"month":"week")+'">Bax</button>':"")+'<button class="sm" data-seen="'+a.id+'">Oxudum</button></div>';
 }
-const notified = new Set();
+const notified = (()=>{ try { return new Set(JSON.parse(localStorage.getItem("almond-notified")||"[]")); } catch(e){ return new Set(); } })();
 function pushNotify(){
   try {
     if (!("Notification" in window) || Notification.permission!=="granted") return;
-    myAlerts().forEach(a=>{ if (notified.has(a.id+role)) return; notified.add(a.id+role);
-      new Notification("Almond Anbar", { body: a.title || (fmtD(a.eta)+": "+a.items.length+" mal gəlmədi") }); });
+    let n = 0;
+    myAlerts().forEach(a=>{ if (notified.has(a.id+role)) return; notified.add(a.id+role); n++;
+      const body = a.title || (fmtD(a.eta)+": "+a.items.length+" mal gəlmədi"), opt = { body: body+(a.sub?"\n"+a.sub:""), tag:a.id, icon:"../icon-192.png", badge:"../icon-192.png", vibrate:[200,100,200], data:{ oid:a.oid } };
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r=>r.showNotification("Almond · "+role, opt)).catch(()=>{});
+      else new Notification("Almond · "+role, opt); });
+    if (n) try { localStorage.setItem("almond-notified", JSON.stringify([...notified].slice(-500))); } catch(e){}
   } catch(e){}
 }
 
@@ -1608,7 +1615,14 @@ function orderBrief(o){
 }
 let ofrom = "all";
 function vOrders(){
-  const base = S.orders.filter(o=>inRange(odate(o)));
+  const picked = !!(RF || RT);
+  // Tarix seçilməyibsə: qəbul olunub bağlanmış sifariş 24 saatdan sonra, Satınalmanın cavab/açıqlama borcu olanlar isə dərhal burada görünmür
+  const owed = o => needsAnswer(o) || lateNeedsAns(o);
+  const oldDone = o => o.status==="redd" || (archived(o) && (Date.now()-new Date(o.recvAt||o.last_move).getTime()) > DAY);
+  const hidden = picked ? [] : S.orders.filter(o=>oldDone(o) || owed(o));
+  const hid = new Set(hidden.map(o=>o.id));
+  const base = S.orders.filter(o=>inRange(odate(o)) && !hid.has(o.id));
+  const nOld = hidden.filter(oldDone).length, nOwed = hidden.filter(o=>!oldDone(o) && owed(o)).length;
   const F = [["all","Hamısı"],["Anbar","Anbar"],["Anbar (İnqilab)","İnqilab"],["Texnoloq","Texnoloq"]];
   const fit = k => k==="all" ? ()=>true : (o=>o.from===k);
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
@@ -1616,7 +1630,8 @@ function vOrders(){
   return '<h2>Sifarişlər</h2>'+
     '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
     '<div class="seg">'+F.map(([k,l])=>'<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+base.filter(fit(k)).length+'</span></button>').join("")+'</div>'+
-    rangeBar() + (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
+    rangeBar() + (picked ? "" : (nOld||nOwed) ? '<div class="meta">'+[nOld?nOld+" qəbul olunmuş köhnə sifariş gizlədilib — görmək üçün tarix seçin":"", nOwed?'<button class="linkb" data-go="buy">'+nOwed+" sifariş Satınalmanın cavabını gözləyir → 🛒 Satınalma</button>":""].filter(Boolean).join(" · ")+'</div>' : "") +
+    (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
 }
 
 // ----- Gəlişlər: həftə zolağı → seçilən günün hər malı -----
@@ -1910,6 +1925,7 @@ function makeOrder(items, note, photos, files){
     note, photos, files, comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   S.orders.unshift(o);
+  notify(["Satınalma"], "note", "Yeni sifariş #"+o.id+" · "+o.from, o.items.length+" mal · qəbul edib gəliş gününü təyin edin", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id);
   return o;
 }
 // Excel-in hər vərəqi ayrıca sifariş: adlar kataloqla uyğunlaşdırılır, tapılmayan ad kataloqa "yeni" kimi düşür

@@ -1,10 +1,15 @@
 // Tətbiq qabığı: internet zəif olanda da açılsın. Yalnız öz faylları keşlənir;
 // bazaya (Supabase) gedən sorğular heç vaxt keşlənmir — məlumat həmişə təzədir.
-const CACHE = "almond-anbar-v19";
+const CACHE = "almond-anbar-v20";
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "./index.html", "./manifest.json"]))); });
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {
   const u = new URL(e.request.url);
   if (e.request.method !== "GET" || u.origin !== location.origin) return;
   e.respondWith(fetch(e.request, { cache: "no-cache" }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request)));
+});
+// Bildirişə basanda proqram açılır
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type:"window", includeUncontrolled:true }).then(ws => { const w = ws.find(x => x.url.includes("/app/")); return w ? w.focus() : self.clients.openWindow("./"); }));
 });
