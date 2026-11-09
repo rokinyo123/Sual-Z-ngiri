@@ -2,24 +2,32 @@
 import json, re
 L = json.load(open('../cumleler.json')); S = {d['i']: d for d in L}
 def st(i): return S[i]['snap']
+SW = json.load(open('../soz_vaxtlari.json')); TXT = SW['text']; TL_ = TXT.lower(); WORDS = SW['words']
+CPOS = {}; _p = 0
+for d in L:
+    q = TXT.find(d['txt'][:25], _p); assert q >= 0, d; CPOS[d['i']] = q; _p = q
+def word_at(p):  # first word whose span contains or follows char p
+    for w in WORDS:
+        if w['c'] + len(w['w']) > p: return w
+    return WORDS[-1]
 def kw(i, word=None, off=0.0):
-    d = S[i]; txt = d['txt'].lower(); t0 = d['snap']
-    if not word: return round(t0 + off, 2)
-    p = txt.find(word.lower())
-    if p < 0: raise SystemExit(f'word {word!r} not in {i}: {txt}')
-    full = len(txt) if len(txt) < 56 else max(len(txt), d['dur'] * 13.5)
-    return round(t0 + d['dur'] * p / full + off, 2)
+    p = CPOS[i]
+    if word:
+        q = TL_.find(word.lower(), p)
+        if q < 0 or q > p + 400: raise SystemExit(f'word {word!r} not after cue {i}')
+        p = q
+    return round(word_at(p)['t0'] + off, 2)
 K = {}
 def k(name, i, word=None, off=0.0): K[name] = kw(i, word, off)
 # ---- HOOK
 k('h_tesevvur', 1); k('h_14esr', 1, 'on dörd')
-k('h_onu', 2); k('h_mikro', 2, 'mikroskop'); k('h_tele', 2, 'nə mikroskop', 1.6)
+k('h_onu', 2); k('h_mikro', 2, 'mikroskop'); k('h_tele', 2, 'teleskop')
 k('h_okean', 3); k('h_ulduz', 4); k('h_amma', 5); k('h_ayeler', 6)
-k('h_29', 7); k('h_29n', 7, 'iyirmi'); k('h_14', 8); k('h_7', 9); k('h_7n', 9, 'yeddi', 1.0)
+k('h_29', 7); k('h_29n', 7, 'iyirmi'); k('h_14', 8); k('h_7', 9); k('h_7n', 9, 'yeddi')
 k('h_zorla', 10); k('h_aye', 11); k('h_netice', 12); k('h_sert', 13); k('h_sonuncu', 14); k('h_sual', 15)
 k('s1', 16); k('s1_herfi', 17)
 # ---- SIRR 1
-k('s1_mushrik', 18); k('s1_sumuk', 19); k('s1_qiyame', 20); k('s1_aye', 21); k('s1_beli', 22); k('s1_barmaq', 23); k('s1_ucunu', 23, 'barmaqlar', 0.4)
+k('s1_mushrik', 18); k('s1_sumuk', 19); k('s1_qiyame', 20); k('s1_aye', 21); k('s1_beli', 22); k('s1_barmaq', 23); k('s1_ucunu', 23, 'ucunu')
 k('s1_diqqet', 24); k('s1_ureyi', 25); k('s1_beyni', 25, 'nə beyni'); k('s1_barm2', 26)
 k('s1_1880', 27); k('s1_shubhe', 28); k('s1_1892', 29); k('s1_eyni', 30); k('s1_1905', 31)
 k('s1_yeni', 32); k('s1_imza', 33); k('s1_tefsir', 34); k('s1_bugun', 35); k('s1_tesaduf', 36)
@@ -52,6 +60,8 @@ k('s7_herf', 148); k('s7_gucunuz', 149); k('s7_amma', 150); k('s7_allah', 151); 
 for n, i in enumerate(range(155, 162)): k(f'n_{n+1}', i)
 k('n_tesaduf', 162); k('n_belke', 163); k('n_cagir', 164); k('n_aye', 165); k('n_kor', 166); k('n_video', 167)
 k('n_serh', 168); k('n_reqem', 169); k('n_bilir', 170); k('n_yeni', 171); k('n_abune', 172); k('n_salam', 173)
+exec(open('wordkeys.py').read())
+for n, (i, w) in NEW.items(): k(n, i, w, -0.08)
 TOTAL = 564.5
 json.dump(K, open('K.json', 'w'), indent=0)
 with open('timeline.js', 'w') as f:

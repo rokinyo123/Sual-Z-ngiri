@@ -325,7 +325,7 @@ sec(K.h_amma, K.h_29, t => {
   grp(a, () => {
     // seven secret icons fly out of the glowing book
     for (let i = 0; i < 7; i++) {
-      const t0 = K.h_ayeler + 0.1 + i * 0.28; if (t < t0) continue;
+      const t0 = K.w_movzu + i * 0.28; if (t < t0) continue;
       const u = eOut(clamp((t - t0) / 0.9)), ang = Math.PI * (0.95 - i * 0.15);
       const x = lerp(1240, 960 + Math.cos(ang) * 720, u), y = lerp(560, 600 - Math.sin(ang) * 420, u);
       sprite(SIRR_ICON[i], x, y, lerp(30, 130, u), clamp(u * 2), 0, 1, '#ffb030');
@@ -341,7 +341,7 @@ sec(K.h_29, K.h_7, t => {
       tx(s, x, y, `bold ${70 + 20 * srand(i)}px ${AR}`, G1, R(t, t0, t0 + 0.5) * (0.55 + 0.45 * Math.sin(t * 2 + i)), { glow: '#ffb030', blur: 30, rot: Math.sin(t * 0.5 + i) * 0.15 }); });
     counter(t, K.h_29n - 0.1, 1.1, 0, 29, 960, 260, 210, G1);
     tx('SURƏ', 960, 400, `60px ${AN}`, '#fff', R(t, K.h_29n + 0.6, K.h_29n + 0.9), { ls: '12px', glow: '#000' });
-    if (t >= K.h_14) { popSprite('el03_5', t, K.h_14 + 0.2, 960, 560, 200, '#ffb030'); chipAt('14 ƏSRDİR SİRR', t, K.h_14 + 0.6, 960, 700, G2, 40); }
+    if (t >= K.h_14) { popSprite('el03_5', t, K.w_alim, 960, 560, 200, '#ffb030'); chipAt('14 ƏSRDİR SİRR', t, K.w_alim + 0.3, 960, 700, G2, 40); }
   });
 });
 sec(K.h_7, K.h_zorla, t => {
@@ -350,8 +350,8 @@ sec(K.h_7, K.h_zorla, t => {
   const k = pop(t, K.h_7n + 0.1, 0.5); tx('7 SİRR', W / 2, H / 2 + 70, `150px ${AN}`, G1, clamp(k), { sc: k, glow: '#ffb030', blur: 50, ls: '8px' });
 });
 sec(K.h_zorla, K.h_sert, t => {
-  chipAt('AYƏ', t, K.h_aye, 640, 270, G1, 50); chipAt('ELM', t, K.h_aye + 1.0, 1290, 270, '#9fe7ff', 50);
-  if (t > K.h_netice) { const u = R(t, K.h_netice, K.h_sert - 0.2); popSprite('el03_4', t, K.h_netice, lerp(500, 1400, u), 560 + Math.sin(u * 6) * 40, 260, null, -0.3); }
+  chipAt('AYƏ', t, K.h_aye, 640, 270, G1, 50); chipAt('ELM', t, K.w_bilgi, 1290, 270, '#9fe7ff', 50);
+  if (t > K.w_netice) { const u = R(t, K.w_netice, K.h_sert - 0.2); popSprite('el03_4', t, K.w_netice, lerp(500, 1400, u), 560 + Math.sin(u * 6) * 40, 260, null, -0.3); }
   stamp('ŞİŞİRTMƏ YOX', t, K.h_zorla + 0.4, 960, 160, 54, G1, -0.04);
 });
 sec(K.h_sert, K.h_sonuncu, t => {
@@ -363,7 +363,7 @@ sec(K.h_sonuncu, K.s1, t => {
   ctx.save(); ctx.translate(sh, 0);
   chipAt('SİRR #7', t, K.h_sonuncu + 0.2, 960, 120, RED, 46);
   ctx.restore();
-  if (t >= K.h_sual) { darken(0.4 * R(t, K.h_sual, K.h_sual + 0.4)); glitchTx('?', W / 2, H / 2, `520px ${AN}`, G1, t, K.h_sual + 0.3); tx('HEÇ KİM CAVAB TAPA BİLMƏYİB', W / 2, 950, `50px ${AN}`, '#fff', R(t, K.h_sual + 1.0, K.h_sual + 1.4), { ls: '5px', glow: '#000' }); }
+  if (t >= K.h_sual) { darken(0.4 * R(t, K.h_sual, K.h_sual + 0.4)); glitchTx('?', W / 2, H / 2, `520px ${AN}`, G1, t, K.h_sual + 0.3); tx('HEÇ KİM CAVAB TAPA BİLMƏYİB', W / 2, 950, `50px ${AN}`, '#fff', R(t, K.w_cavab, K.w_cavab + 0.4), { ls: '5px', glow: '#000' }); }
 });
 
 // ---------- SIRR 1: fingertips ----------
@@ -383,7 +383,7 @@ sec(K.s1_mushrik, K.s1_barmaq, t => {
       ayah('مَن يُحْيِي الْعِظَامَ وَهِيَ رَمِيمٌ', '«Çürümüş sümükləri kim diriltəcək?»', t, K.s1_sumuk, 1450, 430, 70, K.s1_sumuk + 1.0, 'Yasin 36:78', K.s1_sumuk + 1.5);
     });
   } else {
-    chipAt('QİYAMƏ SURƏSİ', t, K.s1_qiyame - 2.9, 1450, 160, G1, 40);
+    chipAt('QİYAMƏ SURƏSİ', t, K.s1_qiyame, 1450, 160, G1, 40);
     ayah('أَيَحْسَبُ الْإِنسَانُ أَلَّن نَّجْمَعَ عِظَامَهُ', null, t, K.s1_aye, 1430, 330, 66);
     if (t > K.s1_beli - 0.1) { ayah('بَلَىٰ قَادِرِينَ عَلَىٰ أَن نُّسَوِّيَ بَنَانَهُ', null, t, K.s1_beli, 1430, 520, 66); stamp('BƏLİ!', t, K.s1_beli + 0.05, 1430, 720, 80, G1, -0.06); }
     src('Qiyamə 75:3–4', t, K.s1_aye + 1, 1430, H - 52);
@@ -392,12 +392,12 @@ sec(K.s1_mushrik, K.s1_barmaq, t => {
 sec(K.s1_barmaq, K.s1_diqqet, t => {
   ayah('بَلَىٰ قَادِرِينَ عَلَىٰ أَن نُّسَوِّيَ بَنَانَهُ', '«...barmaqlarının ucunu belə düzəltməyə qadirik»', t, K.s1_barmaq - 0.05, 560, 250, 64, K.s1_barmaq + 0.6);
   src('Qiyamə 75:4', t, K.s1_barmaq + 1, 560);
-  if (t > K.s1_ucunu) { const k = pop(t, K.s1_ucunu, 0.5); sprite('el02_1', 1395, 330, 150, clamp(k) * 0.85, -0.3, k, '#ffb030'); }
+  if (t > K.w_ucunu) { const k = pop(t, K.w_ucunu, 0.5); sprite('el02_1', 1395, 330, 150, clamp(k) * 0.85, -0.3, k, '#ffb030'); }
 });
 sec(K.s1_diqqet, K.s1_1880, t => {
   const y = 520, xs = [560, 960, 1360];
   chipAt('DİQQƏT', t, K.s1_diqqet, 960, 160, G1, 44);
-  if (t >= K.s1_ureyi - 0.2) { drawHeart(xs[0], y, 230, t); cross(xs[0], y, 260, t, K.s1_ureyi + 0.35); tx('ÜRƏK', xs[0], y + 200, `50px ${AN}`, '#fff', R(t, K.s1_ureyi, K.s1_ureyi + 0.3), { ls: '4px' }); }
+  if (t >= K.w_ureyi - 0.2) { drawHeart(xs[0], y, 230, t); cross(xs[0], y, 260, t, K.w_ureyi + 0.35); tx('ÜRƏK', xs[0], y + 200, `50px ${AN}`, '#fff', R(t, K.w_ureyi, K.w_ureyi + 0.3), { ls: '4px' }); }
   if (t >= K.s1_beyni - 0.2) { const k = pop(t, K.s1_beyni - 0.2, 0.4); drawIcon('🧠', xs[1], y, 210, clamp(k), '#ff9fb2', k); cross(xs[1], y, 260, t, K.s1_beyni + 0.35); tx('BEYİN', xs[1], y + 200, `50px ${AN}`, '#fff', R(t, K.s1_beyni, K.s1_beyni + 0.3), { ls: '4px' }); }
   if (t >= K.s1_barm2 - 0.1) { popSprite('el02_1', t, K.s1_barm2, xs[2], y, 260, '#ffb030'); shock(t, K.s1_barm2 + 0.1, xs[2], y); check(xs[2] + 130, y - 130, 120, t, K.s1_barm2 + 0.4); tx('BARMAQ UCU', xs[2], y + 200, `50px ${AN}`, G1, R(t, K.s1_barm2, K.s1_barm2 + 0.3), { ls: '4px', glow: '#ffb030' }); }
 });
@@ -406,20 +406,20 @@ sec(K.s1_1880, K.s1_yeni, t => {
   timeline(t, yrs, [520, 960, 1400], 985, 1);
   if (t < K.s1_1892) {
     popSprite('el04_1', t, K.s1_shubhe, 380, 470, 380); popSprite('el04_2', t, K.s1_shubhe + 0.25, 800, 470, 380);
-    tx('?', 600, 230, `120px ${AN}`, G1, pop(t, K.s1_shubhe + 0.6, 0.4), { glow: '#ffb030' });
+    tx('?', 600, 230, `120px ${AN}`, G1, pop(t, K.w_shubhe, 0.4), { glow: '#ffb030' });
   } else if (t < K.s1_1905) {
     sprite('el04_1', 640, 450, 520, 1, -0.04); sprite('el04_2', 1280, 450, 520, 1, 0.04);
-    if (t > K.s1_eyni) stamp('2 EYNİ İZ YOXDUR', t, K.s1_eyni + 0.3, 960, 800, 62, G1, -0.03);
+    if (t > K.s1_eyni) stamp('2 EYNİ İZ YOXDUR', t, K.w_eyni, 960, 800, 62, G1, -0.03);
   } else { chipAt('1905 · POLİS', t, K.s1_1905 + 0.4, 960, 140, G1, 44); popSprite('el04_1', t, K.s1_1905 + 0.7, 1500, 470, 300, null, 0.1); }
 });
 sec(K.s1_yeni, K.s1_tefsir, t => {
   const k = pop(t, K.s1_yeni + 0.1, 0.5); sprite('el02_1', 520, 500, 330, clamp(k), 0, k, '#ffb030');
-  if (t > K.s1_imza) { stamp('KİMLİYİNİN İMZASI', t, K.s1_imza + 0.3, 520, 800, 54, G1, -0.05); shock(t, K.s1_imza + 0.35, 520, 500); }
+  if (t > K.s1_imza) { stamp('KİMLİYİNİN İMZASI', t, K.w_imza, 520, 800, 54, G1, -0.05); shock(t, K.w_imza + 0.05, 520, 500); }
 });
 sec(K.s1_tefsir, K.s1_tesaduf, t => {
   if (t < K.s1_bugun) { chipAt('ƏVVƏLKİ TƏFSİRÇİLƏR', t, K.s1_tefsir + 0.2, 1450, 200, G2, 40);
-    tx('ən kiçik sümük belə...', 1450, 330, `56px ${CV}`, '#fff', R(t, K.s1_tefsir + 0.9, K.s1_tefsir + 1.3), { glow: '#000', blur: 16 }); }
-  else { chipAt('BU GÜN', t, K.s1_bugun + 0.1, 470, 200, '#9fe7ff', 44); big('BARMAQ İZİ = KİMLİK', t, K.s1_bugun + 1.2, 520, 360, 70, '#fff'); }
+    tx('ən kiçik sümük belə...', 1450, 330, `56px ${CV}`, '#fff', R(t, K.w_sumuyu, K.w_sumuyu + 0.4), { glow: '#000', blur: 16 }); }
+  else { chipAt('BU GÜN', t, K.s1_bugun + 0.1, 470, 200, '#9fe7ff', 44); big('BARMAQ İZİ = KİMLİK', t, K.w_diqqeti, 520, 360, 70, '#fff'); }
 });
 sec(K.s1_tesaduf, K.s2, t => { glitchTx('TƏSADÜF?', W / 2, H / 2, `200px ${AN}`, G1, t, K.s1_tesaduf + 0.1); });
 
@@ -433,11 +433,11 @@ sec(K.s2_rehman, K.s2_ceb, t => {
   src('Rəhman 55:19–20', t, K.s2_aye + 1);
 });
 sec(K.s2_ceb, K.s2_duzlu, t => {
-  const k = R(t, K.s2_ceb + 0.8, K.s2_ceb + 1.4);
+  const k = R(t, K.w_araliq, K.w_araliq + 0.5);
   tx('ATLANTİK OKEANI', 470, 640, `46px ${AN}`, '#9fe7ff', k, { ls: '5px', glow: '#000', blur: 20 });
   tx('ARALIQ DƏNİZİ', 1480, 560, `46px ${AN}`, '#7fb2ff', k, { ls: '5px', glow: '#000', blur: 20 });
-  const p = pop(t, K.s2_ceb + 1.6, 0.4); if (p > 0) { ctx.save(); ctx.strokeStyle = G1; ctx.lineWidth = 5; ctx.shadowColor = '#ffb030'; ctx.shadowBlur = 25; ctx.beginPath(); ctx.arc(960, 560, 60 + 10 * Math.sin(t * 5), 0, 7); ctx.stroke(); ctx.restore(); }
-  chipAt('CƏBƏLLÜTARİQ BOĞAZI', t, K.s2_ceb + 1.8, 960, 140, G1, 44);
+  const p = pop(t, K.w_qarsi, 0.4); if (p > 0) { ctx.save(); ctx.strokeStyle = G1; ctx.lineWidth = 5; ctx.shadowColor = '#ffb030'; ctx.shadowBlur = 25; ctx.beginPath(); ctx.arc(960, 560, 60 + 10 * Math.sin(t * 5), 0, 7); ctx.stroke(); ctx.restore(); }
+  chipAt('CƏBƏLLÜTARİQ BOĞAZI', t, K.w_qarsi + 0.2, 960, 140, G1, 44);
 });
 // cross-section diagram (drawn in code)
 function seaSection(t, t0, mixing = 0) {
@@ -465,34 +465,34 @@ sec(K.s2_duzlu, K.s2_durust, t => {
   seaSection(t, K.s2_duzlu - 0.1);
   tx('ATLANTİK', 140, 380, `44px ${AN}`, '#fff', R(t, K.s2_duzlu, K.s2_duzlu + 0.4), { align: 'left', ls: '4px', glow: '#000' });
   tx('ARALIQ DƏNİZİ', W - 140, 900, `44px ${AN}`, '#ffe2a0', R(t, K.s2_duzlu + 0.3, K.s2_duzlu + 0.7), { align: 'right', ls: '4px', glow: '#000' });
-  chipAt('DAHA DUZLU · DAHA AĞIR', t, K.s2_duzlu + 1.2, 1300, 720, G1, 38);
-  if (t > K.s2_asagi) { chipAt('YUXARIDAN ↓ İÇƏRİ', t, K.s2_asagi + 1.8, 520, 410, '#fff', 34); chipAt('AŞAĞIDAN → OKEANA', t, K.s2_asagi + 0.6, 560, 870, G2, 34); }
+  chipAt('DAHA DUZLU · DAHA AĞIR', t, K.w_duzlu, 1300, 720, G1, 38);
+  if (t > K.s2_asagi) { chipAt('YUXARIDAN ↓ İÇƏRİ', t, K.w_yuxari, 520, 410, '#fff', 34); chipAt('AŞAĞIDAN → OKEANA', t, K.w_asagi, 560, 870, G2, 34); }
   if (t > K.s2_kecid - 0.2) { stamp('KEÇİD TƏBƏQƏSİ', t, K.s2_kecid + 0.2, 960, 640, 56, '#bff', -0.02); }
   big('İKİ SU KÜTLƏSİ', t, K.s2_iki, 960, 190, 80, '#fff');
 });
 sec(K.s2_durust, K.s2_20esr, t => {
   if (t < K.s2_aye2) {
     stamp('DÜRÜST OLAQ', t, K.s2_durust + 0.05, 960, 170, 62, G1, -0.04);
-    if (t > K.s2_qarisir) cv1('sərhəddə yavaş-yavaş qarışırlar...', t, K.s2_qarisir + 0.3, 960, 320, 58, '#fff');
-    if (t > K.s2_hereri) { chipAt('AMMA HƏR BİRİ', t, K.s2_hereri + 0.1, 960, 440, G1, 40); chipAt('ÖZ DUZLULUĞU', t, K.s2_hereri + 0.8, 760, 540, '#fff', 34); chipAt('ÖZ TEMPERATURU', t, K.s2_hereri + 1.2, 1180, 540, '#fff', 34); }
+    if (t > K.s2_qarisir) cv1('sərhəddə yavaş-yavaş qarışırlar...', t, K.w_yavas, 960, 320, 58, '#fff');
+    if (t > K.s2_hereri) { chipAt('AMMA HƏR BİRİ', t, K.s2_hereri + 0.1, 960, 440, G1, 40); chipAt('ÖZ DUZLULUĞU', t, K.w_duzlulug, 760, 540, '#fff', 34); chipAt('ÖZ TEMPERATURU', t, K.w_temp, 1180, 540, '#fff', 34); }
   } else {
     ayah('بَيْنَهُمَا بَرْزَخٌ لَّا يَبْغِيَانِ', null, t, K.s2_aye2 - 0.1, 960, 200, 76);
     const y = 420;
     panel(960, y + 80, 1100, 290, R(t, K.s2_aye2 + 0.6, K.s2_aye2 + 1));
-    tx('«QARIŞMAZLAR»', 760, y + 20, `58px ${AN}`, 'rgba(255,255,255,0.7)', R(t, K.s2_aye2 + 0.8, K.s2_aye2 + 1.1)); cross(1030, y + 20, 70, t, K.s2_aye2 + 1.2);
-    tx('«HƏDDİ AŞMAZLAR»', 760, y + 140, `58px ${AN}`, G1, R(t, K.s2_aye2 + 2.2, K.s2_aye2 + 2.5), { glow: '#ffb030' }); check(1120, y + 140, 80, t, K.s2_aye2 + 2.6);
+    tx('«QARIŞMAZLAR»', 760, y + 20, `58px ${AN}`, 'rgba(255,255,255,0.7)', R(t, K.w_qarisma, K.w_qarisma + 0.3)); cross(1030, y + 20, 70, t, K.w_yox49);
+    tx('«HƏDDİ AŞMAZLAR»', 760, y + 140, `58px ${AN}`, G1, R(t, K.w_hedd49, K.w_hedd49 + 0.3), { glow: '#ffb030' }); check(1120, y + 140, 80, t, K.w_deyilir);
   }
 });
 sec(K.s2_20esr, K.s3, t => {
-  if (t < K.s2_sehra) { chipAt('XX ƏSR', t, K.s2_20esr + 0.2, 470, 300, G1, 60); cv1('xüsusi cihazlarla ölçüldü', t, K.s2_20esr + 0.8, 470, 430, 56, '#fff'); }
-  else { glitchTx('HARADAN BİLƏYDİ?', W / 2, 200, `120px ${AN}`, '#fff', t, K.s2_sehra + 1.2); }
+  if (t < K.s2_sehra) { chipAt('XX ƏSR', t, K.s2_20esr + 0.2, 470, 300, G1, 60); cv1('xüsusi cihazlarla ölçüldü', t, K.w_cihaz, 470, 430, 56, '#fff'); }
+  else { glitchTx('HARADAN BİLƏYDİ?', W / 2, 200, `120px ${AN}`, '#fff', t, K.w_haradan); }
 });
 
 // ---------- SIRR 3: the bee ----------
 sec(K.s3, K.s3_nehl, t => { sirrCard(t, K.s3, 3, K.s3_nehl - K.s3 - 0.1); });
 sec(K.s3_nehl, K.s3_vehy, t => {
   tx('النَّحْل', 480, 420, `bold 190px ${AR}`, G1, pop(t, K.s3_nehl, 0.5), { glow: '#ffb030', blur: 40, sc: pop(t, K.s3_nehl, 0.5) });
-  tx('NƏHL = BAL ARISI', 480, 620, `60px ${AN}`, '#fff', R(t, K.s3_nehl + 0.6, K.s3_nehl + 1), { ls: '4px', glow: '#000' });
+  tx('NƏHL = BAL ARISI', 480, 620, `60px ${AN}`, '#fff', R(t, K.w_bal, K.w_bal + 0.4), { ls: '4px', glow: '#000' });
   src('16-cı surə', t, K.s3_nehl + 0.8, 480, 700);
 });
 function beeFly(t, t0, i, path) { if (t < t0) return; const u = clamp((t - t0) / 3.5), p = path[Math.floor(u * (path.length - 1))], q = path[Math.min(path.length - 1, Math.floor(u * (path.length - 1)) + 1)]; sprite(i % 2 ? 'el05_1' : 'el05_2', p[0], p[1] + Math.sin(t * 25) * 3, 110, clamp(u * 5) * clamp((1 - u) * 5), Math.atan2(q[1] - p[1], q[0] - p[0]) * 0.3 + (i % 2 ? 0 : Math.PI / 2 - 1.57)); }
@@ -506,27 +506,27 @@ sec(K.s3_kisi, K.s3_bio, t => {
   const W3 = [['اتَّخِذِي', 'DÜZƏLT'], ['كُلِي', 'YE'], ['فَاسْلُكِي', 'GET']];
   tx('Ərəbcədə əmrin kişi və qadın forması var', W / 2, 140, `52px ${CV}`, G2, R(t, K.s3_kisi + 0.2, K.s3_kisi + 0.6), { glow: '#000' });
   W3.forEach(([ar, az], i) => {
-    const x = 1440 - i * 480, y = 470, t0 = K.s3_qadin - 0.2 + i * 0.35, k = pop(t, t0, 0.45); if (k <= 0) return;
+    const x = 1440 - i * 480, y = 470, t0 = [K.w_duzelt, K.w_ye, K.w_get][i], k = pop(t, t0, 0.45); if (k <= 0) return;
     panel(x, y, 400, 300, clamp(k));
     tx(ar, x, y - 30, `bold 96px ${AR}`, G1, clamp(k), { sc: k, glow: '#ffb030' });
     tx(az, x, y + 100, `48px ${AN}`, '#fff', clamp(k), { ls: '4px' });
     // the feminine ending lights up
-    if (t > K.s3_qadin + 1.4) { const f = 0.6 + 0.4 * Math.sin(t * 6); ctx.save(); ctx.globalCompositeOperation = 'lighter'; glow(x - (i === 1 ? 45 : 95), y - 30, 70, 'rgba(255,90,170,A)', 0.8 * f); ctx.restore(); }
+    if (t > K.w_qadin) { const f = 0.6 + 0.4 * Math.sin(t * 6); ctx.save(); ctx.globalCompositeOperation = 'lighter'; glow(x - (i === 1 ? 45 : 95), y - 30, 70, 'rgba(255,90,170,A)', 0.8 * f); ctx.restore(); }
   });
-  if (t > K.s3_qadin + 1.6) { chipAt('ي = QADIN FORMASI', t, K.s3_qadin + 1.6, W / 2, 790, '#ff9ad0', 44); }
-  if (t > K.s3_qadin + 2.4) lens(1440 - 95, 440, 120, 1.6, R(t, K.s3_qadin + 2.4, K.s3_qadin + 2.8) * fadeOut(t, K.s3_bio - 0.4, 0.4));
+  if (t > K.w_qadin + 0.2) { chipAt('ي = QADIN FORMASI', t, K.w_qadin + 0.2, W / 2, 790, '#ff9ad0', 44); }
+  if (t > K.w_formasi) lens(1440 - 95, 440, 120, 1.6, R(t, K.w_formasi, K.w_formasi + 0.4) * fadeOut(t, K.s3_bio - 0.4, 0.4));
 });
 sec(K.s3_bio, K.s3_durust, t => {
   chipAt('BİOLOGİYA', t, K.s3_bio + 0.1, 960, 110, '#9fe7ff', 40);
-  if (t > K.s3_disi) { popSprite('el05_2', t, K.s3_disi + 0.2, 560, 330, 260); tx('İŞÇİ ARILAR = DİŞİ ♀', 560, 520, `52px ${AN}`, '#ff9ad0', R(t, K.s3_disi + 0.6, K.s3_disi + 1), { glow: '#000', ls: '3px' }); check(780, 250, 90, t, K.s3_disi + 1.2); }
+  if (t > K.s3_disi) { popSprite('el05_2', t, K.w_isci, 560, 330, 260); tx('İŞÇİ ARILAR = DİŞİ ♀', 560, 520, `52px ${AN}`, '#ff9ad0', R(t, K.w_disi, K.w_disi + 0.4), { glow: '#000', ls: '3px' }); check(780, 250, 90, t, K.w_disi + 0.3); }
   if (t > K.s3_erkek) { popSprite('el05_3', t, K.s3_erkek + 0.1, 1360, 330, 240); tx('ERKƏK ARI ♂', 1360, 520, `52px ${AN}`, '#9fc8ff', R(t, K.s3_erkek + 0.4, K.s3_erkek + 0.8), { glow: '#000', ls: '3px' });
-    tx('pətək qurmur · bal toplamır', 1360, 590, `44px ${CV}`, '#fff', R(t, K.s3_erkek + 1.2, K.s3_erkek + 1.6), { glow: '#000' }); cross(1560, 250, 90, t, K.s3_erkek + 2.2); }
+    tx('pətək qurmur · bal toplamır', 1360, 590, `44px ${CV}`, '#fff', R(t, K.w_petek61, K.w_petek61 + 0.4), { glow: '#000' }); cross(1560, 250, 90, t, K.w_topla61); }
 });
 sec(K.s3_durust, K.s3_tesaduf, t => {
   stamp('DÜRÜST OLAQ', t, K.s3_durust + 0.05, 960, 170, 62, G1, -0.04);
   if (t > K.s3_dilci) cv1('«nəhl» sözü onsuz da qadın cinsindədir', t, K.s3_dilci + 0.3, 960, 330, 58, '#fff');
   if (t > K.s3_dogru) chipAt('DOĞRUDUR', t, K.s3_dogru + 0.1, 960, 450, '#7be3a2', 44);
-  if (t > K.s3_secib) { chipAt('AMMA AYƏ MƏHZ BU FORMANI SEÇİB', t, K.s3_secib + 0.2, 960, 620, G1, 44); popSprite('el05_2', t, K.s3_secib + 1.4, 960, 820, 160); }
+  if (t > K.s3_secib) { chipAt('AMMA AYƏ MƏHZ BU FORMANI SEÇİB', t, K.w_secib, 960, 620, G1, 44); popSprite('el05_2', t, K.w_arini, 960, 820, 160); }
 });
 sec(K.s3_tesaduf, K.s4, t => { glitchTx('TƏSADÜF?', W / 2, H / 2, `200px ${AN}`, G1, t, K.s3_tesaduf + 0.1); });
 
@@ -542,18 +542,18 @@ function empireMap(t, a, opt = {}) {
   L.forEach(([k, n]) => { if (opt.hide && opt.hide.includes(k)) return; const [x, y] = MAP[k]; ctx.fillStyle = k === 'atro' && opt.atro ? G1 : '#fff'; ctx.beginPath(); ctx.arc(x, y, k === 'atro' && opt.atro ? 14 : 9, 0, 7); ctx.fill(); tx(n, x, y - 34, `30px ${MO}`, k === 'atro' && opt.atro ? G1 : '#fff', 1, { glow: '#000', blur: 10 }); });
   ctx.restore();
 }
-sec(K.s4, K.s4_614, t => { sirrCard(t, K.s4, 4, K.s4_sened - K.s4 + 0.6); if (t > K.s4_sened + 0.3) { chipAt('TARİX · SƏNƏDLƏR', t, K.s4_sened + 0.3, 960, 200, G1, 46); } });
+sec(K.s4, K.s4_614, t => { sirrCard(t, K.s4, 4, K.s4_sened - K.s4 + 0.6); if (t > K.w_sened) { chipAt('TARİX · SƏNƏDLƏR', t, K.w_sened, 960, 200, G1, 46); } });
 sec(K.s4_614, K.s4_cokus, t => {
-  if (t < K.s4_misir) { counter(t, K.s4_614, 0.9, 600, 614, 960, 230, 190, G1); tx('MİLADİ', 960, 110, `44px ${AN}`, '#fff', R(t, K.s4_614, K.s4_614 + 0.3), { ls: '8px' });
-    if (t > K.s4_fars) { chipAt('FARSLAR QÜDSÜ ALIR', t, K.s4_fars + 1.4, 960, 380, RED, 44); popSprite('el06_5', t, K.s4_fars + 0.3, 1640, 830, 230); popSprite('el06_1', t, K.s4_fars + 0.6, 300, 830, 230); } }
-  else { empireMap(t, R(t, K.s4_misir - 0.1, K.s4_misir + 0.3), { persia: R(t, K.s4_misir, K.s4_misir + 1.4) }); counter(t, K.s4_misir, 0.6, 614, 619, 960, 150, 120, RED); }
+  if (t < K.s4_misir) { counter(t, K.w_614, 0.9, 600, 614, 960, 230, 190, G1); tx('MİLADİ', 960, 110, `44px ${AN}`, '#fff', R(t, K.s4_614, K.s4_614 + 0.3), { ls: '8px' });
+    if (t > K.s4_fars) { chipAt('FARSLAR QÜDSÜ ALIR', t, K.w_quds, 960, 380, RED, 44); popSprite('el06_5', t, K.s4_fars + 0.3, 1640, 830, 230); popSprite('el06_1', t, K.s4_fars + 0.6, 300, 830, 230); } }
+  else { empireMap(t, R(t, K.s4_misir - 0.1, K.s4_misir + 0.3), { persia: R(t, K.w_misir - 0.6, K.w_misir + 0.6) }); counter(t, K.w_619, 0.6, 614, 619, 960, 150, 120, RED); }
 });
 sec(K.s4_cokus, K.s4_nazil, t => {
   if (t < K.s4_musrik) { stamp('BİZANS ÇÖKÜŞ ƏRƏFƏSİNDƏ', t, K.s4_cokus + 0.2, 1400, 300, 50, RED, -0.04); }
   else {
     popSprite('el06_1', t, K.s4_musrik + 0.2, 640, 520, 330); popSprite('el06_2', t, K.s4_musrik + 0.4, 1280, 520, 300);
     tx('FARSLAR', 640, 760, `52px ${AN}`, RED, R(t, K.s4_odp, K.s4_odp + 0.3), { ls: '4px', glow: '#000' }); tx('BİZANS', 1280, 760, `52px ${AN}`, '#c8a8ff', R(t, K.s4_odp, K.s4_odp + 0.3), { ls: '4px', glow: '#000' });
-    if (t > K.s4_odp + 0.6) { check(640, 300, 90, t, K.s4_odp + 0.7, RED); cross(1280, 300, 110, t, K.s4_odp + 0.9); }
+    if (t > K.w_meglub74 - 0.1) { check(640, 300, 90, t, K.w_meglub74, RED); cross(1280, 300, 110, t, K.w_meglub74 + 0.2); }
     if (t > K.s4_biz) cv1('«Biz də sizi belə məğlub edəcəyik!»', t, K.s4_biz + 0.1, 960, 150, 60, '#ff8a70');
   }
 });
@@ -562,24 +562,24 @@ sec(K.s4_nazil, K.s4_ebubekr, t => {
     chipAt('MƏHZ BU VAXT · RUM SURƏSİ', t, K.s4_nazil + 0.2, 960, 110, G1, 40);
     ayah('غُلِبَتِ الرُّومُ', '«Rumlar məğlub oldu»', t, K.s4_rum - 0.05, 960, 260, 80, K.s4_rum + 0.4);
     if (t > K.s4_amma - 0.1) ayah('وَهُم مِّن بَعْدِ غَلَبِهِمْ سَيَغْلِبُونَ ۝ فِي بِضْعِ سِنِينَ', '«...bir neçə il içində qalib gələcəklər»', t, K.s4_amma, 960, 520, 66, K.s4_amma + 1.6);
-    if (t > K.s4_amma + 3.4) lens(640, 520, 105, 1.6, R(t, K.s4_amma + 3.4, K.s4_amma + 3.8));
+    if (t > K.w_neceil) lens(640, 520, 105, 1.6, R(t, K.w_neceil, K.w_neceil + 0.4));
     src('Rum 30:2–4', t, K.s4_rum + 0.6);
   } else {
     panel(960, 480, 1000, 520, R(t, K.s4_bid, K.s4_bid + 0.3));
     tx('بِضْع', 960, 340, `bold 170px ${AR}`, G1, pop(t, K.s4_bid + 0.1, 0.5), { sc: pop(t, K.s4_bid + 0.1, 0.5), glow: '#ffb030', blur: 40 });
-    tx('BİD\'', 960, 470, `50px ${AN}`, '#fff', R(t, K.s4_bid + 0.5, K.s4_bid + 0.8), { ls: '6px' });
-    for (let i = 3; i <= 9; i++) { const t0 = K.s4_bid + 1.6 + (i - 3) * 0.22, k = pop(t, t0, 0.35); const x = 960 + (i - 6) * 120; ctx.save(); ctx.globalAlpha = clamp(k); ctx.fillStyle = G1; ctx.shadowColor = '#ffb030'; ctx.shadowBlur = 25; ctx.beginPath(); ctx.arc(x, 600, 34 * k, 0, 7); ctx.fill(); ctx.restore(); tx(String(i), x, 602, `40px ${AN}`, INK, clamp(k)); }
-    tx('= 3 İLDƏN 9 İLƏ QƏDƏR', 960, 690, `54px ${AN}`, G2, R(t, K.s4_bid + 3.2, K.s4_bid + 3.6), { ls: '3px' });
+    tx('BİD\'', 960, 470, `50px ${AN}`, '#fff', R(t, K.w_bid, K.w_bid + 0.3), { ls: '6px' });
+    for (let i = 3; i <= 9; i++) { const t0 = K.w_ucden + (i - 3) * 0.22, k = pop(t, t0, 0.35); const x = 960 + (i - 6) * 120; ctx.save(); ctx.globalAlpha = clamp(k); ctx.fillStyle = G1; ctx.shadowColor = '#ffb030'; ctx.shadowBlur = 25; ctx.beginPath(); ctx.arc(x, 600, 34 * k, 0, 7); ctx.fill(); ctx.restore(); tx(String(i), x, 602, `40px ${AN}`, INK, clamp(k)); }
+    tx('= 3 İLDƏN 9 İLƏ QƏDƏR', 960, 690, `54px ${AN}`, G2, R(t, K.w_doqquza, K.w_doqquza + 0.4), { ls: '3px' });
   }
 });
-sec(K.s4_ebubekr, K.s4_622, t => { popSprite('el06_3', t, K.s4_ebubekr + 0.3, 420, 470, 380, '#ffb030'); chipAt('ƏBU BƏKR ƏMİNDİR', t, K.s4_ebubekr + 0.6, 440, 780, G1, 40); });
+sec(K.s4_ebubekr, K.s4_622, t => { popSprite('el06_3', t, K.s4_ebubekr + 0.3, 420, 470, 380, '#ffb030'); chipAt('ƏBU BƏKR ƏMİNDİR', t, K.w_emin, 440, 780, G1, 40); });
 sec(K.s4_622, K.s4_qafqaz, t => {
-  timeline(t, [['614', K.s4_622 - 0.4, 'məğlubiyyət'], ['622', K.s4_622 + 0.6, 'Herakl hücuma keçir'], ['627', K.s4_627 + 0.4, 'Neynəva']], [560, 960, 1360], 300, 1);
-  if (t > K.s4_627 + 1.2) { const k = pop(t, K.s4_627 + 1.2, 0.5); sprite('el02_4', 1360, 580, 230, clamp(k), 0, k, '#ffb030'); }
-  if (t > K.s4_622 + 1.6) chipAt('614 → 622 = 8 İL ✓', t, K.s4_622 + 1.6, 560, 520, '#7be3a2', 40);
+  timeline(t, [['614', K.w_622 - 0.6, 'məğlubiyyət'], ['622', K.w_622, 'Herakl hücuma keçir'], ['627', K.w_627, 'Neynəva']], [560, 960, 1360], 300, 1);
+  if (t > K.w_meglub82) { const k = pop(t, K.w_meglub82, 0.5); sprite('el02_4', 1360, 580, 230, clamp(k), 0, k, '#ffb030'); }
+  if (t > K.w_herakl) chipAt('614 → 622 = 8 İL ✓', t, K.w_herakl, 560, 520, '#7be3a2', 40);
 });
 sec(K.s4_qafqaz, K.s4_qelebe, t => {
-  if (t < K.s4_atro + 0.6) { chipAt('QAFQAZ', t, K.s4_qafqaz + 0.3, 470, 240, '#fff', 46); chipAt('AZƏRBAYCAN', t, K.s4_qafqaz + 2.4, 470, 340, G1, 52); }
+  if (t < K.s4_atro + 0.6) { chipAt('QAFQAZ', t, K.w_qafqaz, 470, 240, '#fff', 46); chipAt('AZƏRBAYCAN', t, K.w_azerb, 470, 340, G1, 52); }
   else {
     empireMap(t, R(t, K.s4_atro + 0.6, K.s4_atro + 1.0), { persia: 1, atro: true });
     const path = poly([MAP.kon, [900, 300], [1100, 290], MAP.atro, [1330, 450], MAP.ney], 25), u = R(t, K.s4_atro + 0.9, K.s4_qelebe - 0.2);
@@ -589,44 +589,44 @@ sec(K.s4_qafqaz, K.s4_qelebe, t => {
 });
 sec(K.s4_qelebe, K.s5, t => {
   popSprite('el02_4', t, K.s4_qelebe + 0.2, 470, 420, 300, '#ffb030');
-  big('ƏVVƏLCƏDƏN XƏBƏR VERİLDİ', t, K.s4_qelebe + 2.6, 520, 720, 64, '#fff');
+  big('ƏVVƏLCƏDƏN XƏBƏR VERİLDİ', t, K.w_evvelce, 520, 720, 64, '#fff');
 });
 
 // ---------- SIRR 5: Pharaoh's body ----------
-sec(K.s5, K.s5_firon, t => { sirrCard(t, K.s5, 5, K.s5_firon - K.s5 - 0.1); if (t > K.s5 + 2.0) chipAt('QAHİRƏ · MUZEY', t, K.s5 + 2.0, 960, 880, G1, 44); });
+sec(K.s5, K.s5_firon, t => { sirrCard(t, K.s5, 5, K.s5_firon - K.s5 - 0.1); if (t > K.w_qahire) chipAt('QAHİRƏ · MUZEY', t, K.w_qahire, 960, 880, G1, 44); });
 sec(K.s5_firon, K.s5_diqqet, t => {
   particles(t, 'bubble', 0.8, [0, 0, 900, H]);
   cv1('Firon dənizdə boğularkən...', t, K.s5_firon + 0.2, 1450, 170, 58, G2);
   ayah('فَالْيَوْمَ نُنَجِّيكَ بِبَدَنِكَ', '«Bu gün sənin bədənini xilas edəcəyik...»', t, K.s5_aye, 1430, 360, 76, K.s5_aye + 0.8);
-  if (t > K.s5_aye + 1.8) ayah('لِتَكُونَ لِمَنْ خَلْفَكَ آيَةً', '«...səndən sonrakılara ibrət olsun deyə»', t, K.s5_aye + 1.8, 1430, 620, 70, K.s5_aye + 3.4);
-  if (t > K.s5_aye + 1.0) lens(1290, 360, 105, 1.6, R(t, K.s5_aye + 1.0, K.s5_aye + 1.4) * fadeOut(t, K.s5_aye + 3.0, 0.4));
+  if (t > K.w_sonra88) ayah('لِتَكُونَ لِمَنْ خَلْفَكَ آيَةً', '«...səndən sonrakılara ibrət olsun deyə»', t, K.w_sonra88, 1430, 620, 70, K.w_sonra88 + 1.4);
+  if (t > K.w_bedeni88) lens(1290, 360, 105, 1.6, R(t, K.w_bedeni88, K.w_bedeni88 + 0.4) * fadeOut(t, K.w_sonra88 + 1.0, 0.4));
   src('Yunus 10:92', t, K.s5_aye + 1, 1430);
 });
 sec(K.s5_diqqet, K.s5_nazil + 1.4, t => {
   chipAt('DİQQƏT', t, K.s5_diqqet, 960, 170, G1, 44);
-  const k1 = pop(t, K.s5_ruh, 0.45), k2 = pop(t, K.s5_ruh + 0.6, 0.45);
+  const k1 = pop(t, K.s5_ruh, 0.45), k2 = pop(t, K.w_bedeni90, 0.45);
   panel(560, 520, 560, 300, clamp(k1)); tx('RUH', 560, 520, `130px ${AN}`, 'rgba(255,255,255,0.75)', clamp(k1), { sc: k1, ls: '8px' }); cross(560, 520, 240, t, K.s5_ruh + 0.35);
-  panel(1360, 520, 560, 300, clamp(k2)); tx('BƏDƏN', 1360, 520, `130px ${AN}`, G1, clamp(k2), { sc: k2, ls: '8px', glow: '#ffb030' }); check(1600, 400, 100, t, K.s5_ruh + 0.9);
+  panel(1360, 520, 560, 300, clamp(k2)); tx('BƏDƏN', 1360, 520, `130px ${AN}`, G1, clamp(k2), { sc: k2, ls: '8px', glow: '#ffb030' }); check(1600, 400, 100, t, K.w_bedeni90 + 0.3);
 });
 sec(K.s5_nazil + 1.4, K.s5_tapildi, t => {
   particles(t, 'dust', 0.8);
-  popSprite('el07_1', t, K.s5_qum + 0.3, 1480, 480, 170); popSprite('el07_2', t, K.s5_qum + 0.7, 1700, 470, 230); popSprite('el07_3', t, K.s5_qum + 1.1, 260, 470, 330);
+  popSprite('el07_1', t, K.w_qumlar, 1480, 480, 170); popSprite('el07_2', t, K.w_gizli, 1700, 470, 230); popSprite('el07_3', t, K.w_mezar, 260, 470, 330);
   if (t > K.s5_hec) stamp('GİZLİ', t, K.s5_hec + 0.2, 960, 300, 80, G1, -0.06);
-  cv1('Quran nazil olanda — qumun altında', t, K.s5_nazil + 1.5, 960, 130, 56, G2);
+  cv1('Quran nazil olanda — qumun altında', t, K.w_qumlar - 0.4, 960, 130, 56, G2);
 });
 sec(K.s5_tapildi, K.s5_durust, t => {
-  if (t < K.s5_muzey) { chipAt('XIX ƏSRİN SONU', t, K.s5_tapildi + 0.3, 960, 200, G1, 56); chipAt('1881 · 1898', t, K.s5_tapildi + 1.4, 960, 300, '#fff', 36); }
-  else { counter(t, K.s5_muzey + 0.6, 1.6, 0, 1000000, 960, 210, 120, G1, '+', fmt); tx('ZİYARƏTÇİ', 960, 320, `46px ${AN}`, '#fff', R(t, K.s5_muzey + 1.4, K.s5_muzey + 1.8), { ls: '8px', glow: '#000' }); }
+  if (t < K.s5_muzey) { chipAt('XIX ƏSRİN SONU', t, K.w_19esr, 960, 200, G1, 56); chipAt('1881 · 1898', t, K.w_tapil, 960, 300, '#fff', 36); }
+  else { counter(t, K.w_milyon, 1.6, 0, 1000000, 960, 210, 120, G1, '+', fmt); tx('ZİYARƏTÇİ', 960, 320, `46px ${AN}`, '#fff', R(t, K.w_milyon + 0.8, K.w_milyon + 1.2), { ls: '8px', glow: '#000' }); }
 });
 sec(K.s5_durust, K.s5_insanlar, t => {
   stamp('DÜRÜST OLAQ', t, K.s5_durust + 0.05, 960, 150, 62, G1, -0.04);
   if (t > K.s5_hansi) cv1('Musa peyğəmbərin dövründəki firon hansıdır?', t, K.s5_hansi + 0.3, 960, 290, 56, '#fff');
   if (t > K.s5_adlar) { chipAt('II RAMSES?', t, K.s5_adlar + 0.1, 640, 430, '#fff', 40); chipAt('MERNEPTAH?', t, K.s5_adlar + 0.5, 1280, 430, '#fff', 40); }
-  if (t > K.s5_amma) { big('İBRƏT', t, K.s5_ibret + 0.8, 960, 640, 170, G1); }
+  if (t > K.s5_amma) { big('İBRƏT', t, K.w_ibret, 960, 640, 170, G1); }
 });
 sec(K.s5_insanlar, K.s6, t => {
-  ayah('أَنَا رَبُّكُمُ الْأَعْلَىٰ', '«Mən sizin ən uca rəbbinizəm»', t, K.s5_rebb - 0.4, 520, 260, 90, K.s5_rebb + 0.3, 'Naziat 79:24', K.s5_rebb + 0.6);
-  if (t > K.s5_rebb + 1.2) { popSprite('el07_4', t, K.s5_rebb + 1.2, 520, 640, 200); }
+  ayah('أَنَا رَبُّكُمُ الْأَعْلَىٰ', '«Mən sizin ən uca rəbbinizəm»', t, K.w_men, 520, 260, 90, K.s5_rebb + 0.3, 'Naziat 79:24', K.s5_rebb + 0.6);
+  if (t > K.w_quru) { popSprite('el07_4', t, K.w_quru, 520, 640, 200); }
 });
 
 // ---------- SIRR 6: iron ----------
@@ -638,7 +638,7 @@ function feCard(t, t0, x, y) {
 }
 sec(K.s6_hedid, K.s6_endir2, t => {
   particles(t, 'ember', 0.9, [0, 300, 1100, 780]);
-  if (t < K.s6_orada) { tx('الْحَدِيد', 470, 330, `bold 170px ${AR}`, '#ffd2a8', pop(t, K.s6_hedid + 0.4, 0.5), { glow: '#ff7a30', blur: 40, sc: pop(t, K.s6_hedid + 0.4, 0.5) }); src('57-ci surə', t, K.s6_hedid + 1.0, 470, 480); feCard(t, K.s6_hedid + 1.6, 470, 720); }
+  if (t < K.s6_orada) { tx('الْحَدِيد', 470, 330, `bold 170px ${AR}`, '#ffd2a8', pop(t, K.w_hedid, 0.5), { glow: '#ff7a30', blur: 40, sc: pop(t, K.w_hedid, 0.5) }); src('57-ci surə', t, K.w_hedid + 0.6, 470, 480); feCard(t, K.w_demir104, 470, 720); }
   else {
     ayah('وَأَنزَلْنَا الْحَدِيدَ', '«Və dəmiri endirdik»', t, K.s6_endirdik - 0.15, 520, 250, 90, K.s6_endirdik + 0.4);
     if (t > K.s6_quvvet - 0.1) ayah('فِيهِ بَأْسٌ شَدِيدٌ وَمَنَافِعُ لِلنَّاسِ', '«Onda böyük qüvvət və insanlar üçün faydalar var»', t, K.s6_quvvet, 520, 540, 64, K.s6_quvvet + 0.8);
@@ -648,33 +648,33 @@ sec(K.s6_hedid, K.s6_endir2, t => {
 sec(K.s6_endir2, K.s6_astro, t => {
   tx('أَنزَلْنَا', 470, 280, `bold 140px ${AR}`, G1, pop(t, K.s6_endir2, 0.5), { glow: '#ffb030', blur: 40, sc: pop(t, K.s6_endir2, 0.5) });
   tx('ENDİRDİK', 470, 420, `66px ${AN}`, '#fff', R(t, K.s6_endir2 + 0.3, K.s6_endir2 + 0.6), { ls: '8px', glow: '#000' });
-  if (t > K.s6_cixar) { tx('YERDƏN ÇIXARDIQ', 470, 560, `50px ${AN}`, 'rgba(255,255,255,0.65)', R(t, K.s6_cixar, K.s6_cixar + 0.3), { ls: '3px' }); cross(470, 560, 90, t, K.s6_cixar + 0.5); check(720, 420, 80, t, K.s6_cixar + 1.0); }
+  if (t > K.s6_cixar) { tx('YERDƏN ÇIXARDIQ', 470, 560, `50px ${AN}`, 'rgba(255,255,255,0.65)', R(t, K.s6_cixar, K.s6_cixar + 0.3), { ls: '3px' }); cross(470, 560, 90, t, K.w_yox109); check(720, 420, 80, t, K.w_endir109); }
 });
 sec(K.s6_astro, K.s6_partla, t => {
   chipAt('ASTRONOMİYA', t, K.s6_astro + 0.1, 470, 200, '#9fe7ff', 44);
   if (t > K.s6_yaranmir) { tx('DƏMİR YERDƏ YARANMIR', 470, 330, `60px ${AN}`, '#fff', R(t, K.s6_yaranmir, K.s6_yaranmir + 0.4), { glow: '#000', ls: '3px' }); }
-  if (t > K.s6_8x) { glow(605, 535, 60, 'rgba(255,220,120,A)', 0.8); counter(t, K.s6_8x + 1.0, 1.0, 1, 8, 470, 560, 200, '#bfe3ff', '×'); tx('GÜNƏŞDƏN BÖYÜK ULDUZLAR', 470, 720, `46px ${AN}`, '#bfe3ff', R(t, K.s6_8x + 1.6, K.s6_8x + 2), { ls: '3px', glow: '#000' }); }
+  if (t > K.s6_8x) { glow(605, 535, 60, 'rgba(255,220,120,A)', 0.8); counter(t, K.w_sekkiz, 1.0, 1, 8, 470, 560, 200, '#bfe3ff', '×'); tx('GÜNƏŞDƏN BÖYÜK ULDUZLAR', 470, 720, `46px ${AN}`, '#bfe3ff', R(t, K.w_boyuk112, K.w_boyuk112 + 0.4), { ls: '3px', glow: '#000' }); }
 });
 sec(K.s6_partla, K.s6_durust, t => {
-  shock(t, K.s6_partla + 0.1, 960, 540, '255,200,150');
+  shock(t, K.w_partla, 960, 540, '255,200,150');
   if (t < K.s6_yer) {
-    for (let i = 0; i < 10; i++) { const t0 = K.s6_partla + 0.6 + i * 0.12; if (t < t0) continue; const u = (t - t0) / 3, ang = i * 0.63 + 0.3; const x = 960 + Math.cos(ang) * 900 * u, y = 540 + Math.sin(ang) * 600 * u; sprite(i % 2 ? 'el08_5' : 'el08_1', x, y, 90 * (1 + u), clamp(1 - u), t * (i % 3 - 1)); }
-    big('DƏMİR SƏPƏLƏNİR', t, K.s6_partla + 1.2, 960, 160, 80, '#ffd2a8');
+    for (let i = 0; i < 10; i++) { const t0 = K.w_sepel - 0.3 + i * 0.12; if (t < t0) continue; const u = (t - t0) / 3, ang = i * 0.63 + 0.3; const x = 960 + Math.cos(ang) * 900 * u, y = 540 + Math.sin(ang) * 600 * u; sprite(i % 2 ? 'el08_5' : 'el08_1', x, y, 90 * (1 + u), clamp(1 - u), t * (i % 3 - 1)); }
+    big('DƏMİR SƏPƏLƏNİR', t, K.w_sepel, 960, 160, 80, '#ffd2a8');
   } else {
-    popSprite('el08_3', t, K.s6_yer + 1.0, 1500, 640, 300); feCard(t, K.s6_yer + 1.6, 1500, 300 - 40);
+    popSprite('el08_3', t, K.w_yerin, 1500, 640, 300); feCard(t, K.w_terkib, 1500, 300 - 40);
     if (t > K.s6_esa) chipAt('ESA · AVROPA KOSMİK AGENTLİYİ', t, K.s6_esa + 0.4, 960, 980, '#9fe7ff', 34);
   }
 });
 sec(K.s6_durust, K.s6_dusun, t => {
   stamp('DÜRÜST OLAQ', t, K.s6_durust + 0.05, 960, 160, 62, G1, -0.04);
-  tx('أَنزَلْنَا', 960, 350, `bold 130px ${AR}`, G1, R(t, K.s6_enzelna, K.s6_enzelna + 0.4), { glow: '#ffb030', blur: 40 });
-  if (t > K.s6_enzelna + 1.2) { ayah('وَأَنزَلَ لَكُم مِّنَ الْأَنْعَامِ', '«...sizin üçün heyvanlardan endirdi»', t, K.s6_enzelna + 1.2, 960, 560, 62, K.s6_enzelna + 1.8, 'Zumər 39:6', K.s6_enzelna + 2); }
-  if (t > K.s6_bexs) { chipAt('ENDİRDİK', t, K.s6_bexs + 0.6, 700, 800, '#fff', 44); chipAt('BƏXŞ ETDİK', t, K.s6_bexs + 1.0, 1220, 800, G1, 44); }
-  if (t > K.s6_yegane) tx('yeganə oxunuş deyil', 960, 900, `48px ${CV}`, G2, R(t, K.s6_yegane + 0.5, K.s6_yegane + 0.9), { glow: '#000' });
+  tx('أَنزَلْنَا', 960, 350, `bold 130px ${AR}`, G1, R(t, K.w_enzelna - 0.2, K.w_enzelna + 0.2), { glow: '#ffb030', blur: 40 });
+  if (t > K.w_heyvan) { ayah('وَأَنزَلَ لَكُم مِّنَ الْأَنْعَامِ', '«...sizin üçün heyvanlardan endirdi»', t, K.w_heyvan, 960, 560, 62, K.w_heyvan + 0.6, 'Zumər 39:6', K.w_heyvan + 0.8); }
+  if (t > K.s6_bexs) { chipAt('ENDİRDİK', t, K.w_bexs, 700, 800, '#fff', 44); chipAt('BƏXŞ ETDİK', t, K.w_bexs + 0.4, 1220, 800, G1, 44); }
+  if (t > K.s6_yegane) tx('yeganə oxunuş deyil', 960, 900, `48px ${CV}`, G2, R(t, K.w_yegane, K.w_yegane + 0.4), { glow: '#000' });
 });
 sec(K.s6_dusun, K.s7_gel, t => {
   cv1('Amma bir düşünün...', t, K.s6_dusun + 0.1, 470, 230, 60, G2);
-  if (t > K.s6_qan) { big('QANINDAKI DƏMİR', t, K.s6_qan + 1.0, 500, 380, 76, '#ff8a8a'); tx('bir vaxtlar bir ulduzun ürəyində idi', 500, 500, `50px ${CV}`, '#fff', R(t, K.s6_qan + 2.6, K.s6_qan + 3.1), { glow: '#000' }); feCard(t, K.s6_qan + 3.6, 500, 760); }
+  if (t > K.s6_qan) { big('QANINDAKI DƏMİR', t, K.w_qanin, 500, 380, 76, '#ff8a8a'); tx('bir vaxtlar bir ulduzun ürəyində idi', 500, 500, `50px ${CV}`, '#fff', R(t, K.w_ulduzun, K.w_ulduzun + 0.5), { glow: '#000' }); feCard(t, K.w_ureyinde, 500, 760); }
 });
 
 // ---------- SIRR 7: the letters ----------
@@ -685,7 +685,7 @@ sec(K.s7_gel, K.s7_ac, t => {
 });
 sec(K.s7_ac, K.s7_elif, t => {
   chipAt('QURANI AÇIN', t, K.s7_ac + 0.1, 470, 260, '#fff', 44);
-  if (t > K.s7_beqere) { tx('البقرة', 470, 430, `bold 130px ${AR}`, G1, pop(t, K.s7_beqere + 0.4, 0.5), { glow: '#ffb030', sc: pop(t, K.s7_beqere + 0.4, 0.5) }); tx('BƏQƏRƏ · 2-ci SURƏ', 470, 560, `46px ${AN}`, '#fff', R(t, K.s7_beqere + 0.8, K.s7_beqere + 1.1), { ls: '4px' }); }
+  if (t > K.s7_beqere) { tx('البقرة', 470, 430, `bold 130px ${AR}`, G1, pop(t, K.w_beqere, 0.5), { glow: '#ffb030', sc: pop(t, K.w_beqere, 0.5) }); tx('BƏQƏRƏ · 2-ci SURƏ', 470, 560, `46px ${AN}`, '#fff', R(t, K.w_beqere + 0.4, K.w_beqere + 0.7), { ls: '4px' }); }
   if (t > K.s7_ilk) chipAt('İLK AYƏ', t, K.s7_ilk + 0.1, 470, 680, G1, 44);
 });
 const LETTERS = [['ا', 'ƏLİF'], ['ل', 'LAM'], ['م', 'MİM']];
@@ -698,7 +698,7 @@ sec(K.s7_elif, K.s7_yasin, t => {
   });
   if (t > K.s7_soz) { chipAt('SÖZ DEYİL', t, K.s7_soz + 0.1, 560, 920, '#fff', 38); }
   if (t > K.s7_cumle) { chipAt('CÜMLƏ DEYİL', t, K.s7_cumle + 0.1, 1360, 920, '#fff', 38); }
-  if (t > K.s7_3) { big('3 HƏRF', t, K.s7_3 + 0.4, 960, 140, 100, G1); }
+  if (t > K.s7_3) { big('3 HƏRF', t, K.w_uc132, 960, 140, 100, G1); }
 });
 sec(K.s7_yasin, K.s7_29, t => {
   const L = [[K.s7_yasin, 'يس', 'YA SİN'], [K.s7_taha, 'طه', 'TA HA'], [K.s7_qaf, 'ق', 'QAF'], [K.s7_nun, 'ن', 'NUN'], [K.s7_kaf, 'كهيعص', 'KAF HA YA EYN SAD']];
@@ -712,17 +712,17 @@ const ABC = 'ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك �
 const MQ = new Set('ا ح ر س ص ط ع ق ك ل م ن ه ي'.split(' '));
 sec(K.s7_29, K.s7_alim, t => {
   if (t < K.s7_14) {
-    counter(t, K.s7_29 + 0.3, 1.0, 0, 114, 640, 450, 230, '#fff'); tx('SURƏ', 640, 620, `56px ${AN}`, '#fff', R(t, K.s7_29 + 0.6, K.s7_29 + 1), { ls: '10px' });
-    counter(t, K.s7_29 + 2.6, 1.0, 0, 29, 1280, 450, 230, G1); tx('SİRLİ HƏRFLƏRLƏ BAŞLAYIR', 1280, 620, `44px ${AN}`, G1, R(t, K.s7_29 + 3.2, K.s7_29 + 3.6), { ls: '3px' });
+    counter(t, K.w_114, 1.0, 0, 114, 640, 450, 230, '#fff'); tx('SURƏ', 640, 620, `56px ${AN}`, '#fff', R(t, K.w_114 + 0.3, K.w_114 + 0.7), { ls: '10px' });
+    counter(t, K.w_29, 1.0, 0, 29, 1280, 450, 230, G1); tx('SİRLİ HƏRFLƏRLƏ BAŞLAYIR', 1280, 620, `44px ${AN}`, G1, R(t, K.w_sirli, K.w_sirli + 0.4), { ls: '3px' });
   } else {
     // 28-letter alphabet, the 14 used letters light up
     tx('ƏRƏB ƏLİFBASI · 28 HƏRF', 960, 120, `48px ${AN}`, '#fff', R(t, K.s7_14, K.s7_14 + 0.4), { ls: '5px' });
     ABC.forEach((l, i) => {
-      const c = i % 14, r = Math.floor(i / 14), x = 1780 - c * 125, y = 380 + r * 230, k = pop(t, K.s7_14 + 0.1 + i * 0.03, 0.35), on = MQ.has(l) && t > K.s7_14 + 1.6 + i * 0.04;
+      const c = i % 14, r = Math.floor(i / 14), x = 1780 - c * 125, y = 380 + r * 230, k = pop(t, K.s7_14 + 0.1 + i * 0.03, 0.35), on = MQ.has(l) && t > K.w_14 + i * 0.04;
       ctx.save(); ctx.globalAlpha = clamp(k); ctx.fillStyle = on ? 'rgba(246,199,104,0.22)' : 'rgba(0,0,0,0.45)'; rrect(x - 55, y - 80, 110, 160, 16); ctx.fill(); ctx.strokeStyle = on ? G1 : 'rgba(255,255,255,0.2)'; ctx.lineWidth = on ? 4 : 2; ctx.stroke(); ctx.restore();
       tx(l, x, y - 5, `bold 90px ${AR}`, on ? G1 : 'rgba(255,255,255,0.35)', clamp(k), { glow: on ? '#ffb030' : null, blur: 30 });
     });
-    if (t > K.s7_14 + 2.6) { tx('14 HƏRF = DÜZ YARISI', 960, 800, `70px ${AN}`, G1, R(t, K.s7_14 + 2.6, K.s7_14 + 3), { glow: '#ffb030', ls: '4px' }); }
+    if (t > K.w_yarisi) { tx('14 HƏRF = DÜZ YARISI', 960, 800, `70px ${AN}`, G1, R(t, K.w_yarisi, K.w_yarisi + 0.4), { glow: '#ffb030', ls: '4px' }); }
     if (t > K.s7_14b) chipAt('14 FƏRQLİ BİRLƏŞMƏ', t, K.s7_14b + 0.3, 960, 920, '#fff', 42);
   }
 });
@@ -732,7 +732,7 @@ sec(K.s7_alim, K.s7_herf, t => {
 });
 sec(K.s7_herf, K.s7_amma, t => {
   cv1('Quran hər gün işlətdiyiniz bu hərflərdəndir...', t, K.s7_herf + 0.3, 960, 180, 56, '#fff');
-  if (t > K.s7_gucunuz - 0.2) { ayah('فَأْتُوا بِسُورَةٍ مِّن مِّثْلِهِ', null, t, K.s7_gucunuz - 0.2, 960, 420, 96); big('BƏNZƏRİNİ GƏTİRİN!', t, K.s7_gucunuz + 0.9, 960, 680, 110, G1); src('Bəqərə 2:23', t, K.s7_gucunuz + 0.6); }
+  if (t > K.s7_gucunuz - 0.2) { ayah('فَأْتُوا بِسُورَةٍ مِّن مِّثْلِهِ', null, t, K.s7_gucunuz - 0.2, 960, 420, 96); big('BƏNZƏRİNİ GƏTİRİN!', t, K.w_benzer, 960, 680, 110, G1); src('Bəqərə 2:23', t, K.s7_gucunuz + 0.6); }
 });
 sec(K.s7_amma, K.n_1, t => {
   particles(t, 'dust', 0.8);
@@ -756,13 +756,13 @@ sec(K.n_1, K.n_tesaduf, t => {
 });
 sec(K.n_tesaduf, K.n_cagir, t => {
   iconRing(t, K.n_tesaduf - 0.6, W / 2, H / 2, 360, 140, 0.08, t * 0.2);
-  glitchTx('TƏSADÜF?', W / 2, H / 2, `130px ${AN}`, '#fff', t, K.n_tesaduf + 0.6);
+  glitchTx('TƏSADÜF?', W / 2, H / 2, `130px ${AN}`, '#fff', t, K.w_tesaduf162);
   if (t > K.n_belke) chipAt('BƏLKƏ...', t, K.n_belke, W / 2, H / 2 + 120, G2, 40);
 });
 sec(K.n_cagir, K.n_video, t => {
   cv1('Quran özü oxucusunu çağırır:', t, K.n_cagir + 0.3, 480, 230, 58, G2);
   ayah('أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ', '«Onlar Quranı düşünüb daşınmırlarmı?»', t, K.n_aye - 0.1, 500, 430, 90, K.n_aye + 0.6, 'Nisa 4:82', K.n_aye + 1);
-  if (t > K.n_kor) { chipAt('KOR-KORANƏ İMAN', t, K.n_kor + 0.5, 340, 700, 'rgba(255,255,255,0.7)', 38); cross(340, 700, 70, t, K.n_kor + 1.0); chipAt('DÜŞÜNMƏK', t, K.n_kor + 2.0, 700, 700, G1, 44); check(870, 700, 60, t, K.n_kor + 2.4); }
+  if (t > K.n_kor) { chipAt('KOR-KORANƏ İMAN', t, K.w_kor, 340, 700, 'rgba(255,255,255,0.7)', 38); cross(340, 700, 70, t, K.w_yox166); chipAt('DÜŞÜNMƏK', t, K.w_dusun166, 700, 700, G1, 44); check(870, 700, 60, t, K.w_dusun166 + 0.4); }
 });
 sec(K.n_video, K.n_serh, t => { big('BU VİDEO DA BUNUN ÜÇÜN İDİ', t, K.n_video + 0.2, 960, 540, 84, '#fff'); });
 sec(K.n_serh, K.n_abune, t => {
@@ -771,7 +771,7 @@ sec(K.n_serh, K.n_abune, t => {
     ctx.save(); ctx.globalAlpha = clamp(k); ctx.fillStyle = 'rgba(10,8,4,0.7)'; ctx.beginPath(); ctx.arc(x, y, 92 * k, 0, 7); ctx.fill(); ctx.strokeStyle = G1; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
     sprite(SIRR_ICON[i], x, y, 110, clamp(k), 0, k); tx(String(i + 1), x, y + 145, `64px ${AN}`, G1, clamp(k), { glow: '#ffb030' }); }
   if (t > K.n_reqem) { typeText('Rəqəmi şərhlərdə yaz', 960, 800, `58px ${MO}`, '#fff', t, K.n_reqem, 22); drawIcon('💬', 1400, 800, 80, R(t, K.n_reqem + 1, K.n_reqem + 1.3)); }
-  if (t > K.n_bilir) chipAt('BAŞQA SİRR BİLİRSƏN? YAZ', t, K.n_bilir + 0.6, 960, 930, G2, 38);
+  if (t > K.n_bilir) chipAt('BAŞQA SİRR BİLİRSƏN? YAZ', t, K.w_sirr170, 960, 930, G2, 38);
   if (t > K.n_yeni) chipAt('YENİ VİDEO GƏLİR', t, K.n_yeni + 0.1, 960, 1010, G1, 32);
 });
 function endCard16(t) {
@@ -794,9 +794,9 @@ sec(K.n_salam - 0.3, TOTAL2, t => { cv1('Allahın salamı üzərinizə olsun', t
 
 // ================= GLOBAL =================
 const IMPACTS = [K.h_14esr, K.h_mikro + 0.5, K.h_tele + 0.45, K.h_ulduz + 0.1, K.h_29n + 1.1, K.h_7n + 0.1, K.h_sert + 0.05, K.h_sual + 0.3, K.s1_herfi, K.s1_beli + 0.05, K.s1_barm2,
-  K.s1_eyni + 0.3, K.s1_imza + 0.3, K.s1_tesaduf + 0.1, K.s2_kecid + 0.2, K.s2_sehra + 1.2, K.s3_nehl, K.s3_tesaduf + 0.1, K.s4_614 + 0.9, K.s4_bid + 0.1, K.s4_qelebe + 2.6, K.s5_ruh + 0.6,
-  K.s5_hec + 0.2, K.s5_ibret + 0.8, K.s6_endir2, K.s6_partla + 0.1, K.s6_qan + 1.0, K.s7_boyuk, K.s7_elif, K.s7_lam, K.s7_mim, K.s7_yasin, K.s7_taha, K.s7_qaf, K.s7_nun, K.s7_kaf,
-  K.s7_gucunuz + 0.9, K.s7_bilmediyin + 0.4, K.n_tesaduf + 0.6, ...SIRR_T.map(x => x + 0.45)];
+  K.w_eyni, K.w_imza, K.s1_tesaduf + 0.1, K.s2_kecid + 0.2, K.w_haradan, K.s3_nehl, K.s3_tesaduf + 0.1, K.w_614 + 0.9, K.s4_bid + 0.1, K.w_evvelce, K.w_bedeni90,
+  K.s5_hec + 0.2, K.w_ibret, K.s6_endir2, K.w_partla, K.w_qanin, K.s7_boyuk, K.s7_elif, K.s7_lam, K.s7_mim, K.s7_yasin, K.s7_taha, K.s7_qaf, K.s7_nun, K.s7_kaf,
+  K.w_benzer, K.s7_bilmediyin + 0.4, K.w_tesaduf162, ...SIRR_T.map(x => x + 0.45)];
 function shakeAt(t) { let s = 0; for (const i of IMPACTS) { const d = t - i; if (d >= 0 && d < 0.5) s += Math.exp(-d * 9) * 14; } const d = t - K.s6_partla; if (d >= 0 && d < 1.0) s += Math.exp(-d * 4) * 26; return s; }
 const CUTS = SIRR_T.map(x => x - 0.15);
 function watermark(t) {
