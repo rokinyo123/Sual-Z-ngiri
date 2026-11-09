@@ -17,6 +17,10 @@ Bu repo ilə yeni söhbət aç (skill: `.claude/skills/esgarow-video`, mühərri
 | 5 | İhdinəs-sıratəl-mustəqim 1:6 | **İSTİFADƏÇİYƏ GÖRƏ ƏN SUPER VİDEO** — qəlib budur |
 | 6 | **NÖVBƏTİ: 1:7** — mətn layihəsi hazırdır: `esgarow_out/ep6/METN_layihe.md` (təsdiq gözləyir). Sıratəllə­zinə ən'amtə… | Tizer: "Üç qrup insan… sən hansındasan?" Ayrıca bölüm (birləşdirmə yox). Fikirlər: Nisa 4:69 (ne'mət verilənlər), "Amin" + Buxari 780 ilə seriyanı bağlamaq |
 
+## Uzun video: "Qurandakı 7 sirr" (YouTube 16:9, 9:24) — HAZIR
+`esgarow_out/sirr7/`: `qurandaki_7_sirr_yungul.mp4` (baxış üçün), tam keyfiyyətli (442 MB) yalnız göndərilib. Kod: `sirr7/build/` (part_main.js, kt.py, sfx7.py). Başlıqlar/açıqlama/bərkidilmiş şərh: `sirr7/BASLIQLAR.md`. Promptlar: `sirr7/PROMPTLAR_nano_banana.md`.
+Build fonts/sfx engine-dən kopyalanır: `cp -r ../../engine/{fonts,sfx} build/`.
+
 ## QƏLİB (5-ci bölümdən)
 1. **Hook (0–3 san):** "Quranın … ayəsi cəmi N sözdür" — yer + rəqəm + sual. Mövzuya aid yoxlanan rəqəm (114, 17 rükət). Hook öz-özünə tam olmalı (tizerə cavab kimi "ortadan" başlamasın).
 2. Bir/iki cümlə ayə + tərcümə.
