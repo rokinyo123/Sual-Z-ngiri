@@ -1,182 +1,182 @@
 [
  {
   "t0": 0,
-  "t1": 4.14,
-  "rate": 3.63,
+  "t1": 3.1,
+  "rate": 4.83,
   "text": "Fatihədə Allahdan cəmi bir şey istəyirik."
  },
  {
-  "t0": 4.56,
-  "t1": 6.52,
-  "rate": 4.58,
+  "t0": 3.52,
+  "t1": 5.68,
+  "rate": 4.18,
   "text": "Pul yox... sağlamlıq yox... bircə şey."
  },
  {
-  "t0": 6.94,
-  "t1": 9.32,
-  "rate": 3.79,
+  "t0": 6.04,
+  "t1": 8.84,
+  "rate": 3.21,
   "text": "İhdinəs-sıratəl-mustəqim."
  },
  {
-  "t0": 9.74,
-  "t1": 11.27,
-  "rate": 5.21,
+  "t0": 9.26,
+  "t1": 10.74,
+  "rate": 5.43,
   "text": "Bizi doğru yola yönəlt."
  },
  {
-  "t0": 11.69,
-  "t1": 12.41,
-  "rate": 5.56,
+  "t0": 11.16,
+  "t1": 11.81,
+  "rate": 6.14,
   "text": "Birinci sir."
  },
  {
-  "t0": 12.83,
-  "t1": 20.17,
-  "rate": 4.64,
+  "t0": 12.23,
+  "t1": 18.83,
+  "rate": 5.15,
   "text": "Bir gün Peyğəmbərimiz, sallallahu aleyhi və səlləm, yerə düz bir xətt çəkdi və dedi: Bu, Allahın yoludur."
  },
  {
-  "t0": 20.59,
-  "t1": 24.85,
-  "rate": 5.39,
+  "t0": 19.25,
+  "t1": 23.7,
+  "rate": 5.17,
   "text": "Sonra onun sağına və soluna çoxlu xətlər çəkdi: Bunlar da yollardır."
  },
  {
-  "t0": 25.27,
-  "t1": 28.82,
-  "rate": 5.35,
+  "t0": 24.12,
+  "t1": 27.48,
+  "rate": 5.66,
   "text": "Hər birinin başında bir şeytan var, insanı ona çağırır."
  },
  {
-  "t0": 29.24,
-  "t1": 33.64,
-  "rate": 5.0,
+  "t0": 27.77,
+  "t1": 31.98,
+  "rate": 5.22,
   "text": "Sonra bu ayəni oxudu: Bu, Mənim düz yolumdur, ona tabe olun."
  },
  {
-  "t0": 34.06,
-  "t1": 35.44,
-  "rate": 5.8,
+  "t0": 32.4,
+  "t1": 33.74,
+  "rate": 6.01,
   "text": "Başqa yollara uymayın."
  },
  {
-  "t0": 36.44,
-  "t1": 38.86,
-  "rate": 3.73,
+  "t0": 34.44,
+  "t1": 36.57,
+  "rate": 4.23,
   "text": "İkinci sir: sözlərin özü."
  },
  {
-  "t0": 39.28,
-  "t1": 44.0,
-  "rate": 4.02,
+  "t0": 36.99,
+  "t1": 41.06,
+  "rate": 4.67,
   "text": "İhdinə: təkcə yolu göstər yox, bizi o yola sal və apar."
  },
  {
-  "t0": 44.42,
-  "t1": 48.75,
-  "rate": 3.93,
+  "t0": 41.48,
+  "t1": 45.21,
+  "rate": 4.55,
   "text": "Əs-sırat: geniş, aydın, hamının görə biləcəyi yol."
  },
  {
-  "t0": 49.17,
-  "t1": 52.76,
-  "rate": 3.9,
+  "t0": 45.63,
+  "t1": 48.87,
+  "rate": 4.33,
   "text": "Əl-mustəqim: heç bir əyrisi olmayan, düz yol."
  },
  {
-  "t0": 53.18,
-  "t1": 55.6,
-  "rate": 3.72,
+  "t0": 49.29,
+  "t1": 51.41,
+  "rate": 4.25,
   "text": "Diqqət et: sırat tək haldadır."
  },
  {
-  "t0": 56.02,
-  "t1": 57.2,
-  "rate": 4.24,
+  "t0": 51.83,
+  "t1": 52.69,
+  "rate": 5.76,
   "text": "Doğru yol birdir."
  },
  {
-  "t0": 57.62,
-  "t1": 59.34,
-  "rate": 4.65,
+  "t0": 53.11,
+  "t1": 54.49,
+  "rate": 5.8,
   "text": "Yanlış yollar isə çoxdur."
  },
  {
-  "t0": 59.76,
-  "t1": 62.69,
-  "rate": 4.44,
+  "t0": 54.91,
+  "t1": 57.29,
+  "rate": 5.46,
   "text": "Quran onlara sübul, yəni yollar deyir."
  },
  {
-  "t0": 63.32,
-  "t1": 64.12,
-  "rate": 5.0,
+  "t0": 58.08,
+  "t1": 58.77,
+  "rate": 5.82,
   "text": "Üçüncü sir."
  },
  {
-  "t0": 64.54,
-  "t1": 70.18,
-  "rate": 4.43,
+  "t0": 59.19,
+  "t1": 64.0,
+  "rate": 5.2,
   "text": "Bəs biz müsəlmanıqsa, artıq yoldayıqsa, niyə hər rükətdə bunu istəyirik?"
  },
  {
-  "t0": 70.6,
-  "t1": 74.34,
-  "rate": 4.27,
+  "t0": 64.42,
+  "t1": 67.49,
+  "rate": 5.2,
   "text": "Çünki hidayət bir dəfə verilib bitən şey deyil."
  },
  {
-  "t0": 74.76,
-  "t1": 79.14,
-  "rate": 4.56,
+  "t0": 67.91,
+  "t1": 71.86,
+  "rate": 5.07,
   "text": "Yolda qalmaq da, irəliləmək də Allahın köməyi ilədir."
  },
  {
-  "t0": 79.56,
-  "t1": 83.13,
-  "rate": 5.33,
+  "t0": 72.28,
+  "t1": 75.98,
+  "rate": 5.13,
   "text": "Quran deyir: Hidayət tapanların hidayətini artırar."
  },
  {
-  "t0": 83.55,
-  "t1": 87.38,
-  "rate": 4.44,
+  "t0": 76.4,
+  "t1": 79.53,
+  "rate": 5.44,
   "text": "Bu duanı deyəndə Allah buyurur: Bu, qulumundur."
  },
  {
-  "t0": 87.8,
-  "t1": 90.19,
-  "rate": 5.02,
+  "t0": 79.95,
+  "t1": 82.22,
+  "rate": 5.29,
   "text": "Qulum nə istəsə, ona veriləcək."
  },
  {
-  "t0": 90.61,
-  "t1": 93.03,
-  "rate": 4.96,
+  "t0": 82.64,
+  "t1": 84.65,
+  "rate": 5.95,
   "text": "Bəs səni ən çox yoldan çıxaran nədir?"
  },
  {
-  "t0": 93.45,
-  "t1": 94.8,
-  "rate": 4.45,
+  "t0": 85.07,
+  "t1": 86.52,
+  "rate": 4.14,
   "text": "Şərhdə bir sözlə yaz."
  },
  {
-  "t0": 95.22,
-  "t1": 98.03,
-  "rate": 5.33,
+  "t0": 86.94,
+  "t1": 89.71,
+  "rate": 5.42,
   "text": "Növbəti videoda: Fatihənin son ayəsi."
  },
  {
-  "t0": 98.45,
-  "t1": 100.92,
-  "rate": 3.64,
+  "t0": 90.13,
+  "t1": 92.4,
+  "rate": 3.96,
   "text": "Üç qrup insan... Sən hansındasan?"
  },
  {
-  "t0": 101.34,
-  "t1": 102.7,
-  "rate": 6.62,
+  "t0": 92.82,
+  "t1": 93.94,
+  "rate": 8.05,
   "text": "Abunə olmağı unutma."
  }
 ]
