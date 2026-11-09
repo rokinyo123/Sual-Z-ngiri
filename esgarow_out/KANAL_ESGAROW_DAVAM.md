@@ -1,6 +1,6 @@
 # @esgarow — davam faylı (yeni söhbət üçün)
 
-Yeni söhbətdə bu faylı, `esgarow_toolkit.zip`-i və bu repodakı `esgarow_out/ref_ep5_ihdina/` qovluğunu göstər və yaz:
+Bu repo ilə yeni söhbət aç (skill: `.claude/skills/esgarow-video`, mühərrik: `esgarow_out/engine`, istinad: `esgarow_out/ref_ep5_ihdina`) və yaz:
 "Bu fayla əsasən Ayənin sirri seriyasına davam edək."
 
 ## Kanal
