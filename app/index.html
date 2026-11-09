@@ -638,7 +638,9 @@ const Cloud = (() => {
     catch(e){ net("⚠"); return false; }
   }
   function logout(){ fetch(URL0+"/auth/v1/logout", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+(C.sess||{}).access_token } }).catch(()=>{}); C.sess = null; C.me = null; keepSess(); clearInterval(C.poll); location.reload(); }
-  return { start, queue, logout, me: () => C.me, push, sync };
+  // Yeni bildiriş Telegram-a da gedir (server funksiyası "telegram" quraşdırılıbsa; yoxdursa səssizcə keçir)
+  function tg(a){ if (!C.sess) return; try { fetch(URL0+"/functions/v1/telegram", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+C.sess.access_token, "Content-Type":"application/json" }, body:JSON.stringify({ alert:{ id:a.id, kind:a.kind, to:a.to, title:a.title, sub:a.sub, items:a.items, oid:a.oid } }) }).catch(()=>{}); } catch(e){} }
+  return { start, queue, logout, me: () => C.me, push, sync, tg };
 })();
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
@@ -831,7 +833,9 @@ function autoMissing(){
   if (n) save();
 }
 function notify(to, kind, title, sub, items, oid){
-  (S.alerts = S.alerts || []).unshift({ id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] });
+  const a = { id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] };
+  (S.alerts = S.alerts || []).unshift(a);
+  if (ONLINE) setTimeout(()=>Cloud.tg(a), 0);
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
 const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
