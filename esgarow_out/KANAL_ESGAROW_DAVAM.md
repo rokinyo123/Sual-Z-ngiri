@@ -15,7 +15,7 @@ Bu repo ilə yeni söhbət aç (skill: `.claude/skills/esgarow-video`, mühərri
 | 3 | Maliki yəvmiddin 1:4 | 1:52 (1:3 atlanıb) |
 | 4 | İyyakə nəbudu 1:5 | ağaca lent / qəbirdən istəmək — tövhid, mübahisə yaradan komment sualı |
 | 5 | İhdinəs-sıratəl-mustəqim 1:6 | **İSTİFADƏÇİYƏ GÖRƏ ƏN SUPER VİDEO** — qəlib budur |
-| 6 | **NÖVBƏTİ: 1:7** Sıratəllə­zinə ən'amtə… | Tizer: "Üç qrup insan… sən hansındasan?" Ayrıca bölüm (birləşdirmə yox). Fikirlər: Nisa 4:69 (ne'mət verilənlər), "Amin" + Buxari 780 ilə seriyanı bağlamaq |
+| 6 | **NÖVBƏTİ: 1:7** — mətn layihəsi hazırdır: `esgarow_out/ep6/METN_layihe.md` (təsdiq gözləyir). Sıratəllə­zinə ən'amtə… | Tizer: "Üç qrup insan… sən hansındasan?" Ayrıca bölüm (birləşdirmə yox). Fikirlər: Nisa 4:69 (ne'mət verilənlər), "Amin" + Buxari 780 ilə seriyanı bağlamaq |
 
 ## QƏLİB (5-ci bölümdən)
 1. **Hook (0–3 san):** "Quranın … ayəsi cəmi N sözdür" — yer + rəqəm + sual. Mövzuya aid yoxlanan rəqəm (114, 17 rükət). Hook öz-özünə tam olmalı (tizerə cavab kimi "ortadan" başlamasın).
