@@ -32,3 +32,8 @@ grant all on almond.tg_chats, almond.tg_sent to service_role;
 -- select cron.schedule('almond-axsam', '0 14 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?evening=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
+
+-- Excel hesabatı: hər gün 20:05 Bakı (16:05 UTC) yoxlanır — bazar günü həftəlik, ayın son günü aylıq → Rəhbərlik
+-- select cron.schedule('almond-hesabat', '5 16 * * *',
+--   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?report=auto',
+--        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
