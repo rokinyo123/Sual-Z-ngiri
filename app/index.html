@@ -639,7 +639,12 @@ const Cloud = (() => {
   }
   function logout(){ fetch(URL0+"/auth/v1/logout", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+(C.sess||{}).access_token } }).catch(()=>{}); C.sess = null; C.me = null; keepSess(); clearInterval(C.poll); location.reload(); }
   // Yeni bildiriş Telegram-a da gedir (server funksiyası "telegram" quraşdırılıbsa; yoxdursa səssizcə keçir)
-  function tg(a){ if (!C.sess) return; try { fetch(URL0+"/functions/v1/telegram", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+C.sess.access_token, "Content-Type":"application/json" }, body:JSON.stringify({ alert:{ id:a.id, kind:a.kind, to:a.to, title:a.title, sub:a.sub, items:a.items, oid:a.oid } }) }).catch(()=>{}); } catch(e){} }
+  function tg(a){
+    if (!C.sess) return Promise.resolve({ ok:false, status:0, text:"daxil olunmayıb" });
+    return fetch(URL0+"/functions/v1/telegram", { method:"POST", headers:{ apikey:AKEY, Authorization:"Bearer "+C.sess.access_token, "Content-Type":"application/json" }, body:JSON.stringify({ alert:{ id:a.id, kind:a.kind, to:a.to, title:a.title, sub:a.sub, items:a.items, oid:a.oid } }) })
+      .then(async r=>({ ok:r.ok, status:r.status, text:(await r.text().catch(()=>"")).slice(0,200) }))
+      .catch(e=>({ ok:false, status:0, text:String(e && e.message || e) }));
+  }
   return { start, queue, logout, me: () => C.me, push, sync, tg };
 })();
 const prod = id => S.products.find(p=>p.id===Number(id));
@@ -835,7 +840,7 @@ function autoMissing(){
 function notify(to, kind, title, sub, items, oid){
   const a = { id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] };
   (S.alerts = S.alerts || []).unshift(a);
-  if (ONLINE) setTimeout(()=>Cloud.tg(a), 0);
+  if (ONLINE) setTimeout(()=>Cloud.tg(a).then(r=>{ if (!r.ok && r.status!==404) console.warn("Telegram:", r); }), 0);
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
 const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
@@ -1091,7 +1096,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot">'+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v22</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2162,6 +2167,9 @@ $("main").addEventListener("click", e => {
   if (t.id==="fAdd") return addFirm();
   if (t.id==="pAdd") return addProduct();
   if (t.id==="out2"){ Cloud.logout(); return; }
+  if (t.id==="tgtest"){ toast("Telegram-a göndərilir…");
+    Cloud.tg({ id:"test"+Date.now(), kind:"note", to:[role], title:"Sınaq mesajı · "+role, sub:"Proqramdan Telegram-a əlaqə işləyir", items:[], oid:null })
+      .then(r=>toast(r.ok ? (/"sent":0/.test(r.text) ? "Funksiya işləyir, amma heç bir söhbət "+role+" və ya hamısı-na qoşulmayıb" : "✓ Telegram-a göndərildi: "+r.text) : "Telegram xətası "+r.status+": "+r.text)); return; }
   if (t.id==="install"){ installEvt && installEvt.prompt(); return; }
   if (t.id==="notif"){ try { Notification.requestPermission().then(()=>render()); } catch(e){} return; }
   if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Bütün sifarişlər silindi"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
