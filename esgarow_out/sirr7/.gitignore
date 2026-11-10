@@ -6,3 +6,10 @@ build/sfx/
 qurandaki_7_sirr_final.mp4
 sil.txt
 qurandaki_7_sirr_youtube.mp4
+trailer/*.wav
+trailer/mixwork/
+trailer/tr_video.mp4
+trailer/fonts/
+trailer/sfx/
+build/K_old.json
+build/K_prev.json

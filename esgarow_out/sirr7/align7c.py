@@ -10,11 +10,16 @@ w = [syl(x) for x in texts]; R = sum(w) / sum(e - s for s, e in SEG)
 N, M = len(texts), len(SEG); INF = 1e18
 LAM = 1.5
 dp = [[INF] * (M + 1) for _ in range(N + 1)]; bk = [[0] * (M + 1) for _ in range(N + 1)]; dp[0][0] = 0
+def gap_before(t):
+    g = [e - s for s, e in fine_all if abs(e - t) < 0.06]
+    return g[0] if g else 0
+HARD = [gap_before(c[1]) >= 0.2 for c in cues]
 for i in range(1, N + 1):
     old = cues[i - 1][1]
     for j in range(i, M - (N - i) + 1):
         for k in range(max(i - 1, j - 20), j):
             if dp[i - 1][k] >= INF: continue
+            if HARD[i - 1] and abs(SEG[k][0] - old) > 0.07: continue
             st = SEG[k][0]; t = SEG[j - 1][1] - st; r = w[i - 1] / t
             c = dp[i - 1][k] + (math.log(r / R)) ** 2 * w[i - 1] + LAM * min(25, (st - old) ** 2)
             if c < dp[i][j]: dp[i][j] = c; bk[i][j] = k

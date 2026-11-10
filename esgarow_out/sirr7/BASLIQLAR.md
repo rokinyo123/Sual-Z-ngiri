@@ -60,3 +60,20 @@ Sizi ən çox hansı sirr düşündürdü? Rəqəmini yaz 👇
 - Uzun videodan hər sirr ayrıca qısa video ola bilər (məs. Sirr 1: 0:56–2:14).
 - Caption: `14 əsr əvvəl bunu kim bilə bilərdi? 🤯 Sirr #1 — barmaq ucları. Tam video YouTube-da. #quran #islam #esgarow`
 - Ekran yazısı tövsiyəsi: ilk 1 saniyədə "QURANDAKI 7 SİRR · #1".
+
+## YENİ: YouTube başlıq + giriş + qapaq (Flow)
+
+**Başlıq:** `Qurandakı 7 Sirr: 7-cisinin cavabını 14 əsrdir heç kim tapmayıb`
+Alternativlər: `Qanındakı dəmir bir ulduzdan gəlib — Qurandakı 7 sirr` · `14 əsr əvvəl yazılan kitabda bu günün elmi? | Qurandakı 7 Sirr`
+
+**Açıqlamanın ilk 2 sətri (axtarışda görünən hissə):**
+```
+Sənin qanındakı dəmir bir vaxtlar bir ulduzun ürəyində idi. Barmaq izləri, qarışmayan dənizlər, bal arısı, bir imperiyanın qayıdışı, fironun bədəni… və 14 əsrdir mənası açılmayan hərflər.
+Heç nəyi zorla iddia etmirik: ayəni oxuyuruq, bu günkü bilgini göstəririk — nəticəni sən çıxar. Sonuncu sirrə qədər izlə.
+```
+
+**Qapaq promptu (Flow / Nano Banana, 16:9):**
+```
+YouTube thumbnail, 16:9, ultra high contrast cinematic image. Center-right: a large ancient round golden seal medallion with an abstract eight-pointed star pattern (no letters), wrapped in heavy rusted iron chains with a big old padlock; bright golden light is bursting out through deep cracks in the medallion, sparks and glowing dust flying toward the camera. Behind it, deep black space with a faint nebula and a single bright star flare. Lower left corner: a single dark red drop of blood with a tiny glowing star inside it, sharp macro detail. Left 40% of the frame is darker and clean, reserved for a big title added later. Dramatic rim light, warm gold against black and deep teal, shallow depth of field, photorealistic, crisp details that read well at small size. No text, no letters, no numbers, no people, no faces, no watermark.
+```
+Yazını şəklin üstünə sonra qoy (AI "Ə, İ, Ş" hərflərini səhv yazır): sol tərəfə iri **7 SİRR**, altında kiçik **QURANDA**, küncdə **#7 = ?**

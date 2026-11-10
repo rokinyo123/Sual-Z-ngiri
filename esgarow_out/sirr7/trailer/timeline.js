@@ -1,0 +1,3 @@
+const KT = {"c0": 0.0, "c1": 6.15, "c2": 10.89, "c4": 15.77, "c5": 20.87, "c6": 34.78, "c0_end": 5.850000000000023, "c1_end": 10.59, "c2_end": 15.469999999999999, "c4_end": 20.57, "c5_end": 34.47999999999996, "c6_end": 42.26, "qan": 0.457, "demir0": 1.248, "ulduzun": 3.894, "ureyinde": 4.487, "ondord": 8.448, "kitab": 9.982, "mikro": 13.312, "tele": 14.898, "yeddi": 18.474, "acacagiq": 19.824, "barmaq": 20.925, "deniz": 22.395, "ari": 24.252, "imper": 25.597, "firon": 27.865, "demir": 29.833, "herfler": 32.023, "amma": 34.84000000000001, "sonuncu": 36.592, "cunki": 38.767, "sual": 41.712};
+const TOTAL2 = 45.06;
+const TL = { _total: TOTAL2 };
