@@ -58,11 +58,12 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 - Then titles: YouTube (title + description with sources and hashtags), TikTok (short caption + on-screen text tip + cover frame), Instagram (caption + cover), and the **pinned comment** with word-by-word meaning + a bonus fact.
 
 ## 8. Series status
-1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best).
-**Next: Fatihə 1:7** — teaser promised "Üç qrup insan… sən hansındasan?" (Nisa 4:69; close the Fatihə series with "Amin", Buxari 780). Separate episode, not merged.
+1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best) · 6 Fatihə 1:7 (3 groups, Amin; code in `esgarow_out/ref_ep6_fatihe7/`).
+**Next: Bəqərə** — ep6 teaser: "Quranın ən böyük ayəsi… hansıdır, bilirsənmi?" (Ayətəl-kürsi 2:255, Müslim 810; on-screen hint "Bəqərə surəsi"). The user also sees Bəqərə 2:1 (Əlif-Ləm-Mim) as the natural next step — ask which first.
 
 ## 9. Environment notes
 Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyPI, npm, Zapier S3. Chromium + Playwright preinstalled.
 
 ## Changelog
+- Ep6: ElevenLabs take was slow (144 s) → `tighten.py` cap 0.34 + `atempo=1.15` → 117.6 s, still natural for the deep voice. Velocity-matched seams from hyperframes `cut-the-curve` in the compositor (`SCN` = [scene, start, seam]; seams zoom / inv / whip / blur / wipe / break, mirrored power-4 eases, each seam has its own SFX). `waterfall()` staggered word entry with blur. Colour-coded ayah (gold = blessed, red = anger, grey = astray) carried through every scene. Split screen ✓/✗, two lines merging into one road, star-ring "Amin" wave, 1→7 counter. Reusable ep5 effects live in `fx_ep5.js`. Don't `rm` stills dirs in a cd-compound command (safety check blocks it): write each batch to a new dir.
 - Ep5: fracture hook, "Quranın … ayəsi cəmi N sözdür" hook, word-meaning cards with glass lens, real SFX samples, no music, green-screen props.

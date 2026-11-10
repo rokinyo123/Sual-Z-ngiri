@@ -15,7 +15,8 @@ Bu repo ilə yeni söhbət aç (skill: `.claude/skills/esgarow-video`, mühərri
 | 3 | Maliki yəvmiddin 1:4 | 1:52 (1:3 atlanıb) |
 | 4 | İyyakə nəbudu 1:5 | ağaca lent / qəbirdən istəmək — tövhid, mübahisə yaradan komment sualı |
 | 5 | İhdinəs-sıratəl-mustəqim 1:6 | **İSTİFADƏÇİYƏ GÖRƏ ƏN SUPER VİDEO** — qəlib budur |
-| 6 | **NÖVBƏTİ: 1:7** Sıratəllə­zinə ən'amtə… | Tizer: "Üç qrup insan… sən hansındasan?" Ayrıca bölüm (birləşdirmə yox). Fikirlər: Nisa 4:69 (ne'mət verilənlər), "Amin" + Buxari 780 ilə seriyanı bağlamaq |
+| 6 | Fatihə 1:7 — 3 qrup insan, Amin | 1:59. Səs: ElevenLabs (sürət 1.15). 13 səhnə, hyperframes keçidləri. Kod: `ref_ep6_fatihe7/`. Tizer: "Quranın ən böyük ayəsi… hansıdır?" |
+| 7 | **NÖVBƏTİ: Bəqərə** | Ayətəl-kürsi (2:255, Müslim 810) və ya Bəqərə 2:1 (Əlif-Ləm-Mim) — istifadəçidən soruş |
 
 ## QƏLİB (5-ci bölümdən)
 1. **Hook (0–3 san):** "Quranın … ayəsi cəmi N sözdür" — yer + rəqəm + sual. Mövzuya aid yoxlanan rəqəm (114, 17 rükət). Hook öz-özünə tam olmalı (tizerə cavab kimi "ortadan" başlamasın).
