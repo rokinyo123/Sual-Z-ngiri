@@ -8,7 +8,7 @@
 //    /siyahi — bu söhbət nələri alır,  /ayril — dayandır
 // 3) Proqram hər yeni bildirişi bura göndərir → həmin şöbəyə bağlı söhbətlərə mesaj gedir
 // 4) Sual əmrləri: /bugun /geciken /problemler /sobeler /sifaris 105
-// 6) Günorta xatırlatması: ...functions/v1/telegram?midday=1 (pg_cron 14:00 Bakı) — bu gün gəlməli, hələ gəlməyən firmalar → Satınalma
+// 6) Günorta xatırlatması: ...functions/v1/telegram?midday=1 (pg_cron 16:00 Bakı) — bu gün gəlməli, hələ gəlməyən firmalar → Satınalma
 // 5) Səhər xülasəsi: ...functions/v1/telegram?morning=1 (pg_cron hər gün 09:30 Bakı vaxtı çağırır; gündə bir dəfə göndərir)
 
 const TOKEN = Deno.env.get("TELEGRAM_TOKEN") ?? "";
@@ -234,10 +234,10 @@ async function morning(force: boolean) {
   return json({ ok: true, sent });
 }
 
-// 14:00 — bu gün gəlməli olan, amma hələ "Gəldi" basılmayan sifarişlər: Satınalma firmaya zəng etsin
+// 16:00 — bu gün gəlməli olan, amma hələ "Gəldi" basılmayan sifarişlər: Satınalma firmaya zəng etsin
 async function midday(force: boolean) {
   const t = today(), b = bakuNow();
-  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 13 * 60 + 50) return json({ ok: true, skip: "tez" });
+  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 15 * 60 + 50) return json({ ok: true, skip: "tez" });
   const d = await load();
   const list = d.orders.filter((o) => o.status === "yolda" && o.eta === t);
   if (!list.length) return json({ ok: true, sent: 0, skip: "hamısı gəlib" });
@@ -245,7 +245,7 @@ async function midday(force: boolean) {
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const by = new Map<string, any[]>();
   list.forEach((o) => { const k = o.supplier || "Firmasız"; by.set(k, [...(by.get(k) ?? []), o]); });
-  const text = cut(`⏰ <b>Saat 14:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
+  const text = cut(`⏰ <b>Saat 16:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
     [...by.entries()].map(([f, os]) => `📞 <b>${esc(f)}</b> → ${[...new Set(os.map((o) => esc(o.wh)))].join(", ")} · ${os.reduce((a, o) => a + o.items.length, 0)} mal · ${os.map((o) => link(o.id)).join(" ")}\n   ` +
       ((ns) => esc(ns.slice(0, 6).join(", ")) + (ns.length > 6 ? "…" : ""))([...new Set(os.flatMap((o) => o.items.map((i: any) => d.pname(i.pid))))])).join("\n") +
     `\n\n<a href="${APP}">👉 Proqramı aç</a>`);

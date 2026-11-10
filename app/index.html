@@ -890,7 +890,7 @@ function pushNotify(){
 function stage(o){
   if (o.status==="redd") return {k:"arch", t:"Ləğv edildi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
-  if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=14 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
+  if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=16 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"} : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
   if (techPending(o)){ const d = o.items.filter(i=>techReady(o,i)).map(i=>i.techDue).filter(Boolean).sort()[0]; return {k: d && daysTo(d)<0 ? "bad" : "chk", t:"Texnoloqda"+(d?" · cavab "+fmtD(d).slice(0,5)+(daysTo(d)<0?" keçib":""):"")}; }
@@ -1096,7 +1096,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v24</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v25</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
