@@ -33,7 +33,7 @@ const DEPTS: Record<string, string> = {
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
   rehberlik: "Rəhbərlik", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
-const ICON: Record<string, string> = { late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
+const ICON: Record<string, string> = { stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
 const fold = (s: string) => s.toLowerCase().replace(/ə/g, "e").replace(/ı/g, "i").replace(/i̇/g, "i").replace(/ş/g, "s")
   .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u").replace(/\s+/g, "");
@@ -227,7 +227,7 @@ async function onAlert(req: Request, body: any) {
   const chats = [...new Set(rows.filter((r) => r.dept === "*" || to.includes(r.dept)).map((r) => r.chat_id))];
   if (!chats.length) return json({ ok: true, sent: 0 });
   const items: string[] = Array.isArray(a.items) ? a.items.slice(0, 10) : [];
-  const text = `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>` +
+  const text = (a.kind === "stuck" ? "🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n" : "") + `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>` +
     (a.sub ? `\n${esc(a.sub)}` : "") +
     (items.length ? "\n" + items.map((x) => "• " + esc(x)).join("\n") : "") +
     (to.length ? `\n<i>Kimə: ${esc(to.join(", "))}</i>` : "") +

@@ -787,10 +787,12 @@ function stuckSignals(){
   if (ONLINE && !(role==="Rəhbərlik" || role==="Satınalma" || (Cloud.me()||{}).is_admin)) return;
   let n = 0;
   S.orders.forEach(o=>{ const w = waitOn(o); if (!w || !w.stuck || w.noNotify) return;
-    const key = w.who+"|"+o.status+"|"+(o.qcAt?1:0); if (o.stuckN===key) return;
+    // ilk dəfə + hələ də ilişibsə hər 4 saatdan bir təkrar (ən çox 3 dəfə)
+    const rep = Math.min(3, Math.floor((w.h - w.lim) / 4));
+    const key = w.who+"|"+o.status+"|"+(o.qcAt?1:0)+"|"+rep; if (o.stuckN===key) return;
     o.stuckN = key; n++;
     const toProb = w.who==="Satınalma" && (needsAnswer(o) || lateNeedsAns(o));
-    notify(["Rəhbərlik", w.who], "late", toProb ? "#"+o.id+" · Satınalma "+ANS_H+" saatda cavab vermədi → Problemlər" : "#"+o.id+" · "+(w.neg||inWho(w.who)+" ilişib")+" · "+hTxt(w.h), w.who+" "+w.what, [], o.id);
+    notify(["Rəhbərlik", w.who], "stuck", (rep>0?"Təkrar xəbərdarlıq ("+(rep+1)+") · ":"")+(toProb ? "#"+o.id+" · Satınalma "+ANS_H+" saatda cavab vermədi → Problemlər" : "#"+o.id+" · "+(w.neg||inWho(w.who)+" ilişib")+" · "+hTxt(w.h)), w.who+" "+w.what, [], o.id);
   });
   if (n) save();
 }
@@ -850,7 +852,7 @@ function notify(to, kind, title, sub, items, oid){
   if (ONLINE) setTimeout(()=>Cloud.tg(a).then(r=>{ if (!r.ok && r.status!==404) console.warn("Telegram:", r); }), 0);
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
-const ALK = { late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
+const ALK = { stuck:["🚨","alert"], late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
 let alAll = false;
 function alertsHtml(){
   const A = myAlerts(); if (!A.length) return "";
@@ -1194,7 +1196,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v26</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v27</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
