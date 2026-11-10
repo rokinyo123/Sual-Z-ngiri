@@ -77,3 +77,56 @@ Heç nəyi zorla iddia etmirik: ayəni oxuyuruq, bu günkü bilgini göstəririk
 YouTube thumbnail, 16:9, ultra high contrast cinematic image. Center-right: a large ancient round golden seal medallion with an abstract eight-pointed star pattern (no letters), wrapped in heavy rusted iron chains with a big old padlock; bright golden light is bursting out through deep cracks in the medallion, sparks and glowing dust flying toward the camera. Behind it, deep black space with a faint nebula and a single bright star flare. Lower left corner: a single dark red drop of blood with a tiny glowing star inside it, sharp macro detail. Left 40% of the frame is darker and clean, reserved for a big title added later. Dramatic rim light, warm gold against black and deep teal, shallow depth of field, photorealistic, crisp details that read well at small size. No text, no letters, no numbers, no people, no faces, no watermark.
 ```
 Yazını şəklin üstünə sonra qoy (AI "Ə, İ, Ş" hərflərini səhv yazır): sol tərəfə iri **7 SİRR**, altında kiçik **QURANDA**, küncdə **#7 = ?**
+
+## YouTube açıqlaması — son variant (detallı fəsillər + heşteqlər)
+```
+Sənin qanındakı dəmir bir vaxtlar bir ulduzun ürəyində idi. Barmaq izləri, qarışmayan dənizlər, bal arısı, bir imperiyanın qayıdışı, fironun bədəni… və 14 əsrdir mənası açılmayan hərflər.
+Heç nəyi zorla iddia etmirik: ayəni oxuyuruq, bu günkü bilgini göstəririk — nəticəni sən çıxar. Sonuncu sirrə qədər izlə.
+
+⏱ FƏSİLLƏR
+0:00 Giriş: 14 əsr əvvəl yazılmış kitab
+0:33 Qurandakı 7 sirr
+0:47 Bir şərt: sonuncu sirrə qədər izlə
+0:56 SİRR 1 — Barmaq ucları
+1:06 Qiyamə surəsi: "barmaq uclarını belə düzəltməyə qadirik"
+1:23 Niyə ürək yox, beyin yox — məhz barmaq ucu?
+1:37 Frensis Qalton (1892): dünyada iki eyni barmaq izi yoxdur
+1:49 1905: polis barmaq izi ilə cinayətkar tapır
+2:14 SİRR 2 — Qarışmayan dənizlər
+2:26 Cəbəllütariq: Aralıq dənizi və Atlantik okeanı
+2:49 Dürüst olaq: sular qarışırmı?
+3:14 SİRR 3 — Bal arısı
+3:29 Ayədəki "düzəlt, ye, get" — qadın formasında
+3:52 Dürüst olaq: dilçilər nə deyir?
+4:05 SİRR 4 — İmperiyanın qayıdışı
+4:31 Rum surəsi nazil olur: "Rumlar məğlub oldu"
+4:39 "Bid'" sözü: 3 ildən 9 ilə qədər
+4:50 622–627: Herakl və Neynəva döyüşü
+5:01 Yürüş Qafqaz və Atropatena (Azərbaycan) üzərindən
+5:14 SİRR 5 — Fironun bədəni
+5:30 "Ruhunu yox, bədənini"
+5:45 Firon mumiyaları necə tapıldı
+5:57 Dürüst olaq: Musanın dövründəki firon hansıdır?
+6:20 SİRR 6 — Göydən enən dəmir
+6:36 Astronomiya: dəmir ulduzlarda yaranır
+6:55 Dürüst olaq: "ənzəlna" sözünün mənaları
+7:12 SİRR 7 — Sirli hərflər
+7:22 Əlif. Lam. Mim.
+7:39 29 surə, 14 hərf — əlifbanın düz yarısı
+7:57 Alimlər nə deyir?
+8:17 "Həqiqi mənasını yalnız Allah bilir"
+8:31 Nəticə: 7 sirr bir yerdə
+8:50 "Onlar Quranı düşünüb daşınmırlarmı?"
+9:05 Səni ən çox hansı sirr düşündürdü? Rəqəmini yaz
+
+📖 MƏNBƏLƏR
+Yasin 36:78 · Qiyamə 75:3–4 · Rəhman 55:19–20 · Nəhl 16:68–69 · Rum 30:2–4 · Yunus 10:92 · Naziat 79:24 · Hədid 57:25 · Zumər 39:6 · Bəqərə 2:1, 2:23 · Ali-İmran 3:7 · Nisa 4:82
+Barmaq izi: Henry Faulds (Nature, 1880), Francis Galton "Finger Prints" (1892)
+Dəmir: ESA — kütləvi ulduzlarda nukleosintez və supernovalar
+Fironlar: Deyr əl-Bəhri (1881) və KV35 (1898) tapıntıları; Misir Sivilizasiyası Milli Muzeyi, Qahirə
+
+Bu yeddi sirrdən səni ən çox hansı düşündürdü? Rəqəmini şərhdə yaz 👇
+Abunə ol: @esgarow
+
+#Quran #QurandakıSirlər #İslam #QuranVəElm #Möcüzə #Azərbaycan #AyəninSirri #esgarow #Barmaqİzləri #İkiDəniz #BalArısı #RumSurəsi #Firon #HədidSurəsi #ƏlifLamMim
+```
