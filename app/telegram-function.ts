@@ -13,6 +13,9 @@
 const TOKEN = Deno.env.get("TELEGRAM_TOKEN") ?? "";
 const SB = Deno.env.get("SUPABASE_URL") ?? "";
 const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+// Qoşulma kodu (Edge Functions → Secrets → TG_KOD). Yalnız bu kodu bilən söhbət /qosul edə bilər;
+// qoşulmamış söhbət sual əmrlərinə (/bugun, /sifaris ...) cavab almır.
+const KOD = (Deno.env.get("TG_KOD") ?? "").trim();
 const APP = "https://rokinyo123.github.io/Sual-Z-ngiri/app/";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -143,10 +146,12 @@ const cut = (t: string) => t.length > 3900 ? t.slice(0, 3900) + "\n…" : t;
 
 const HELP = "Salam! Mən Almond Anbar botuyam.\n\n" +
   "Bu söhbətə hansı şöbənin bildirişləri gəlsin — yazın:\n" +
-  "<code>/qosul Satınalma</code>\n<code>/qosul Keyfiyyət</code>\n<code>/qosul Anbar</code>\n<code>/qosul İnqilab</code>\n<code>/qosul Texnoloq</code>\n<code>/qosul Rəhbərlik</code>\n" +
-  "<code>/qosul hamısı</code> — bütün bildirişlər (yoxlamaq üçün)\n\n" +
+  "<code>/qosul Satınalma KOD</code>\n<code>/qosul Keyfiyyət KOD</code>\n<code>/qosul Anbar KOD</code>\n<code>/qosul İnqilab KOD</code>\n<code>/qosul Texnoloq KOD</code>\n<code>/qosul Rəhbərlik KOD</code>\n" +
+  "<code>/qosul hamısı KOD</code> — bütün bildirişlər\n(KOD — qoşulma kodu, Admindən alın)\n\n" +
   "<code>/siyahi</code> — bu söhbət nələri alır\n<code>/ayril</code> — bildirişləri dayandır\n\n" +
   "Soruşmaq üçün:\n/bugun — bu gün nə gələcək\n/geciken — vaxtında gəlməyənlər\n/problemler — Satınalmanın cavabsız qoyduqları\n/sobeler — şöbələrdə nə iş gözləyir\n<code>/sifaris 105</code> — sifarişin vəziyyəti";
+
+const joined = (chat: number) => db(`tg_chats?chat_id=eq.${chat}&select=dept&limit=1`).then((r) => r.json()).then((r) => Array.isArray(r) && r.length > 0).catch(() => false);
 
 async function onTelegram(update: any) {
   const m = update.message ?? update.channel_post;
@@ -158,8 +163,13 @@ async function onTelegram(update: any) {
   const arg = rest.join(" ");
   if (cmd === "/start" || cmd === "/help" || cmd === "/komek") return say(chat, HELP);
   if (cmd === "/qosul" || cmd === "/qoşul") {
-    const dept = DEPTS[fold(arg)];
-    if (!dept) return say(chat, "Şöbəni yazın, məsələn: <code>/qosul Satınalma</code>\n\n" + HELP);
+    // kodlu mesajı söhbətdən silməyə çalışırıq (qrupda bot admin olmalıdır; alınmasa da olar)
+    tg("deleteMessage", { chat_id: chat, message_id: m.message_id });
+    if (!KOD) return say(chat, "⛔ Qoşulma kodu qurulmayıb. Admin Supabase-də <b>TG_KOD</b> əlavə etməlidir.");
+    const parts = arg.split(/\s+/).filter(Boolean), code = parts.length > 1 ? parts.pop()! : "";
+    if (code !== KOD) { await new Promise((r) => setTimeout(r, 1500)); return say(chat, "⛔ Kod səhvdir və ya yazılmayıb. Belə yazın: <code>/qosul Satınalma KOD</code>"); }
+    const dept = DEPTS[fold(parts.join(" "))];
+    if (!dept) return say(chat, "Şöbəni yazın, məsələn: <code>/qosul Satınalma KOD</code>");
     const r = await db("tg_chats", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify({ chat_id: chat, dept, title: m.chat.title ?? m.chat.first_name ?? "" }) });
     if (!r.ok) return say(chat, "Xəta: " + esc(await r.text()));
@@ -171,6 +181,7 @@ async function onTelegram(update: any) {
     return say(chat, dept ? `Bu söhbət artıq ${esc(dept)} bildirişlərini almayacaq.` : "Bu söhbətə bildiriş göndərilməyəcək.");
   }
   if (["/bugun", "/bugün", "/geciken", "/gecikən", "/problemler", "/problemlər", "/sobeler", "/şöbələr", "/sifaris", "/sifariş"].includes(cmd)) {
+    if (!(await joined(chat))) return say(chat, "⛔ Bu söhbət qoşulmayıb. Əvvəlcə: <code>/qosul Şöbə KOD</code> (kodu Admindən alın).");
     const d = await load();
     const f = fold(cmd);
     const t = f.startsWith("/bug") ? cmdBugun(d) : f.startsWith("/gec") ? cmdGeciken(d) : f.startsWith("/prob") ? cmdProblemler(d) : f.startsWith("/sob") ? `📋 <b>Şöbələr</b>\n` + board(d.orders) : cmdSifaris(d, arg);
