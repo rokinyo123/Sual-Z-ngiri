@@ -69,8 +69,8 @@ Close underwater view of the boundary between two water layers with gentle slow 
 === bg18_gemi.png ===
 An oceanographic research vessel at sea at dusk, a crane on the stern lowering a large round CTD rosette water sampler (gray metal frame with many tall cylinders) into dark water, splashing. Crew only as tiny distant silhouettes from behind. Orange-pink sky, calm swell. EMPTY ZONE: top-left sky empty. Cinematic film still, warm sunset and cool sea teal, film grain, photorealistic, 16:9, no readable text on ship, no watermark.
 
-=== bg19_sehra_deniz.png ⭐ ===
-A lone man in a simple 7th-century Arabian robe and head wrap stands on top of a sand dune, seen only from behind, looking toward a distant sea on the horizon. Late afternoon, long shadow, wind blowing sand. He is small in the frame, the landscape is vast. Face never visible. EMPTY ZONE: top 40% sky empty. Cinematic film still, amber desert and teal sea, film grain, photorealistic, 16:9, no text, no watermark.
+=== bg19_sehra_deniz.png ⭐ (YENİLƏNİB: içində heç bir insan yoxdur) ===
+A vast, completely empty Arabian desert at late afternoon: tall golden sand dunes with sharp wind-carved ridges lead the eye toward a thin strip of deep blue sea on the far horizon. Wind lifts fine streams of sand off the dune crests. Long soft shadows, warm low sun from the side, a few wispy clouds. Absolutely no people, no human figures, no silhouettes, no footprints, no animals, no tents, no buildings — only sand, sky and the distant sea. Feeling: silence, isolation, the sea impossibly far away. EMPTY ZONE: top 40% sky calm and empty. Cinematic film still, amber desert and teal sea, film grain, photorealistic, 16:9, no text, no watermark.
 
 === bg20_ari_makro.png ⭐ ===
 Extreme macro of a single honeybee worker on a yellow wildflower, pollen dust on its legs, translucent wings backlit by warm golden sunlight. Background soft green-gold bokeh. Bee on the right third. EMPTY ZONE: left 40% soft blurred bokeh, empty. Cinematic macro photography, gold and green, shallow depth of field, film grain, photorealistic, 16:9, no text, no watermark.
