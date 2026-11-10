@@ -28,7 +28,7 @@ Növbəti bölüm: Quranın ən böyük ayəsi.
 Hər namazda deyirsən… amma bu 9 sözdə 3 qrup insan var 😳 Sən hansındasan? Şərhdə bir sözlə yaz: BİLMƏK, yoxsa ETMƏK? #quran #fatihə #ayəninsirri #islam #namaz #azərbaycan #esgarow
 
 **Ekran üstü yazı (ilk 2 saniyə):** "Fatihənin son ayəsi = 3 qrup insan"
-**Örtük (cover) kadrı:** 0:08.9 (üç qapı + "SƏN HANSINDASAN?")
+**Örtük (cover) kadrı:** 0:10.5 (üç qapı + "SƏN HANSINDASAN?")
 
 ## Instagram (Reels)
 **Caption:**
@@ -40,7 +40,7 @@ Sən hansındasan? Şərhdə bir sözlə yaz 👇
 Növbəti: Quranın ən böyük ayəsi. Abunə ol @esgarow
 #quran #fatihə #ayəninsirri #islam #namaz #azərbaycan
 
-**Örtük:** 0:08.9 kadrı (üç qapı).
+**Örtük:** 0:10.5 kadrı (üç qapı).
 
 ## Sabitlənmiş şərh (pinned comment)
 📖 Fatihə 1:7, söz-söz:

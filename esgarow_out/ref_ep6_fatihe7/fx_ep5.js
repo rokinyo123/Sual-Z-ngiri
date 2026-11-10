@@ -40,7 +40,7 @@ function glitchTx(s, x, y, font, col, t, t0, a = 1) {
 // full-frame photo with slow camera + readability gradients
 function bgImage(k, t, t0, z0 = 1.0, z1 = 1.1, opt = {}) {
   const im = IM[k]; if (!im) { brandBg(t); return; }
-  const u = ease((t - t0) / (opt.dur || 12)), z = lerp(z0, z1, u);
+  const u = ease((t - t0) / ((opt.dur || 12) * 1.15)), z = lerp(z0, z1, u);
   ctx.save(); ctx.translate(W / 2, H / 2 + (opt.dy || 0) * u); if (opt.mirror) ctx.scale(-1, 1); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
   if (opt.filter) ctx.filter = opt.filter; ctx.drawImage(im, 0, 0, W, H); ctx.restore();
   const g2 = ctx.createLinearGradient(0, 0, 0, 800); g2.addColorStop(0, 'rgba(7,6,11,0.8)'); g2.addColorStop(1, 'rgba(7,6,11,0)'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, 800);

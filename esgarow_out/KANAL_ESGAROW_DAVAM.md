@@ -15,7 +15,7 @@ Bu repo ilə yeni söhbət aç (skill: `.claude/skills/esgarow-video`, mühərri
 | 3 | Maliki yəvmiddin 1:4 | 1:52 (1:3 atlanıb) |
 | 4 | İyyakə nəbudu 1:5 | ağaca lent / qəbirdən istəmək — tövhid, mübahisə yaradan komment sualı |
 | 5 | İhdinəs-sıratəl-mustəqim 1:6 | **İSTİFADƏÇİYƏ GÖRƏ ƏN SUPER VİDEO** — qəlib budur |
-| 6 | Fatihə 1:7 — 3 qrup insan, Amin | 1:59. Səs: ElevenLabs (sürət 1.15). 13 səhnə, hyperframes keçidləri. Kod: `ref_ep6_fatihe7/`. Tizer: "Quranın ən böyük ayəsi… hansıdır?" |
+| 6 | Fatihə 1:7 — 3 qrup insan, Amin | 2:17. Səs: ElevenLabs, təbii sürət (sürətləndirmə YOX). 13 səhnə, hyperframes keçidləri. Kod: `ref_ep6_fatihe7/`. Tizer: "Quranın ən böyük ayəsi… hansıdır?" |
 | 7 | **NÖVBƏTİ: Bəqərə** | Ayətəl-kürsi (2:255, Müslim 810) və ya Bəqərə 2:1 (Əlif-Ləm-Mim) — istifadəçidən soruş |
 
 ## QƏLİB (5-ci bölümdən)

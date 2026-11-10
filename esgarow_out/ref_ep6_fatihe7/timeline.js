@@ -1,24 +1,24 @@
-// Ayənin sirri 6 — Fatihə 1:7 (Sıratəlləzinə ən'amtə aleyhim…). Seconds in voice.wav (117.6 s)
+// Ayənin sirri 6 — Fatihə 1:7 (Sıratəlləzinə ən'amtə aleyhim…). Seconds in voice.wav (135.8 s, natural speed, 0.5 s lead-in)
 const KT = {
-  quran: 0.07, son: 1.39, uzun: 3.08, cemi: 4.43, doqquz: 4.90, soz: 5.15,
-  bu_doqquz: 5.90, uc_qrup: 7.19, hansinda: 8.45,
-  ayah: 9.51, gayril: 12.08, veled: 13.36, nemet: 14.50, qezebe: 17.73, azan: 19.27, yox: 20.70,
-  sozsoz: 21.75, w1: 23.08, w2: 24.08, w3: 25.11, w4: 26.02, w5: 27.10, w6: 28.51,
-  sirr1: 30.64, kimdir: 31.95, quran_ozu: 34.26, p1: 35.85, p2: 36.75, p3: 37.52, p4: 38.61,
-  deyir: 39.61, yoldas: 40.49, yeni: 42.40, yol_tek: 44.16, yoldasi: 45.57,
-  sirr2: 48.57, edeb: 49.52, nemetden: 50.80, enamte: 52.48, sen_verdin: 53.40, amma_q: 54.36, sen_qez: 55.98,
-  sadece: 57.53, azanlar: 59.57, sen_azd: 61.16, yaxsiliq: 62.69, edebi: 64.31,
-  sirr3: 66.33, iki_yanlis: 67.31, alimler: 68.45, qezebe_ugr: 69.15, bilib: 70.77, etmeyen: 71.20,
-  azan2: 72.32, emel_eden: 73.18, bilmeden: 74.57, biri1: 75.73, etmir: 76.64, biri2: 77.36, bilmir: 78.34,
-  dogru: 79.04, bilmek: 81.41, etmek: 82.05, elmsiz: 82.99, ibadetsiz: 85.09, qezebe_ap: 86.58,
-  sonda: 88.08, amin: 89.00, deyil: 89.66, peyg: 91.36, buyurdu: 93.97, imam: 94.71, siz_de: 96.24,
-  kimin: 97.66, melek: 98.58, uygun: 100.06, kecmis: 100.72, bagis: 102.48,
-  yeddi: 103.63, her_biri: 104.58, bes: 105.51, bilmek_q: 107.16, etmek_q: 107.90, serh: 109.01,
-  fatihe: 110.60, novbeti: 111.70, en_boyuk: 113.17, hansidir: 114.50, abune: 116.07,
+  quran: 0.58, son: 2.09, uzun: 4.04, cemi: 5.59, doqquz: 6.13, soz: 6.42,
+  bu_doqquz: 7.29, uc_qrup: 8.77, hansinda: 10.21,
+  ayah: 11.43, gayril: 14.39, veled: 15.87, nemet: 17.18, qezebe: 20.89, azan: 22.66, yox: 24.30,
+  sozsoz: 25.51, w1: 27.04, w2: 28.19, w3: 29.38, w4: 30.42, w5: 31.66, w6: 33.29,
+  sirr1: 35.73, kimdir: 37.24, quran_ozu: 39.90, p1: 41.73, p2: 42.76, p3: 43.65, p4: 44.90,
+  deyir: 46.05, yoldas: 47.06, yeni: 49.26, yol_tek: 51.29, yoldasi: 52.90,
+  sirr2: 56.36, edeb: 57.45, nemetden: 58.92, enamte: 60.86, sen_verdin: 61.91, amma_q: 63.01, sen_qez: 64.87,
+  sadece: 66.65, azanlar: 69.01, sen_azd: 70.83, yaxsiliq: 72.59, edebi: 74.45,
+  sirr3: 76.77, iki_yanlis: 77.91, alimler: 79.22, qezebe_ugr: 80.02, bilib: 81.89, etmeyen: 82.38,
+  azan2: 83.67, emel_eden: 84.66, bilmeden: 86.26, biri1: 87.59, etmir: 88.63, biri2: 89.47, bilmir: 90.59,
+  dogru: 91.39, bilmek: 94.12, etmek: 94.86, elmsiz: 95.94, ibadetsiz: 98.36, qezebe_ap: 100.07,
+  sonda: 101.79, amin: 102.86, deyil: 103.61, peyg: 105.56, buyurdu: 108.56, imam: 109.41, siz_de: 111.17,
+  kimin: 112.81, melek: 113.87, uygun: 115.57, kecmis: 116.33, bagis: 118.35,
+  yeddi: 119.67, her_biri: 120.76, bes: 121.84, bilmek_q: 123.73, etmek_q: 124.58, serh: 125.86,
+  fatihe: 127.69, novbeti: 128.96, en_boyuk: 130.64, hansidir: 132.17, abune: 133.99,
 };
-const TOTAL2 = 119.2;
+const TOTAL2 = 137.4;
 // [scene, start, incoming transition]
-const SCN = [['hook', 0, 'none'], ['ayah', 9.51, 'zoom'], ['sozsoz', 21.75, 'whip'], ['sirr1', 30.64, 'wipe'], ['yoldas', 42.40, 'blur'],
-  ['sirr2', 48.57, 'inv'], ['sirr3', 66.33, 'whip'], ['birles', 79.04, 'blur'], ['amin', 88.08, 'break'], ['melek', 97.66, 'blur'],
-  ['yeddi', 103.63, 'zoom'], ['serh', 105.51, 'whip'], ['novbeti', 110.60, 'inv']];
+const SCN = [['hook', 0, 'none'], ['ayah', 11.43, 'zoom'], ['sozsoz', 25.51, 'whip'], ['sirr1', 35.73, 'wipe'], ['yoldas', 49.26, 'blur'],
+  ['sirr2', 56.36, 'inv'], ['sirr3', 76.77, 'whip'], ['birles', 91.39, 'blur'], ['amin', 101.79, 'break'], ['melek', 112.81, 'blur'],
+  ['yeddi', 119.67, 'zoom'], ['serh', 121.84, 'whip'], ['novbeti', 127.69, 'inv']];
 const TL = { _total: TOTAL2 };

@@ -76,12 +76,16 @@ function shakeAt(t) {
   return s;
 }
 
+function bgShade() {
+  const g2 = ctx.createLinearGradient(0, 0, 0, 800); g2.addColorStop(0, 'rgba(7,6,11,0.8)'); g2.addColorStop(1, 'rgba(7,6,11,0)'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, 800);
+  const g = ctx.createLinearGradient(0, H * 0.6, 0, H); g.addColorStop(0, 'rgba(7,6,11,0)'); g.addColorStop(1, 'rgba(7,6,11,0.85)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
 // ================= scenes =================
 const AYL = ['صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ', 'غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ', 'وَلَا الضَّالِّينَ'];
 const AYW = ['صِرَاطَ', 'الَّذِينَ', 'أَنْعَمْتَ', 'عَلَيْهِمْ', 'غَيْرِ', 'الْمَغْضُوبِ', 'عَلَيْهِمْ', 'وَلَا', 'الضَّالِّينَ'];
 const SCENES = {
   hook(t) {
-    if (t < 1.55) fracture('yol', t, 0, 1.5); else bgImage('yol', t, 1.55, 1.0, 1.14, { dur: 9 });
+    if (t < 1.3) { fracture('yol', t, 0, 1.3); const g = R(t, 0.6, 1.3); grp(g, () => bgShade()); } else bgImage('yol', t, 1.3, 1.0, 1.14, { dur: 9 });
     lightLeak(t, 0.12);
     // last ayah of the first surah
     grp(fadeOut(t, K.bu_doqquz - 0.15, 0.35), () => {
@@ -150,7 +154,7 @@ const SCENES = {
   },
 
   sirr1(t, a) {
-    if (t < K.kimdir - 0.1) { sirrCard(t, a, 1, 'nemət verilənlər', 'nerdivan'); return; }
+    
     bgImage('nerdivan', t, K.kimdir - 0.1, 1.15, 1.02, { dur: 11 }); darken(0.2);
     grp(fadeOut(t, K.p1 - 0.3, 0.35), () => {
       waterfall('Nemət verilənlər', W / 2, 360, `70px ${CV}`, G2, t, K.kimdir, 0.1);
@@ -195,7 +199,7 @@ const SCENES = {
   },
 
   sirr2(t, a) {
-    if (t < K.nemetden - 0.1) { sirrCard(t, a, 2, 'sözlərin ədəbi', 'dua'); return; }
+    
     bgImage('dua', t, K.nemetden - 0.1, 1.05, 1.15, { dur: 16 }); darken(0.35);
     const out = fadeOut(t, K.yaxsiliq - 0.2, 0.4);
     grp(out, () => {
@@ -240,7 +244,7 @@ const SCENES = {
   },
 
   sirr3(t, a) {
-    if (t < K.alimler - 0.1) { sirrCard(t, a, 3, 'iki yanlış yol', 'ikiyol'); return; }
+    
     bgImage('ikiyol', t, K.alimler - 0.1, 1.1, 1.0, { dur: 11 }); darken(0.35);
     // split screen: left = anger (red), right = astray (grey)
     const hl = t >= K.biri2 ? 1 : t >= K.biri1 ? 0 : -1;
@@ -376,6 +380,12 @@ const SCENES = {
   },
 };
 
+// chapter card dissolves into the scene instead of a hard cut
+[['sirr1', 'kimdir', 1, 'nemət verilənlər', 'nerdivan'], ['sirr2', 'nemetden', 2, 'sözlərin ədəbi', 'dua'], ['sirr3', 'alimler', 3, 'iki yanlış yol', 'ikiyol']].forEach(([k, kk, n, w, bg]) => {
+  const body = SCENES[k];
+  SCENES[k] = (t, a, b) => { const x = K[kk] - 0.1, cA = 1 - R(t, x - 0.15, x + 0.35);
+    if (cA >= 1) { sirrCard(t, a, n, w, bg); return; } body(t, a, b); grp(cA, () => sirrCard(t, a, n, w, bg)); };
+});
 function watermark(t) {
   const a = 0.7 * (1 - R(t, K.abune - 0.8, K.abune - 0.4)); if (a <= 0) return;
   ctx.save(); ctx.globalAlpha = a; ctx.save(); ctx.beginPath(); ctx.arc(78, 78, 28, 0, 7); ctx.clip(); ctx.drawImage(logo, 50, 50, 56, 56); ctx.restore();
