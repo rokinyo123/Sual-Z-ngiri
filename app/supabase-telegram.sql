@@ -23,7 +23,7 @@ grant all on almond.tg_chats, almond.tg_sent to service_role;
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?morning=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
 
--- Günorta xatırlatması: hər gün 14:00 Bakı vaxtı (10:00 UTC) — bu gün gəlməli olub hələ gəlməyən firmalar → Satınalma
--- select cron.schedule('almond-gunorta', '0 10 * * *',
+-- Günorta xatırlatması: hər gün 16:00 Bakı vaxtı (12:00 UTC) — bu gün gəlməli olub hələ gəlməyən firmalar → Satınalma
+-- select cron.schedule('almond-gunorta', '0 12 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?midday=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
