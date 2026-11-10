@@ -15,3 +15,10 @@ alter table almond.tg_chats enable row level security;
 alter table almond.tg_sent  enable row level security;
 grant usage on schema almond to service_role;
 grant all on almond.tg_chats, almond.tg_sent to service_role;
+
+-- Səhər xülasəsi: hər gün 09:30 Bakı vaxtı (05:30 UTC). Əvvəlcə Database → Extensions: pg_cron və pg_net açılmalıdır.
+-- create extension if not exists pg_cron;
+-- create extension if not exists pg_net;
+-- select cron.schedule('almond-seher', '30 5 * * *',
+--   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?morning=1',
+--        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);

@@ -613,7 +613,7 @@ const Cloud = (() => {
     if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
-    $("role").hidden = false; renderRole(); render();
+    $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
   }
@@ -1096,7 +1096,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v22</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v23</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2418,7 +2418,17 @@ draft = newDraft();
     el.innerHTML = '<b>'+p(d.getHours())+':'+p(d.getMinutes())+'</b><span class="ckd"> · <span class="ckw">'+wday(today())+' </span>'+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+'</span>'; }
   setTimeout(tickClock, (60 - new Date().getSeconds())*1000 + 50);
 })();
-if (ONLINE) Cloud.start(); else { $("sub").textContent = "Anbar zənciri · nümunə"; renderRole(); render(); }
+// Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
+function openDeep(){
+  const m = /[#&]o=(\d+)/.exec(location.hash||""); if (!m) return;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+  const id = Number(m[1]), o = S.orders.find(x=>x.id===id) || (S.trash||[]).find(x=>x.id===id);
+  if (!o) return toast("#"+id+" sifarişi tapılmadı (silinib ola bilər)");
+  tab = "orders"; filter = "all"; oq = "#"+id; RF = RT = ""; openMore.add(id); fullSet.add(id); render();
+  const el = $("o-"+id); if (el) el.scrollIntoView({block:"start"});
+}
+window.addEventListener("hashchange", ()=>{ if ((!ONLINE || Cloud.me()) && /o=\d+/.test(location.hash)) openDeep(); });
+if (ONLINE) Cloud.start(); else { $("sub").textContent = "Anbar zənciri · nümunə"; renderRole(); render(); openDeep(); }
 </script>
 </body>
 </html>
