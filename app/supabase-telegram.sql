@@ -27,3 +27,8 @@ grant all on almond.tg_chats, almond.tg_sent to service_role;
 -- select cron.schedule('almond-gunorta', '0 12 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?midday=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
+
+-- Axşam yekunu: hər gün 18:00 Bakı vaxtı (14:00 UTC) — bütün qoşulmuş söhbətlərə
+-- select cron.schedule('almond-axsam', '0 14 * * *',
+--   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?evening=1',
+--        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);

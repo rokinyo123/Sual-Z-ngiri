@@ -9,6 +9,7 @@
 // 3) Proqram hər yeni bildirişi bura göndərir → həmin şöbəyə bağlı söhbətlərə mesaj gedir
 // 4) Sual əmrləri: /bugun /geciken /problemler /sobeler /sifaris 105
 // 6) Günorta xatırlatması: ...functions/v1/telegram?midday=1 (pg_cron 16:00 Bakı) — bu gün gəlməli, hələ gəlməyən firmalar → Satınalma
+// 7) Axşam yekunu: ...functions/v1/telegram?evening=1 (pg_cron 18:00 Bakı) — bu gün nə gəldi, nə gəlmədi, nə qəbul olunmadı
 // 5) Səhər xülasəsi: ...functions/v1/telegram?morning=1 (pg_cron hər gün 09:30 Bakı vaxtı çağırır; gündə bir dəfə göndərir)
 
 const TOKEN = Deno.env.get("TELEGRAM_TOKEN") ?? "";
@@ -255,12 +256,37 @@ async function midday(force: boolean) {
   return json({ ok: true, sent });
 }
 
+// 18:00 — günün yekunu, bütün qoşulmuş söhbətlərə
+const bakuDay = (iso?: string) => iso ? new Date(new Date(iso).getTime() + 4 * H).toISOString().slice(0, 10) : "";
+async function evening(force: boolean) {
+  const t = today(), b = bakuNow();
+  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 17 * 60 + 50) return json({ ok: true, skip: "tez" });
+  const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: (force ? "evening-test-" + Date.now() : "evening-" + t) }) });
+  if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
+  const d = await load();
+  const got = d.orders.filter((o) => o.recvDone && bakuDay(o.recvAt) === t);
+  const miss = d.orders.filter((o) => o.status === "yolda" && o.eta === t);
+  const rej = d.orders.flatMap((o) => o.items.filter((i: any) => i.qc === "bad" && bakuDay(o.qcAt) === t).map((i: any) => ({ o, i })));
+  const line = (o: any) => { const n = o.items.length, ok = o.items.filter((i: any) => !problem(o, i)).length;
+    return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ${ok === n ? `${n} mal tam ✓` : `${ok}/${n} mal tam, ${n - ok} problemli`}`; };
+  const text = cut(`🌆 <b>Günün yekunu · ${fmtD(t)}</b>\n\n` +
+    `✅ <b>Bu gün qəbul olunanlar · ${got.length}</b>\n` + (got.length ? got.map(line).join("\n") : "—") + "\n\n" +
+    `⛔ <b>Bu gün gəlməli idi, gəlmədi · ${miss.length}</b>\n` + (miss.length ? miss.map((o) => `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ${o.items.length} mal`).join("\n") : "—") + "\n\n" +
+    (rej.length ? `🔍 <b>Keyfiyyət bu gün qəbul etmədi · ${rej.length}</b>\n` + rej.map(({ o, i }) => `• ${esc(d.pname(i.pid))} — ${esc(i.qcWhy || "uyğun deyil")} · ${link(o.id)} ${esc(o.supplier || "")}`).join("\n") + "\n\n" : "") +
+    cmdProblemler(d) + "\n\n📋 <b>Kim işini bitirməyib</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
+  const rows: any[] = await db("tg_chats?select=chat_id").then((r) => r.json()).catch(() => []);
+  let sent = 0;
+  for (const c of [...new Set(rows.map((r) => r.chat_id))]) { const r = await say(c, text); if (r.ok) sent++; }
+  return json({ ok: true, sent });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (!TOKEN) return json({ ok: false, error: "TELEGRAM_TOKEN yoxdur — Edge Functions → Secrets bölməsində əlavə edin" }, 500);
   const url = new URL(req.url);
   if (url.searchParams.has("morning")) return morning(url.searchParams.has("force"));
   if (url.searchParams.has("midday")) return midday(url.searchParams.has("force"));
+  if (url.searchParams.has("evening")) return evening(url.searchParams.has("force"));
   if (req.method === "GET" && url.searchParams.has("setup")) {
     await tg("setMyCommands", { commands: [
       { command: "bugun", description: "Bu gün nə gələcək" }, { command: "geciken", description: "Vaxtında gəlməyənlər" },
