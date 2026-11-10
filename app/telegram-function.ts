@@ -10,7 +10,11 @@
 // 4) Sual əmrləri: /bugun /geciken /problemler /sobeler /sifaris 105
 // 6) Günorta xatırlatması: ...functions/v1/telegram?midday=1 (pg_cron 16:00 Bakı) — bu gün gəlməli, hələ gəlməyən firmalar → Satınalma
 // 7) Axşam yekunu: ...functions/v1/telegram?evening=1 (pg_cron 18:00 Bakı) — bu gün nə gəldi, nə gəlmədi, nə qəbul olunmadı
+// 8) Excel hesabatı: ...functions/v1/telegram?report=auto (pg_cron hər gün 20:05 Bakı): bazar günü həftəlik, ayın son günü aylıq
+//    → Rəhbərlik söhbətlərinə. Əl ilə: ?report=week&force=1, ?report=month&force=1; Telegram-da /hesabat, /hesabat ay
 // 5) Səhər xülasəsi: ...functions/v1/telegram?morning=1 (pg_cron hər gün 09:30 Bakı vaxtı çağırır; gündə bir dəfə göndərir)
+
+import * as XLSX from "npm:xlsx@0.18.5";
 
 const TOKEN = Deno.env.get("TELEGRAM_TOKEN") ?? "";
 const SB = Deno.env.get("SUPABASE_URL") ?? "";
@@ -156,6 +160,7 @@ const HELP = "Salam! Mən Almond Anbar botuyam.\n\n" +
   "<code>/qosul Satınalma KOD</code>\n<code>/qosul Keyfiyyət KOD</code>\n<code>/qosul Anbar KOD</code>\n<code>/qosul İnqilab KOD</code>\n<code>/qosul Texnoloq KOD</code>\n<code>/qosul Rəhbərlik KOD</code>\n" +
   "<code>/qosul hamısı KOD</code> — bütün bildirişlər\n(KOD — qoşulma kodu, Admindən alın)\n\n" +
   "<code>/siyahi</code> — bu söhbət nələri alır\n<code>/ayril</code> — bildirişləri dayandır\n\n" +
+  "Hesabat (Excel): /hesabat — bu həftə, <code>/hesabat ay</code> — bu ay\n\n" +
   "Soruşmaq üçün:\n/bugun — bu gün nə gələcək\n/geciken — vaxtında gəlməyənlər\n/problemler — Satınalmanın cavabsız qoyduqları\n/sobeler — şöbələrdə nə iş gözləyir\n<code>/sifaris 105</code> — sifarişin vəziyyəti";
 
 const joined = (chat: number) => db(`tg_chats?chat_id=eq.${chat}&select=dept&limit=1`).then((r) => r.json()).then((r) => Array.isArray(r) && r.length > 0).catch(() => false);
@@ -193,6 +198,13 @@ async function onTelegram(update: any) {
     const f = fold(cmd);
     const t = f.startsWith("/bug") ? cmdBugun(d) : f.startsWith("/gec") ? cmdGeciken(d) : f.startsWith("/prob") ? cmdProblemler(d) : f.startsWith("/sob") ? `📋 <b>Şöbələr</b>\n` + board(d.orders) : cmdSifaris(d, arg);
     return say(chat, cut(t));
+  }
+  if (cmd === "/hesabat") {
+    if (!(await joined(chat))) return say(chat, "⛔ Bu söhbət qoşulmayıb.");
+    const kind = /^ay/.test(fold(arg)) ? "month" : "week";
+    await say(chat, "⏳ Hesabat hazırlanır…");
+    const r = await reportBuild(kind, today());
+    return sendDoc(chat, r.buf, r.name, r.caption);
   }
   if (cmd === "/siyahi" || cmd === "/siyahı") {
     const rows = await db(`tg_chats?chat_id=eq.${chat}&select=dept`).then((r) => r.json()).catch(() => []);
@@ -285,6 +297,121 @@ async function evening(force: boolean) {
   return json({ ok: true, sent });
 }
 
+// ---------- Excel hesabatı ----------
+const sendDoc = (chat_id: number, buf: ArrayBuffer, name: string, caption: string) => {
+  const fd = new FormData();
+  fd.append("chat_id", String(chat_id)); fd.append("caption", caption.slice(0, 1000)); fd.append("parse_mode", "HTML");
+  fd.append("document", new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), name);
+  return fetch(`https://api.telegram.org/bot${TOKEN}/sendDocument`, { method: "POST", body: fd }).then((r) => r.json()).catch((e) => ({ ok: false, description: String(e) }));
+};
+const addD = (d: string, n: number) => new Date(new Date(d + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
+const monday = (d: string) => addD(d, -((new Date(d + "T00:00:00Z").getUTCDay() + 6) % 7));
+const dmy = (d?: string) => d ? d.slice(8, 10) + "." + d.slice(5, 7) + "." + d.slice(0, 4) : "";
+const hrs = (a?: string, b?: string) => a && b ? Math.round((new Date(b).getTime() - new Date(a).getTime()) / H * 10) / 10 : "";
+function sheet(rows: any[][], widths: number[]) { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; }
+
+async function reportBuild(kind: string, ref: string) {
+  const d = await load();
+  const a = kind === "month" ? ref.slice(0, 8) + "01" : monday(ref);
+  const b = kind === "month" ? addD(addD(ref.slice(0, 8) + "01", 32).slice(0, 8) + "01", -1) : addD(a, 6);
+  const inR = (x?: string) => !!x && x >= a && x <= b;
+  const iDate = (o: any) => o.eta || String(o.created || "").slice(0, 10);
+  const os = d.orders.filter((o) => inR(iDate(o)));
+  const rows = os.flatMap((o) => o.items.map((i: any) => ({ o, i, pr: problem(o, i) })));
+  const done = rows.filter((r) => r.o.recvDone || r.i.unav || r.i.notFound);
+  const full = done.filter((r) => !r.pr && (r.i.got || 0) >= num(r.i.qty)).length;
+  const part = done.filter((r) => /^Az/.test(r.pr)).length;
+  const miss = rows.filter((r) => /^(Gəlmədi|Satınalma: mal yoxdur|Sürücü tapmadı)/.test(r.pr));
+  const qc = rows.filter((r) => r.i.qc === "bad");
+  const tech = rows.filter((r) => r.i.techRes);
+  const lates = d.orders.flatMap((o) => (o.lates || []).filter((e: any) => inR(e.eta)).map((e: any) => ({ o, e })));
+  const samples = d.orders.filter((o) => o.sample && inR(String(o.created || "").slice(0, 10)));
+  const unans = rows.filter((r) => r.pr && !r.i.ans);
+  const slowAns = rows.filter((r) => r.i.ans && Number(hrs(ansSince(r.o, r.i), r.i.ans.at)) > ANS_H);
+  const recv = os.filter((o) => o.recvAt && o.eta);
+  const ontime = recv.length ? Math.round(100 * recv.filter((o) => String(o.recvAt).slice(0, 10) <= o.eta).length / recv.length) : null;
+  const title = kind === "month" ? `Aylıq hesabat · ${dmy(a)} – ${dmy(b)}` : `Həftəlik hesabat · ${dmy(a)} – ${dmy(b)}`;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheet([
+    ["Almond Anbar — " + title], [],
+    ["Göstərici", "Say"],
+    ["Sifariş", new Set(os.filter((o) => !o.parent).map((o) => o.group || o.id)).size],
+    ["Mal (sətir)", rows.length],
+    ["Tam gəldi", full], ["Az gəldi", part], ["Gəlmədi / tapılmadı", miss.length],
+    ["Keyfiyyət qəbul etmədi", qc.length],
+    ["Texnoloq: qəbul / rədd", tech.filter((r) => r.i.techRes === "ok").length + " / " + tech.filter((r) => r.i.techRes === "bad").length],
+    ["Vaxtında qəbul olunan sifariş", ontime == null ? "—" : ontime + "%"],
+    ["Gecikmə (firma vaxtında gəlmədi)", lates.length],
+    ["  — Satınalma açıqlama verməyib", lates.filter((x) => !x.e.note).length],
+    ["Satınalma 12 saatdan gec cavab verib", slowAns.length],
+    ["Cavabsız qalan problem", unans.length],
+    ["Nümunə", samples.length],
+    ["  — xəbərsiz gələn (Satınalma yazmayıb)", samples.filter((o) => o.unannounced).length],
+    [], ["Hazırlandı", dmy(today())],
+  ], [42, 14]), "Xülasə");
+
+  const sup: Record<string, any> = {};
+  rows.forEach(({ o, i, pr }) => { const k = o.supplier || "Firmasız", x = sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() };
+    x.n++; x.ords.add(o.id); if (o.recvDone && !pr && (i.got || 0) >= num(i.qty)) x.full++; if (/^Az/.test(pr)) x.part++;
+    if (/^(Gəlmədi|Satınalma: mal yoxdur|Sürücü tapmadı)/.test(pr)) x.miss++; if (i.qc === "bad") x.qc++; });
+  lates.forEach(({ o }) => { const k = o.supplier || "Firmasız"; (sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() }).late++; });
+  samples.filter((o) => o.unannounced).forEach((o) => { const k = o.supplier || "Firmasız"; (sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() }).surp++; });
+  XLSX.utils.book_append_sheet(wb, sheet([["Firma", "Sifariş", "Mal", "Tam", "Az", "Gəlmədi", "Keyfiyyət ✗", "Gecikmə", "Xəbərsiz nümunə", "Tam %"],
+    ...Object.entries(sup).sort((x: any, y: any) => y[1].n - x[1].n).map(([k, x]: any) => [k, x.ords.size, x.n, x.full, x.part, x.miss, x.qc, x.late, x.surp, x.n ? Math.round(100 * x.full / x.n) + "%" : ""])],
+    [26, 9, 7, 7, 7, 9, 11, 9, 15, 8]), "Firmalar");
+
+  XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Firma", "Anbar", "Mal", "Sifariş edilən", "Gələn", "Problem", "Satınalmanın cavabı", "Cavab neçə saata"],
+    ...rows.filter((r) => r.pr && r.i.qc !== "bad" && !(r.o.sample && r.i.techRes)).map(({ o, i, pr }) => [dmy(iDate(o)), "#" + o.id, o.supplier || "", o.wh, d.pname(i.pid), i.qty, i.got ?? "", pr,
+      i.ans ? (i.ans.none ? "Tapılmır: " + (i.ans.note || "") : "Yeni tarix " + dmy(i.ans.date) + (i.ans.note ? " · " + i.ans.note : "")) : "CAVAB YOXDUR", i.ans ? hrs(ansSince(o, i), i.ans.at) : ""])],
+    [11, 9, 22, 16, 26, 13, 8, 24, 36, 14]), "Gəlməyən mallar");
+
+  XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Firma", "Mal", "Miqdar", "Səbəb", "Yoxlayan", "İstehsal", "Son istifadə", "Satınalmanın cavabı"],
+    ...qc.map(({ o, i }) => [dmy(iDate(o)), "#" + o.id, o.supplier || "", d.pname(i.pid), i.qty, i.qcWhy || "", i.qcBy || "", i.mfg || "", i.exp || "",
+      i.ans ? (i.ans.none ? "Tapılmır" : "Yeni tarix " + dmy(i.ans.date)) : "CAVAB YOXDUR"])],
+    [11, 9, 22, 26, 10, 30, 18, 12, 12, 22]), "Keyfiyyət rədd");
+
+  XLSX.utils.book_append_sheet(wb, sheet([["Gəlməli idi", "Sifariş", "Firma", "Anbar", "Satınalmanın açıqlaması", "Nəticə"],
+    ...lates.map(({ o, e }) => [dmy(e.eta), "#" + o.id, e.firm || o.supplier || "", o.wh, e.note || "AÇIQLAMA VERİLMƏYİB",
+      e.arrived ? "Gəldi " + dmy(e.arrived) + " (" + days(e.eta, e.arrived) + " gün gec)" : e.none ? "Gəlmədi" : e.newEta ? "Yeni tarix " + dmy(e.newEta) : "Gözlənilir"])],
+    [12, 9, 22, 16, 40, 26]), "Gecikmələr");
+
+  XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Firma", "Anbar", "Necə gəldi", "Saxlanma (saat)", "Mallar", "Texnoloqun nəticəsi"],
+    ...samples.map((o) => [dmy(String(o.created).slice(0, 10)), "#" + o.id, o.supplier || "", o.wh, o.unannounced ? "XƏBƏRSİZ" : "Satınalma yazıb",
+      o.hold ? (o.holdDone ? hrs(o.hold.at, o.holdDone.at) : "hələ yazılmayıb") : "", o.items.map((i: any) => d.pname(i.pid)).join(", ") || (o.hold?.desc ?? ""),
+      o.items.map((i: any) => i.techRes === "ok" ? "✓" : i.techRes === "bad" ? "✗" + (i.techNote ? " " + i.techNote : "") : "…").join(", ")])],
+    [11, 9, 22, 16, 16, 15, 36, 26]), "Nümunələr");
+
+  XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Kimdən", "Anbar", "Firma", "Mal sayı", "Vəziyyət"],
+    ...os.sort((x, y) => iDate(x).localeCompare(iDate(y))).map((o) => [dmy(iDate(o)), "#" + o.id, o.from, o.wh, o.supplier || "", o.items.length, stageTxt(o)])],
+    [11, 9, 16, 16, 22, 9, 40]), "Sifarişlər");
+
+  const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+  const name = `Almond_${kind === "month" ? "ayliq_" + a.slice(0, 7) : "heftelik_" + a + "_" + b}.xlsx`;
+  const caption = `📊 <b>${title}</b>\n${rows.length} mal · ${full} tam · ${part} az · ${miss.length} gəlmədi · Keyfiyyət ✗ ${qc.length}\n` +
+    `⏰ ${lates.length} gecikmə (${lates.filter((x) => !x.e.note).length}-nə açıqlama yoxdur) · 🧪 ${samples.length} nümunə (${samples.filter((o) => o.unannounced).length} xəbərsiz)` +
+    (unans.length ? `\n⚠️ ${unans.length} problem cavabsız` : "");
+  return { buf, name, caption };
+}
+// Avtomatik: bazar günü — həftəlik, ayın son günü — aylıq; Rəhbərlik və "hamısı" söhbətlərinə, hər dövr üçün bir dəfə
+async function reportRun(mode: string, force: boolean) {
+  const t = today(), kinds: string[] = [];
+  if (mode === "week" || mode === "month") kinds.push(mode);
+  else { if (new Date(t + "T00:00:00Z").getUTCDay() === 0) kinds.push("week"); if (addD(t, 1).slice(8) === "01") kinds.push("month"); }
+  if (!kinds.length) return json({ ok: true, skip: "bu gün hesabat günü deyil" });
+  const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
+  const chats = [...new Set(rows.filter((r) => r.dept === "*" || r.dept === "Rəhbərlik").map((r) => r.chat_id))];
+  const out: any[] = [];
+  for (const k of kinds) {
+    const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: force ? `report-test-${k}-${Date.now()}` : `report-${k}-${k === "month" ? t.slice(0, 7) : monday(t)}` }) });
+    if (s.status === 409) { out.push({ k, skip: "göndərilib" }); continue; }
+    const r = await reportBuild(k, t);
+    let sent = 0; for (const c of chats) { const x = await sendDoc(c, r.buf, r.name, r.caption); if (x.ok) sent++; }
+    out.push({ k, sent });
+  }
+  return json({ ok: true, out });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (!TOKEN) return json({ ok: false, error: "TELEGRAM_TOKEN yoxdur — Edge Functions → Secrets bölməsində əlavə edin" }, 500);
@@ -292,11 +419,13 @@ Deno.serve(async (req) => {
   if (url.searchParams.has("morning")) return morning(url.searchParams.has("force"));
   if (url.searchParams.has("midday")) return midday(url.searchParams.has("force"));
   if (url.searchParams.has("evening")) return evening(url.searchParams.has("force"));
+  if (url.searchParams.has("report")) return reportRun(url.searchParams.get("report") ?? "auto", url.searchParams.has("force"));
   if (req.method === "GET" && url.searchParams.has("setup")) {
     await tg("setMyCommands", { commands: [
       { command: "bugun", description: "Bu gün nə gələcək" }, { command: "geciken", description: "Vaxtında gəlməyənlər" },
       { command: "problemler", description: "Satınalmanın cavabsız qoyduqları" }, { command: "sobeler", description: "Şöbələrdə nə iş gözləyir" },
       { command: "sifaris", description: "Sifarişin vəziyyəti, məs. /sifaris 105" }, { command: "qosul", description: "Bu söhbəti şöbəyə qoş" },
+      { command: "hesabat", description: "Excel hesabat: /hesabat və ya /hesabat ay" },
       { command: "siyahi", description: "Bu söhbət nələri alır" }, { command: "ayril", description: "Bildirişləri dayandır" } ] });
     const self = `${SB}/functions/v1/telegram`;
     const r = await tg("setWebhook", { url: self, secret_token: await secret(), allowed_updates: ["message", "channel_post"] });
