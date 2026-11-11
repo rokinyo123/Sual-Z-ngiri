@@ -284,8 +284,15 @@ async function evening(force: boolean) {
   const got = d.orders.filter((o) => o.recvDone && bakuDay(o.recvAt) === t);
   const miss = d.orders.filter((o) => o.status === "yolda" && o.eta === t);
   const rej = d.orders.flatMap((o) => o.items.filter((i: any) => i.qc === "bad" && bakuDay(o.qcAt) === t).map((i: any) => ({ o, i })));
-  const line = (o: any) => { const n = o.items.length, ok = o.items.filter((i: any) => !problem(o, i)).length;
-    return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ${ok === n ? `${n} mal tam ✓` : `${ok}/${n} mal tam, ${n - ok} problemli`}`; };
+  // hər qəbul olunan sifariş: neçəsi tam gəlib + problemli mallar adı ilə (gəlmədi / az gəldi / Keyfiyyət qəbul etmədi)
+  const unit = (q: unknown) => String(q ?? "").replace(/^[\d.,\s]+/, "").trim();
+  const itemTxt = (o: any, i: any) => { const pr = problem(o, i), u = unit(i.qty);
+    if (/^Az/.test(pr)) return `🟡 ${esc(d.pname(i.pid))} — ${esc(i.qty)} sifariş, <b>${esc(i.got)}${u ? " " + esc(u) : ""} gəldi</b> (${esc(Math.round((num(i.qty) - (i.got || 0)) * 1000) / 1000)}${u ? " " + esc(u) : ""} əskik)`;
+    if (/^Keyfiyyət/.test(pr)) return `🔍 ${esc(d.pname(i.pid))} ${esc(i.qty)} — <b>Keyfiyyət qəbul etmədi</b>${i.qcWhy ? ": " + esc(i.qcWhy) : ""}`;
+    return `🔴 ${esc(d.pname(i.pid))} ${esc(i.qty)} — <b>${esc(pr || "gəlmədi")}</b>`; };
+  const line = (o: any) => { const n = o.items.length, bad = o.items.filter((i: any) => problem(o, i)), ok = n - bad.length;
+    return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ` + (ok === n ? `${n} mal tam gəldi ✓` : `✅ ${ok} mal tam gəldi, ⚠️ ${bad.length} problemli:`) +
+      bad.slice(0, 10).map((i: any) => "\n   " + itemTxt(o, i)).join("") + (bad.length > 10 ? `\n   … və daha ${bad.length - 10} mal` : ""); };
   const text = cut(`🌆 <b>Günün yekunu · ${fmtD(t)}</b>\n\n` +
     `✅ <b>Bu gün qəbul olunanlar · ${got.length}</b>\n` + (got.length ? got.map(line).join("\n") : "—") + "\n\n" +
     `⛔ <b>Bu gün gəlməli idi, gəlmədi · ${miss.length}</b>\n` + (miss.length ? miss.map((o) => `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ${o.items.length} mal`).join("\n") : "—") + "\n\n" +
