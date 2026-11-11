@@ -58,13 +58,22 @@ $$;
 --   version > 0 → yalnız bazadakı versiya eynidirsə yazılır, yoxsa "conflict" qaytarılır.
 create or replace function almond.put_many(p_items jsonb) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare it jsonb; k text; i text; v int; d jsonb; nv int; ts timestamptz; out jsonb := '[]'::jsonb; newid bigint;
+declare it jsonb; k text; i text; v int; d jsonb; nv int; ts timestamptz; out jsonb := '[]'::jsonb; newid bigint; rs timestamptz; born timestamptz;
 begin
   if not almond.is_member() then raise exception 'İcazə yoxdur' using errcode = '42501'; end if;
+  -- sıfırlanma vaxtı: ondan əvvəl yaranmış sifariş/bildiriş/qeyd bir daha yazılmır (köhnə açıq cihazlar geri yazmasın)
+  select (r.data->>'at')::timestamptz into rs from almond.records r where r.kind = 'meta' and r.id = 'reset';
   for it in select * from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) loop
     k := it->>'kind'; i := it->>'id'; v := coalesce((it->>'version')::int, 0); d := it->'data';
     if k not in ('order','product','alert','log','meta') or i is null or d is null then
       out := out || jsonb_build_array(jsonb_build_object('kind',k,'id',i,'error','bad')); continue;
+    end if;
+    if rs is not null and k in ('order','alert','log') and v = 0 then
+      born := null;
+      begin born := coalesce(d->>'created', d->>'at')::timestamptz; exception when others then born := null; end;
+      if born is null or born < rs - interval '5 minutes' then
+        out := out || jsonb_build_array(jsonb_build_object('kind',k,'id',i,'stale',true)); continue;
+      end if;
     end if;
     if v = 0 then
       if exists (select 1 from almond.records r where r.kind = k and r.id = i) then
