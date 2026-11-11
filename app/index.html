@@ -335,6 +335,62 @@ header .who{border:none;background:none;cursor:default}
 .sent{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--sunk);color:var(--fg)}
 .sent.new{background:var(--wait-bg);color:var(--wait)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== Giriş: zəncirdən asılan lampa — zənciri çəkəndə lampa yanır, "Almond" hərfləri halqalarla birləşir ===== */
+body.lg-on{overflow:hidden}
+#lg{--lgc:#FFF3E0;--lgm:#b59a80;--lgg:#E9B45A;--lgg2:#F7D594;--lgl:rgba(255,230,190,.14);--lgt:255,198,120;
+  position:fixed;inset:0;z-index:40;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;color:var(--lgc);
+  display:flex;flex-direction:column;align-items:center;padding:0 16px 32px;background:radial-gradient(120% 70% at 50% 0%,#1a120c,#0f0a07 70%)}
+#lg .lamp{position:relative;width:200px;height:250px;flex:none;z-index:3}
+#lg .lamp svg{width:100%;height:100%;overflow:visible}
+#lg .swing{transform-origin:100px 0;animation:lgSway 6s ease-in-out infinite}
+@keyframes lgSway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+#lg .bulb{fill:#4a3a2a;transition:fill .25s}
+#lg .bulb-glow{opacity:0;transition:opacity .35s}
+#lg .shade-in{fill:#2a1d13;transition:fill .35s}
+#lg.on .bulb{fill:#FFE7B3} #lg.on .bulb-glow{opacity:1} #lg.on .shade-in{fill:#7a5320}
+#lg .pull{cursor:grab;touch-action:none;outline:none}
+#lg .pull .knob{fill:var(--lgg);stroke:#7a5320;stroke-width:1.5}
+#lg .pull:focus-visible .knob{stroke:#fff;stroke-width:3}
+#lg .pull .bead{fill:#8d6a3d}
+#lg .pull-hit{fill:transparent}
+#lg .cone{position:absolute;left:50%;top:176px;width:min(150vw,1100px);height:120vh;transform:translateX(-50%);pointer-events:none;z-index:1;
+  background:radial-gradient(60% 55% at 50% 0%,rgba(var(--lgt),.38),rgba(var(--lgt),.12) 45%,transparent 75%);
+  clip-path:polygon(calc(50% - 64px) 0,calc(50% + 64px) 0,100% 100%,0 100%);opacity:0;transition:opacity .5s ease;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 45%,transparent 95%);mask-image:linear-gradient(180deg,#000 0,#000 45%,transparent 95%)}
+#lg.on .cone{opacity:1}
+#lg .lhint{margin-top:2px;font-size:13px;color:var(--lgm);z-index:3;transition:opacity .3s;display:flex;gap:6px}
+#lg .lhint .arr{display:inline-block;animation:lgNudge 1.4s ease-in-out infinite}
+@keyframes lgNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+#lg.on .lhint{opacity:0}
+#lg .word{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;margin:22px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(40px,12vw,64px);line-height:1;letter-spacing:.5px}
+#lg .word .ch{color:rgba(255,236,205,.07);transition:color .45s ease,text-shadow .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);transform:translateY(6px)}
+#lg .word .lk{width:.42em;height:.42em;margin:0 -.02em;opacity:0;transform:scale(.4) rotate(-30deg);transition:opacity .3s ease,transform .35s cubic-bezier(.2,1.4,.4,1)}
+#lg .word .lk path{fill:none;stroke:var(--lgg);stroke-width:2.2;stroke-linecap:round}
+#lg.lit .word .ch{color:var(--lgg2);text-shadow:0 0 18px rgba(var(--lgt),.55),0 2px 0 #5a3a12;transform:none}
+#lg.lit .word .lk{opacity:1;transform:none}
+#lg.done .word{animation:lgPulse .7s ease}
+@keyframes lgPulse{40%{filter:drop-shadow(0 0 14px rgba(255,198,120,.8)) brightness(1.15)}}
+#lg .tag{z-index:3;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--lgm);opacity:0;transition:opacity .5s .2s}
+#lg.lit .tag{opacity:.9}
+#lg .lform{position:relative;z-index:3;width:100%;max-width:360px;margin-top:22px;padding:20px;border-radius:16px;background:rgba(32,22,15,.72);border:1px solid var(--lgl);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:12px;
+  opacity:0;transform:translateY(16px) scale(.98);pointer-events:none;transition:opacity .45s ease .15s,transform .5s cubic-bezier(.2,.8,.2,1) .15s}
+#lg.open .lform{opacity:1;transform:none;pointer-events:auto}
+#lg .lform h2{font-family:var(--display);font-size:20px;color:var(--lgc);margin:0}
+#lg .lform .sub{font-size:13px;color:var(--lgm);margin-top:-6px}
+#lg .lform label{font-size:12px;font-weight:600;color:var(--lgm);display:flex;flex-direction:column;gap:6px}
+#lg .lform select,#lg .lform input{width:100%;font:inherit;font-size:16px;color:var(--lgc);background:rgba(15,10,7,.6);border:1px solid var(--lgl);border-radius:10px;padding:11px 12px;outline:none}
+#lg .lform select:focus,#lg .lform input:focus{border-color:var(--lgg);box-shadow:0 0 0 3px rgba(233,180,90,.18)}
+#lg .lform select option{background:#1a120c;color:var(--lgc)}
+#lg .pin{letter-spacing:10px;text-align:center;font-weight:700}
+#lg .pin::placeholder{letter-spacing:1px;font-weight:400;color:#7d6553}
+#lg .lbtn{font:inherit;font-weight:700;font-size:16px;color:#2a1708;background:linear-gradient(180deg,var(--lgg2),var(--lgg));border:0;border-radius:10px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(233,180,90,.25)}
+#lg .lbtn:disabled{opacity:.6}
+#lg .lnote{font-size:13px;color:#ff9a8a;text-align:center;min-height:16px}
+#lg .lskip{z-index:3;margin-top:14px;background:none;border:0;color:var(--lgm);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
+#lg.open .lskip{display:none}
+@media (prefers-reduced-motion:reduce){#lg *{animation:none!important;transition:none!important}}
 </style>
 
 </head>
@@ -588,20 +644,18 @@ const Cloud = (() => {
   const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["admin","Admin"]];
   const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || ""; } catch(e){ return ""; } };
   function loginView(msg){
-    $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true;
-    $("main").innerHTML = '<form class="card" id="lf" style="max-width:380px;margin:8vh auto 0"><h2>Daxil olun</h2>'+
-      '<div class="hint">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>'+
-      '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>'+
-      '<input id="lp" type="password" inputmode="numeric" autocomplete="current-password" placeholder="4 rəqəmli parol">'+
-      '<button class="pri big" id="lb">Daxil ol</button>'+(msg?'<div class="hint rs">'+esc(msg)+'</div>':"")+'</form>';
+    $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true; $("main").innerHTML = "";
+    lampLogin(msg, '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>');
+    const note = t => { $("lnote").textContent = t; };
     $("lf").onsubmit = async e => { e.preventDefault();
-      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u) return toast("Şöbəni seçin"); if (!p) return toast("Parolu yazın");
+      const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u) return note("Şöbəni seçin"); if (!p) return note("Parolu yazın");
       try { localStorage.setItem("almond-last-login", u); } catch(e){}
       $("lb").disabled = true;
       // 4 rəqəmli PIN → Supabase parolu "almond"+PIN (Supabase ən az 6 simvol istəyir)
       const pw = /^\d{4}$/.test(p) ? "almond"+p : p;
+      note("");
       try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); keepSess(); await start(); }
-      catch(err){ if (err.message!=="stop") toast(err.message); $("lb").disabled = false; } };
+      catch(err){ if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
   }
   async function start(){
     if (!C.sess) return loginView();
@@ -614,7 +668,7 @@ const Cloud = (() => {
     if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
-    $("role").hidden = false; renderRole(); render(); openDeep();
+    lampClose(); $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
   }
@@ -1196,7 +1250,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v27</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v28</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2539,6 +2593,83 @@ draft = newDraft();
     el.innerHTML = '<b>'+p(d.getHours())+':'+p(d.getMinutes())+'</b><span class="ckd"> · <span class="ckw">'+wday(today())+' </span>'+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+'</span>'; }
   setTimeout(tickClock, (60 - new Date().getSeconds())*1000 + 50);
 })();
+
+// ===================== Giriş ekranı: zəncirdən asılan lampa =====================
+// Zənciri çək (və ya bas) → klik səsi, lampa yanır, "Almond" hərfləri bir-bir yanır, aralarına halqalar düşür → giriş forması açılır.
+let lgAudio = null;
+function lgAC(){ try { lgAudio = lgAudio || new (window.AudioContext || window.webkitAudioContext)(); if (lgAudio.state === "suspended") lgAudio.resume(); } catch(e){} return lgAudio; }
+function lgClick(){ const a = lgAC(); if (!a) return; const t = a.currentTime;
+  const n = a.createBufferSource(), buf = a.createBuffer(1, Math.floor(a.sampleRate*.04), a.sampleRate), d = buf.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/d.length,3);
+  const g = a.createGain(); g.gain.value = .35; n.buffer = buf; n.connect(g).connect(a.destination); n.start(t);
+  const o = a.createOscillator(), og = a.createGain(); o.type = "sine"; o.frequency.setValueAtTime(120, t+.05);
+  og.gain.setValueAtTime(.0001, t); og.gain.linearRampToValueAtTime(.05, t+.1); og.gain.exponentialRampToValueAtTime(.0001, t+.4);
+  o.connect(og).connect(a.destination); o.start(t+.05); o.stop(t+.42); }
+function lgClink(delay){ const a = lgAC(); if (!a) return; const t = a.currentTime+(delay||0);
+  [[2200,.12],[3300,.08],[4400,.04]].forEach(([f,v])=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.35); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.4); }); }
+function lampClose(){ const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey); }
+let lampOn = null;
+function lampKey(e){ if (lampOn && /^[0-9a-z]$/i.test(e.key) && !$("lg").classList.contains("open")) lampOn(true); }
+function lampLogin(msg, selectHtml){
+  lampClose();
+  const NS = "http://www.w3.org/2000/svg";
+  const L = "Almond".split(""), link = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
+  const el = document.createElement("div"); el.id = "lg";
+  el.innerHTML = '<div class="cone" aria-hidden="true"></div>'+
+    '<div class="lamp"><svg viewBox="0 0 200 250" role="img" aria-label="Zəncirdən asılan lampa"><defs>'+
+      '<radialGradient id="lgBulb" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF4D6"/><stop offset=".35" stop-color="#FFD48A" stop-opacity=".75"/><stop offset="1" stop-color="#FFB347" stop-opacity="0"/></radialGradient>'+
+      '<linearGradient id="lgShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1c130c"/><stop offset=".45" stop-color="#3a2717"/><stop offset="1" stop-color="#140d08"/></linearGradient></defs>'+
+      '<g class="swing"><g id="lgHang" fill="none" stroke="#6b5136" stroke-width="3"></g>'+
+      '<rect x="90" y="108" width="20" height="14" rx="3" fill="#2a1d13" stroke="#6b5136" stroke-width="1.5"/>'+
+      '<path d="M100 118 C70 120 42 146 34 178 L166 178 C158 146 130 120 100 118 Z" fill="url(#lgShade)" stroke="#6b5136" stroke-width="1.5"/>'+
+      '<path class="shade-in" d="M42 176 C56 168 144 168 158 176 L166 178 L34 178 Z"/>'+
+      '<circle class="bulb-glow" cx="100" cy="182" r="52" fill="url(#lgBulb)"/><circle class="bulb" cx="100" cy="182" r="12"/>'+
+      '<g class="pull" id="lgPull" tabindex="0" role="button" aria-label="Lampanı yandırmaq üçün zənciri çəkin"><rect class="pull-hit" x="122" y="168" width="40" height="80"/><g id="lgBeads"></g><circle class="knob" id="lgKnob" cx="142" cy="226" r="7"/></g>'+
+      '</g></svg></div>'+
+    '<div class="lhint"><span class="arr">↓</span> Zənciri çəkin</div>'+
+    '<h1 class="word" aria-label="Almond">'+L.map((c,i)=>'<span class="ch" aria-hidden="true">'+c+'</span>'+(i<L.length-1?link:"")).join("")+'</h1>'+
+    '<div class="tag">Anbar zənciri</div>'+
+    '<form class="lform" id="lf"><h2>Daxil olun</h2><div class="sub">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>'+
+      '<label>Şöbə'+selectHtml+'</label>'+
+      '<label>Parol<input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="• • • •"></label>'+
+      '<button class="lbtn" id="lb">Daxil ol</button><div class="lnote" id="lnote">'+esc(msg||"")+'</div></form>'+
+    '<button class="lskip" id="lgSkip" type="button">Animasiyasız aç</button>';
+  document.body.appendChild(el); document.body.classList.add("lg-on");
+  const g = $("lgHang");
+  for (let y=-40,k=0; y<106; y+=12,k++){ const e = document.createElementNS(NS, k%2 ? "rect" : "ellipse");
+    if (k%2){ e.setAttribute("x",98.5); e.setAttribute("y",y-1); e.setAttribute("width",3); e.setAttribute("height",14); e.setAttribute("rx",1.5); e.setAttribute("fill","#6b5136"); e.setAttribute("stroke","none"); }
+    else { e.setAttribute("cx",100); e.setAttribute("cy",y+6); e.setAttribute("rx",4.5); e.setAttribute("ry",7.5); }
+    g.appendChild(e); }
+  const beads = $("lgBeads");
+  for (let y=176; y<=216; y+=6){ const c = document.createElementNS(NS,"circle"); c.setAttribute("class","bead"); c.setAttribute("cx",142); c.setAttribute("cy",y); c.setAttribute("r",1.9); beads.appendChild(c); }
+  let lit = false;
+  lampOn = quiet => {
+    if (lit){ el.classList.toggle("on"); return; }
+    lit = true; if (!quiet) lgClick(); el.classList.add("on");
+    const fast = quiet || matchMedia("(prefers-reduced-motion: reduce)").matches, step = fast ? 0 : 85;
+    const chs = [...el.querySelectorAll(".word .ch")], lks = [...el.querySelectorAll(".word .lk")];
+    chs.forEach((c,i)=>{ c.style.transitionDelay = (120+i*step)+"ms"; });
+    lks.forEach((l,i)=>{ l.style.transitionDelay = (160+i*step+step/2)+"ms"; });
+    requestAnimationFrame(()=>el.classList.add("lit"));
+    const end = fast ? 0 : 120+chs.length*step+120;
+    if (!quiet) lgClink(end/1000);
+    setTimeout(()=>el.classList.add("done","open"), end);
+  };
+  if (msg) lampOn(true);                         // səhv mesajı varsa (məs. parol səhvdir) — birbaşa açıq
+  const pull = $("lgPull"), knob = $("lgKnob");
+  let y0 = null, dy = 0;
+  const setPull = v => { knob.setAttribute("cy", 226+v); beads.setAttribute("transform", "translate(0,"+v*.6+")"); };
+  pull.addEventListener("pointerdown", e => { y0 = e.clientY; dy = 0; try { pull.setPointerCapture(e.pointerId); } catch(x){} lgAC(); });
+  pull.addEventListener("pointermove", e => { if (y0 == null) return; dy = Math.max(0, Math.min(34, e.clientY-y0)); setPull(dy); });
+  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null; const from = dy, t0 = performance.now();
+    (function back(t){ const k = Math.min(1,(t-t0)/220); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); lampOn(); });
+  pull.addEventListener("pointercancel", () => { y0 = null; setPull(0); });
+  pull.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); lampOn(); } });
+  el.querySelector(".lamp").addEventListener("click", e => { if (!e.target.closest("#lgPull")) lampOn(); });
+  $("lgSkip").onclick = () => lampOn(true);
+  document.addEventListener("keydown", lampKey);
+}
 // Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
 function openDeep(){
   const m = /[#&]o=(\d+)/.exec(location.hash||""); if (!m) return;
