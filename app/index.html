@@ -592,6 +592,7 @@ const Cloud = (() => {
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
+    else if (row.id==="reset" && C.booted){ toast("Admin proqramı sıfırladı — yenilənir…"); setTimeout(()=>location.reload(), 1200); }
     return true;
   }
   async function pull(full){
@@ -664,7 +665,7 @@ const Cloud = (() => {
     try {
       C.me = await rpc("me");
       if (!C.me) return out("Bu hesab proqrama əlavə olunmayıb — Adminə müraciət edin");
-      await pull(true);
+      await pull(true); C.booted = true;
     } catch(e){ if (e.message==="stop") return; $("main").innerHTML = '<div class="empty">Bazaya qoşulmaq olmadı: '+esc(e.message)+' <button id="retry">Yenidən</button></div>'; $("retry").onclick = start; return; }
     if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
@@ -701,7 +702,9 @@ const Cloud = (() => {
       .then(async r=>({ ok:r.ok, status:r.status, text:(await r.text().catch(()=>"")).slice(0,200) }))
       .catch(e=>({ ok:false, status:0, text:String(e && e.message || e) }));
   }
-  return { start, queue, logout, me: () => C.me, push, sync, tg };
+  // Admin: kataloqdan başqa hər şeyi bazadan silir (almond.reset_data)
+  async function reset(){ await rpc("reset_data"); }
+  return { start, queue, logout, me: () => C.me, push, sync, tg, reset };
 })();
 const prod = id => S.products.find(p=>p.id===Number(id));
 const pname = id => prod(id) ? prod(id).name : "?";
@@ -1282,7 +1285,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v29</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v30</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1701,8 +1704,25 @@ function trashBlock(){
   return '<details class="dcard"><summary><span class="dn">🗑 Silinən sifarişlər</span><span class="pill p-mute">'+S.trash.length+'</span></summary>'+
     list.map(o=>'<div class="dl">#'+o.id+' · '+esc(o.from)+' → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+' <span class="meta">'+o.items.length+' mal · silinib '+(o.deleted&&o.deleted.at?shortT(new Date(o.deleted.at)):"")+(o.deleted&&o.deleted.by?' ('+esc(o.deleted.by)+')':"")+'</span> <button class="sm" data-restore="'+o.id+'">♻ Bərpa et</button></div>').join("")+'</details>';
 }
+// Admin: proqramı sıfırla — sınaq bitəndə təmiz başlamaq üçün
+function resetBlock(){
+  if (!isAdminUser()) return "";
+  return '<details class="dcard bad"><summary><span class="dn">⚠ Proqramı sıfırla</span><span class="pill p-bad">Admin</span></summary>'+
+    '<div class="dl">Bütün <b>sifarişlər</b> (silinənlər də), <b>bildirişlər</b>, <b>tarixçə</b> və <b>hesabatlar</b> bazadan silinir. <b>Kataloq, firmalar, istifadəçilər və parollar, Telegram qrupları qalır.</b> Geri qaytarmaq olmur.</div>'+
+    '<div class="dl"><input id="rsTxt" placeholder="Təsdiq üçün SIFIRLA yazın" autocomplete="off"></div>'+
+    '<div class="dl"><button class="badb" id="rsGo">Hamısını sil — kataloq qalsın</button></div></details>';
+}
+async function doReset(btn){
+  if (!isAdminUser()) return;
+  if ((($("rsTxt")||{}).value||"").trim().toUpperCase()!=="SIFIRLA") return toast("Təsdiq üçün SIFIRLA yazın");
+  btn.disabled = true; btn.textContent = "Silinir…";
+  if (!ONLINE){ S.orders = []; S.trash = []; S.alerts = []; S.log = []; S.reports = {}; S.seq = 100; save(); render(); return toast("Sıfırlandı · kataloq qaldı"); }
+  try { await Cloud.reset(); toast("Sıfırlandı · kataloq qaldı. Proqram yenilənir…"); setTimeout(()=>location.reload(), 1500); }
+  catch(e){ btn.disabled = false; btn.textContent = "Hamısını sil — kataloq qalsın";
+    toast(/reset_data|function|404|schema cache/i.test(e.message) ? "Əvvəlcə Supabase-də sıfırlama funksiyasını yaradın (SQL)" : "Xəta: "+e.message); }
+}
 function vArch(){
-  const seg = '<h2>Şöbələr</h2>'+deptBoard()+trashBlock()+'<h2>Statistika</h2><div class="seg">'+[["arch","🗄 Arxiv"],["week","📊 Həftəlik"],["month","📅 Aylıq"]].map(([k,l])=>'<button class="'+(arM===k?"on":"")+'" data-arm="'+k+'">'+l+'</button>').join("")+'</div>';
+  const seg = '<h2>Şöbələr</h2>'+deptBoard()+trashBlock()+resetBlock()+'<h2>Statistika</h2><div class="seg">'+[["arch","🗄 Arxiv"],["week","📊 Həftəlik"],["month","📅 Aylıq"]].map(([k,l])=>'<button class="'+(arM===k?"on":"")+'" data-arm="'+k+'">'+l+'</button>').join("")+'</div>';
   if (arM==="week"){ const b = addD(arW,6), done = b<today();
     return seg+'<div class="calh"><button class="nav" data-arw="-1" aria-label="Əvvəlki həftə">‹</button><b>'+fmtD(arW).slice(0,5)+' – '+fmtD(b)+'</b><button class="nav" data-arw="1" aria-label="Növbəti həftə"'+(arW>=monday(today())?" disabled":"")+'>›</button></div>'+
       (done?"":'<div class="hint">Həftə hələ bitməyib — rəqəmlər bu günə qədərdir. Bazar günü hesabat Rəhbərliyə göndəriləcək.</div>')+statsHtml(arW,b); }
@@ -2377,6 +2397,7 @@ $("main").addEventListener("click", e => {
   if (t.id==="fAdd") return addFirm();
   if (t.id==="pAdd") return addProduct();
   if (t.id==="out2"){ Cloud.logout(); return; }
+  if (t.id==="rsGo") return doReset(t);
   if (t.id==="tgtest"){ toast("Telegram-a göndərilir…");
     Cloud.tg({ id:"test"+Date.now(), kind:"note", to:[role], title:"Sınaq mesajı · "+role, sub:"Proqramdan Telegram-a əlaqə işləyir", items:[], oid:null })
       .then(r=>toast(r.ok ? (/"sent":0/.test(r.text) ? "Funksiya işləyir, amma heç bir söhbət "+role+" və ya hamısı-na qoşulmayıb" : "✓ Telegram-a göndərildi: "+r.text) : "Telegram xətası "+r.status+": "+r.text)); return; }
