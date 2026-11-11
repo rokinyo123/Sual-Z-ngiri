@@ -1,0 +1,25 @@
+# copied from ../../engine and ../../ref_ep5_ihdina at build time (see README.md)
+align.py
+common.js
+logo.png
+make_music.py
+mix5.py
+organs.js
+part_*.js
+render.mjs
+sfx/
+sfx_lib.py
+tighten.py
+fonts/Amiri.ttf
+fonts/Anton.ttf
+fonts/Caveat.ttf
+fonts/Montserrat.ttf
+# render / mix intermediates
+*.wav
+mix.m4a
+video.mp4
+*.jpg
+stills/
+st*/
+vo/*.txt
+!vo/sents.txt
