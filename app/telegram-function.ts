@@ -290,11 +290,12 @@ async function evening(force: boolean) {
     if (/^Az/.test(pr)) return `🟡 ${esc(d.pname(i.pid))} — ${esc(i.qty)} sifariş, <b>${esc(i.got)}${u ? " " + esc(u) : ""} gəldi</b> (${esc(Math.round((num(i.qty) - (i.got || 0)) * 1000) / 1000)}${u ? " " + esc(u) : ""} əskik)`;
     if (/^Keyfiyyət/.test(pr)) return `🔍 ${esc(d.pname(i.pid))} ${esc(i.qty)} — <b>Keyfiyyət qəbul etmədi</b>${i.qcWhy ? ": " + esc(i.qcWhy) : ""}`;
     return `🔴 ${esc(d.pname(i.pid))} ${esc(i.qty)} — <b>${esc(pr || "gəlmədi")}</b>`; };
-  const line = (o: any) => { const n = o.items.length, bad = o.items.filter((i: any) => problem(o, i)), ok = n - bad.length;
-    return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ` + (ok === n ? `${n} mal tam gəldi ✓` : `✅ ${ok} mal tam gəldi, ⚠️ ${bad.length} problemli:`) +
+  // yalnız problemli mallar — tam gələnlər yazılmır
+  const line = (o: any) => { const bad = o.items.filter((i: any) => problem(o, i));
+    return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)}` +
       bad.slice(0, 10).map((i: any) => "\n   " + itemTxt(o, i)).join("") + (bad.length > 10 ? `\n   … və daha ${bad.length - 10} mal` : ""); };
   const text = cut(`🌆 <b>Günün yekunu · ${fmtD(t)}</b>\n\n` +
-    `✅ <b>Bu gün qəbul olunanlar · ${got.length}</b>\n` + (got.length ? got.map(line).join("\n") : "—") + "\n\n" +
+    ((pg) => pg.length ? `⚠️ <b>Bu gün qəbul olunanlarda problem · ${pg.length} sifariş</b>\n` + pg.map(line).join("\n") : `✅ Bu gün qəbul olunanlarda problem yoxdur`)(got.filter((o) => o.items.some((i: any) => problem(o, i)))) + "\n\n" +
     `⛔ <b>Bu gün gəlməli idi, gəlmədi · ${miss.length}</b>\n` + (miss.length ? miss.map((o) => `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> → ${esc(o.wh)} · ${o.items.length} mal`).join("\n") : "—") + "\n\n" +
     (rej.length ? `🔍 <b>Keyfiyyət bu gün qəbul etmədi · ${rej.length}</b>\n` + rej.map(({ o, i }) => `• ${esc(d.pname(i.pid))} — ${esc(i.qcWhy || "uyğun deyil")} · ${link(o.id)} ${esc(o.supplier || "")}`).join("\n") + "\n\n" : "") +
     cmdProblemler(d) + "\n\n📋 <b>Kim işini bitirməyib</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
