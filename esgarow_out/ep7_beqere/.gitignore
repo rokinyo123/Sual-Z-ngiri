@@ -1,0 +1,5 @@
+# >100 MB: sent to the user, not committed (lite copy is committed)
+beqere_1_2_final.mp4
+# raw Nano Banana uploads (renamed copies live in build/img/)
+in/*.jpg
+*.jpg
