@@ -1,0 +1,24 @@
+# copied from ../../engine, ../../ep6_kinetic, ../../ref_ep5_ihdina at build time
+common.js
+part_*.js
+render.mjs
+render_page.mjs
+logo.png
+organs.js
+make_music.py
+mix5.py
+key.py
+sfx_lib.py
+sfx/
+fonts/
+kin_icons.js
+# intermediates
+*.wav
+mix.m4a
+video.mp4
+*.jpg
+!img/*.jpg
+st/
+st2/
+sync/
+chk/

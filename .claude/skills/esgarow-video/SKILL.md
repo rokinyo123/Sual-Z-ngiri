@@ -57,9 +57,9 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 - Calm motion over flashy: fewer shakes/impacts (only on the 2–3 real "vay" moments), slower easing.
 
 ## 6. Audio
-- **No background music.** Voice + ASMR only.
+- **Background music: calm Islamic ambient** (user request from ep7), synthesized by `esgarow_out/ep7_beqere/build/music7.py` (D Hijaz drone + slow pads + sparse soft bells, no percussion). Always far under the voice: `mix7.py` keeps music+SFX ≥16 dB (median ~25 dB) below speech; it is heard mainly in the pauses.
 - SFX: `engine/sfx/*.mp3` (whoosh, hit, crack, shatter, stamp, riser, reveal, chime, typing, click, bubble, whip, cascade) via `ref_ep5_ihdina/sfx5.py`, plus synthesized textures from `sfx_lib.py` (scratch, tones). Every visual event gets a sound.
-- Mix: `mix5.py voice.wav silence.wav sfx.wav out.m4a .` → −14 LUFS, voice ≥12 dB above SFX while speaking (heavy samples scaled by `HEAVY`).
+- Mix: `mix7.py voice.wav music.wav sfx.wav out.m4a .` → −14 LUFS (MUSIC_GAIN 0.22, GAP_SPEECH 17 dB). ASMR in ep7: page rustle on transitions, qalam scratch, soft rain bed, clock ticks, soft chimes on Arabic letters.
 
 ## 7. Delivery
 - Final MP4 to the user (SendUserFile) + commit to `esgarow_out/epN/`. Files >100 MB: send, don't commit.
@@ -67,7 +67,7 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 
 ## 8. Series status
 1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best) · 6 Fatihə 1:7 (kinetic format, posted; user re-timed it in CapCut).
-**Fatihə surəsi tamamlandı.** Next topic: ask the user (options discussed: "Amin" closer with Buxari 780, Ayətəl-Kürsi 2:255, Bəqərə 2:1–5, İxlas).
+**Fatihə surəsi tamamlandı.** 7 Bəqərə 2:1–2 (Əlif-Lam-Mim, 3 sirr + müjdə; `esgarow_out/ep7_beqere/`). **Next: Bəqərə 2:3–5** — teaser promised "Müttəqi kimdir? Quran onun beş əlamətini sayır".
 
 ## 9. Environment notes
 Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyPI, npm, Zapier S3. Chromium + Playwright preinstalled.
@@ -75,3 +75,4 @@ Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyP
 ## Changelog
 - Ep5: fracture hook, "Quranın … ayəsi cəmi N sözdür" hook, word-meaning cards with glass lens, real SFX samples, no music, green-screen props.
 - Ep6: kinetic-typography format (`esgarow_out/ep6_kinetic/build/kin_main.js`, `kin_icons.js`: flying words, highlighter pills, code-drawn 3D props, white/black scenes, Poppins). Worked visually, but **sync failed**: pauses were tightened to 0.36 s and word times were estimated by syllables, and the intro cut 3 times in 7 s → user re-timed in CapCut. Rules in section 5a fix this. Shorts cover drawn in code (`cover2.js`, white style matching the video) was accepted.
+- Ep7: first video on the calm rules (5a). Word times MEASURED by `ep7_beqere/build/walign.py` (phrases→pauses DP, words→syllable-energy peaks; Whisper/HF are blocked here), `mk_timeline.py` → `timeline.js`. LEAD = 0.4 s with 0.5 s fade so each word is ~90 % visible when spoken (0.15 s was too late). Verified with stills at 12 word onsets. One-scene 15 s hook, 0.9 s dissolves, Nano Banana photos + keyed icons + code-drawn Arabic (alphabet grid with the 14 muqattaʿat letters lit, custom ۛ marks + lens, +10 savab counters). User's "sirr" rule: a hadith about reward is a *müjdə*, not a sirr — sirr = something hidden/surprising.
