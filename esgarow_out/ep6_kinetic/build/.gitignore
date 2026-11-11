@@ -23,3 +23,4 @@ stills/
 st*/
 vo/*.txt
 !vo/sents.txt
+vo/az/
