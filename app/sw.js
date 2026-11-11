@@ -1,6 +1,6 @@
 // Tətbiq qabığı: internet zəif olanda da açılsın. Yalnız öz faylları keşlənir;
 // bazaya (Supabase) gedən sorğular heç vaxt keşlənmir — məlumat həmişə təzədir.
-const CACHE = "almond-anbar-v28";
+const CACHE = "almond-anbar-v29";
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "./index.html", "./manifest.json"]))); });
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {

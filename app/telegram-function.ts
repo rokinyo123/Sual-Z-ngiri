@@ -151,7 +151,7 @@ function cmdSifaris(d: Awaited<ReturnType<typeof load>>, arg: string) {
     `Vəziyyət: <b>${esc(stageTxt(o))}</b>\n` + (o.eta ? `Gəliş: ${fmtD(o.eta)} · ${esc(o.supplier || "Firmasız")}\n` : "") +
     o.items.slice(0, 30).map((i: any) => { const pr = problem(o, i);
       return `• ${esc(d.pname(i.pid))} ${esc(i.qty)}` + (i.got != null && o.recvDone ? ` → gəldi ${esc(i.got)}` : "") + (pr ? ` — <b>${esc(pr)}</b>` : "") +
-        (i.ans ? (i.ans.none ? " · Satınalma: tapılmır" : ` · Satınalma: ${fmtD(i.ans.date)} gələcək`) : ""); }).join("\n");
+        (i.ans ? (i.ans.closed ? " · 🔒 Admin bağladı" : i.ans.none ? " · Satınalma: tapılmır" : ` · Satınalma: ${fmtD(i.ans.date)} gələcək`) : ""); }).join("\n");
 }
 const cut = (t: string) => t.length > 3900 ? t.slice(0, 3900) + "\n…" : t;
 
@@ -363,12 +363,12 @@ async function reportBuild(kind: string, ref: string) {
 
   XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Firma", "Anbar", "Mal", "Sifariş edilən", "Gələn", "Problem", "Satınalmanın cavabı", "Cavab neçə saata"],
     ...rows.filter((r) => r.pr && r.i.qc !== "bad" && !(r.o.sample && r.i.techRes)).map(({ o, i, pr }) => [dmy(iDate(o)), "#" + o.id, o.supplier || "", o.wh, d.pname(i.pid), i.qty, i.got ?? "", pr,
-      i.ans ? (i.ans.none ? "Tapılmır: " + (i.ans.note || "") : "Yeni tarix " + dmy(i.ans.date) + (i.ans.note ? " · " + i.ans.note : "")) : "CAVAB YOXDUR", i.ans ? hrs(ansSince(o, i), i.ans.at) : ""])],
+      i.ans ? (i.ans.closed ? "Admin bağladı" : i.ans.none ? "Tapılmır: " + (i.ans.note || "") : "Yeni tarix " + dmy(i.ans.date) + (i.ans.note ? " · " + i.ans.note : "")) : "CAVAB YOXDUR", i.ans ? hrs(ansSince(o, i), i.ans.at) : ""])],
     [11, 9, 22, 16, 26, 13, 8, 24, 36, 14]), "Gəlməyən mallar");
 
   XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Firma", "Mal", "Miqdar", "Səbəb", "Yoxlayan", "İstehsal", "Son istifadə", "Satınalmanın cavabı"],
     ...qc.map(({ o, i }) => [dmy(iDate(o)), "#" + o.id, o.supplier || "", d.pname(i.pid), i.qty, i.qcWhy || "", i.qcBy || "", i.mfg || "", i.exp || "",
-      i.ans ? (i.ans.none ? "Tapılmır" : "Yeni tarix " + dmy(i.ans.date)) : "CAVAB YOXDUR"])],
+      i.ans ? (i.ans.closed ? "Admin bağladı" : i.ans.none ? "Tapılmır" : "Yeni tarix " + dmy(i.ans.date)) : "CAVAB YOXDUR"])],
     [11, 9, 22, 26, 10, 30, 18, 12, 12, 22]), "Keyfiyyət rədd");
 
   XLSX.utils.book_append_sheet(wb, sheet([["Gəlməli idi", "Sifariş", "Firma", "Anbar", "Satınalmanın açıqlaması", "Nəticə"],
