@@ -613,14 +613,23 @@ const Cloud = (() => {
     try {
       await uploads();
       const items = records().filter(([k,id,d])=>JSON.stringify(d)!==C.snap[k+":"+id]).map(([kind,id,data])=>({ kind, id, version:C.ver[kind+":"+id]||0, data:JSON.parse(JSON.stringify(data)) }));
-      const conflicts = [];
+      const conflicts = [], stale = [];
       for (let i=0;i<items.length;i+=200){
         const part = items.slice(i,i+200), res = await rpc("put_many", { p_items:part });
         res.forEach((r,j)=>{ const it = part[j], k0 = it.kind+":"+it.id;
           if (r.conflict){ conflicts.push(it); return; }
+          if (r.stale){ stale.push(it); return; }   // sıfırlanmadan əvvəlki köhnə yazı — baza qəbul etmir, buradan da silinir
           if (r.new_id){ remap(it.kind, it.id, r.new_id); delete C.snap[k0]; delete C.ver[k0]; it.id = r.new_id; it.data.id = Number(r.new_id); }
           const k = it.kind+":"+it.id; C.ver[k] = r.version;
           const cur = records().find(x=>x[0]===it.kind && x[1]===it.id); C.snap[k] = JSON.stringify(cur ? cur[2] : it.data); });
+      }
+      if (stale.length){
+        const gone = new Set(stale.map(x=>x.kind+":"+x.id));
+        const keep = (arr, kind, f) => arr.filter(x=>!gone.has(kind+":"+f(x)));
+        S.orders = keep(S.orders, "order", x=>x.id); S.trash = keep(S.trash||[], "order", x=>x.id);
+        S.alerts = keep(S.alerts||[], "alert", x=>x.id); S.log = keep(S.log, "log", x=>x.id);
+        stale.forEach(x=>{ delete C.snap[x.kind+":"+x.id]; delete C.ver[x.kind+":"+x.id]; });
+        render();
       }
       if (conflicts.length){
         // Başqası eyni anda dəyişib: bazadakı son vəziyyət götürülür; bildirişlərdə "oxudum"lar birləşdirilir
@@ -1285,7 +1294,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v30</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v31</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
