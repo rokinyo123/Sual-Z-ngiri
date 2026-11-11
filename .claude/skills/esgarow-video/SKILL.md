@@ -29,8 +29,8 @@ Talk to the user in Azerbaijani, "sən" form. Discuss first, then produce: **tex
 
 ## 3. Voice
 - Preferred: user records in ElevenLabs — "Seyfullah Kartal – Deep and Muffled", Eleven v4. Give them the tagged text (`[serious]`, `[pause]`, `[softly]`) in one copyable block plus a clean version.
-- Fallback: Gemini TTS via Zapier (`GoogleMakerSuiteCLIAPI` → `generate_audio`, model `gemini-2.5-flash-preview-tts`, voice **Charon**). Instruction line (do not quote the script in it): "Speak as a native speaker of Azerbaijani from Baku… no Turkish/Russian accent… a little faster". Free tier = 10 requests/day; split text into ~3 parts (Zapier 60 s timeout); download from the returned S3 URL.
-- Processing: `tighten.py` (pauses ≤0.40 s) → `silencedetect -36dB d=0.12` → `align.py` (sentence DP; every sentence 3–7 syllables/s) → fine gaps (`-30dB d=0.06`) for word-level key times → `timeline.js` `KT`.
+- Fallback: Gemini TTS via Zapier (`GoogleMakerSuiteCLIAPI` → `generate_audio`, model `gemini-2.5-flash-preview-tts`, voice **Charon**). Instruction line (do not quote the script in it): "Speak as a native speaker of Azerbaijani from Baku… no Turkish/Russian accent… calm, unhurried pace". Free tier = 10 requests/day; split text into ~3 parts (Zapier 60 s timeout); download from the returned S3 URL.
+- Processing: **do NOT run `tighten.py` / do not shorten pauses** — the pauses carry the intonation (see section 5a). `silencedetect -36dB d=0.12` → `align.py` (sentence DP) → **measured** word times (fine gaps `-30dB d=0.06`, or a word-timestamp transcription); never spread words over a sentence by syllable share → `timeline.js` `KT`.
 
 ## 4. Images (user makes them in Nano Banana; ask for a ZIP of files, not pasted images)
 Give **all prompts in one copyable block**, each headed with its file name.
@@ -48,6 +48,14 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 - Ideas library: `rokinyo123/video-shotcraft` (145 shot recipes) and `rokinyo123/video-effects-skill` (21 effects) — Remotion; port the idea to our Canvas engine, don't switch engines.
 - Always render check stills (contact sheets) and look at them before the full render; fix overlaps, unreadable red-on-red, emoji typed letter by letter, text below y≈1650 (platform UI).
 
+## 5a. Pacing and sync — user rule after ep6 (the user lost an hour fixing sync in CapCut)
+"İslamda tələsmirik: aram-aram, yavaş-yavaş. Əsas odur ki, mənanı başa düşsünlər."
+- **Keep the voice's own pauses and intonation.** Every silence between phrases stays as recorded; the visuals hold (the current word/scene stays still) during the pause instead of the timeline being squeezed.
+- **Sync to measured times only.** Each on-screen word is keyed to the real start of that spoken word (measured), and its entrance starts ~0.15 s *before* it so it is fully readable when heard. Before delivery, render a sync-check (click on every keyed word) and fix any word off by more than 0.1 s. The user must not have to re-time anything.
+- **Calm intro.** Hook (first ~7 s) = **one scene, no cuts**; the number and question build up inside it. No scene shorter than ~4 s anywhere; transitions soft and ≥0.6 s (fade / slow slide), no rapid circle/bar/flash chains.
+- **Readable on screen.** Every key word/pill stays ≥1.5 s; at most 2 new text elements per second; the Arabic ayah stays on screen long enough to read after the recitation ends.
+- Calm motion over flashy: fewer shakes/impacts (only on the 2–3 real "vay" moments), slower easing.
+
 ## 6. Audio
 - **No background music.** Voice + ASMR only.
 - SFX: `engine/sfx/*.mp3` (whoosh, hit, crack, shatter, stamp, riser, reveal, chime, typing, click, bubble, whip, cascade) via `ref_ep5_ihdina/sfx5.py`, plus synthesized textures from `sfx_lib.py` (scratch, tones). Every visual event gets a sound.
@@ -58,11 +66,12 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 - Then titles: YouTube (title + description with sources and hashtags), TikTok (short caption + on-screen text tip + cover frame), Instagram (caption + cover), and the **pinned comment** with word-by-word meaning + a bonus fact.
 
 ## 8. Series status
-1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best).
-**Next: Fatihə 1:7** — teaser promised "Üç qrup insan… sən hansındasan?" (Nisa 4:69; close the Fatihə series with "Amin", Buxari 780). Separate episode, not merged.
+1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best) · 6 Fatihə 1:7 (kinetic format, posted; user re-timed it in CapCut).
+**Fatihə surəsi tamamlandı.** Next topic: ask the user (options discussed: "Amin" closer with Buxari 780, Ayətəl-Kürsi 2:255, Bəqərə 2:1–5, İxlas).
 
 ## 9. Environment notes
 Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyPI, npm, Zapier S3. Chromium + Playwright preinstalled.
 
 ## Changelog
 - Ep5: fracture hook, "Quranın … ayəsi cəmi N sözdür" hook, word-meaning cards with glass lens, real SFX samples, no music, green-screen props.
+- Ep6: kinetic-typography format (`esgarow_out/ep6_kinetic/build/kin_main.js`, `kin_icons.js`: flying words, highlighter pills, code-drawn 3D props, white/black scenes, Poppins). Worked visually, but **sync failed**: pauses were tightened to 0.36 s and word times were estimated by syllables, and the intro cut 3 times in 7 s → user re-timed in CapCut. Rules in section 5a fix this. Shorts cover drawn in code (`cover2.js`, white style matching the video) was accepted.
