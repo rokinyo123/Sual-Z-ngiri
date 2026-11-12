@@ -1,0 +1,27 @@
+# copied from ../../engine, ../../ep7_beqere/build, ../../ep6_kinetic at build time
+common.js
+part_*.js
+render.mjs
+render_page.mjs
+logo.png
+kin_lib.js
+kin_icons.js
+sfx_lib.py
+mix7.py
+sfx/
+fonts/
+# intermediates
+*.wav
+*.m4a
+video_*.mp4
+*.log
+*.jpg
+!img/*.jpg
+img/k_*.png
+img/tebiet_*.png
+img/qelb_*.png
+ss*/
+ls*/
+th*/
+chk*/
+syncS/

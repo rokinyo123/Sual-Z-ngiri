@@ -27,10 +27,16 @@ Talk to the user in Azerbaijani, "sən" form. Discuss first, then produce: **tex
 - Never longer than ~2:00 for shorts (2:42 episode underperformed).
 - Long videos (16:9 or 9:16, 8–10 min): chapters, a mini re-hook every 45–60 s, 2–3 signature effects per chapter, voice recorded per chapter.
 
+## 2a. Every new topic = TWO videos (user rule from ep8; YPP needs long-form watch hours, Shorts hours don't count)
+- **Long (16:9, ~6–8 min)**: tefsir + hadith + təbliğ, every meaning explained with images/animation; 5-step tracker on top, an on-screen open loop at the start ("Sonda: …sirri"), mercy before responsibility, a 2-s music silence before the big reveal, dua + share + teaser at the end.
+- **Short (9:16, ~1:30–2:00)**: *theory only* — hook in the first 3 s, the list/points in one line each, **one complete story** (so the Short satisfies on its own), then the big sirr is **left locked** and the outro sends viewers to the long video ("…uzun videoda. Aşağıdakı linkə toxun." + arrow to the Related-video link).
+- The user records ONE long voiceover (★ marks the sentences that also go into the Short) + one short outro line; the Short audio is cut from the long recording at measured pauses.
+- Tone (user): "kora yol olmaq" — the viewer who doesn't pray should want to pray; no blame ("özünü qınama"), rəhmət first.
+
 ## 3. Voice
 - Preferred: user records in ElevenLabs — "Seyfullah Kartal – Deep and Muffled", Eleven v4. Give them the tagged text (`[serious]`, `[pause]`, `[softly]`) in one copyable block plus a clean version.
 - Fallback: Gemini TTS via Zapier (`GoogleMakerSuiteCLIAPI` → `generate_audio`, model `gemini-2.5-flash-preview-tts`, voice **Charon**). Instruction line (do not quote the script in it): "Speak as a native speaker of Azerbaijani from Baku… no Turkish/Russian accent… calm, unhurried pace". Free tier = 10 requests/day; split text into ~3 parts (Zapier 60 s timeout); download from the returned S3 URL.
-- Processing: **do NOT run `tighten.py` / do not shorten pauses** — the pauses carry the intonation (see section 5a). `silencedetect -36dB d=0.12` → `align.py` (sentence DP) → **measured** word times (fine gaps `-30dB d=0.06`, or a word-timestamp transcription); never spread words over a sentence by syllable share → `timeline.js` `KT`.
+- Processing: **do NOT run `tighten.py` / do not shorten pauses** — the pauses carry the intonation (see section 5a). Use `ep8_mutteqi/build/walign2.py voice.wav script.txt out.json 8` (micro-pauses ≥0.08 s, splits after closing quotes too). Then check every phrase rate is 2.8–8 syll/s — an outlier run means the DP slipped by a sentence (ep7's `walign.py` slipped once in ep8 part 2: "Peyğəmbərimiz buyurdu:" got glued to the previous sentence and everything after was one sentence late). Word fixes from the user (e.g. a re-recorded word) are spliced in at measured energy minima with level matching.
 
 ## 4. Images (user makes them in Nano Banana; ask for a ZIP of files, not pasted images)
 Give **all prompts in one copyable block**, each headed with its file name.
@@ -42,10 +48,11 @@ Give **all prompts in one copyable block**, each headed with its file name.
 ## 5. Montage (code in `esgarow_out/engine/` + `esgarow_out/ref_ep5_ihdina/`)
 Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from `ref_ep5_ihdina/part_main.js`), images in `img/`, SFX in `sfx/`.
 `python3 -m http.server <PORT>` in the build dir, then `PORT=<PORT> node engine/render.mjs stills <dir> t1 t2…` / `video <out.mp4> <dur>` (1080×1920, 30 fps).
-- **No subtitles.** Only key words on screen: `fly3d` + "gup" + light shake (`IMPACTS`).
+- **Subtitles ON** (user request from ep8): karaoke subtitles (current word gold) in a **reserved bottom band** — 9:16: y≈1400–1540, 16:9: y≈940–1030. Nothing else may be drawn in that band; all other text/visuals stay above it (`SAFE_B`). Key words still appear big on screen.
 - Signature effects (keep using, rotate per scene): `fracture` (hook assembles from 25 shards), `drawStroke` (line drawn in sand/xətt), `lens` (Liquid Glass magnifier over a word), `glitchTx`, `frameBreak` (scene shatters into the next), `stamp`, `sprite/popSprite` (green-screen props), counters (rükət 1→17), `bgImage` (slow camera + readability gradients), `wipe`, `sirrCard`, `cardFlip`, `endCard`.
 - ~10–12 s per background image; motion comes from effects. Images can repeat with mirror/filter/different crop.
-- Ideas library: `rokinyo123/video-shotcraft` (145 shot recipes) and `rokinyo123/video-effects-skill` (21 effects) — Remotion; port the idea to our Canvas engine, don't switch engines.
+- Ideas library: `rokinyo123/video-shotcraft` (145 shot recipes) and `rokinyo123/video-effects-skill` (21 effects) — Remotion; port the idea to our Canvas engine, don't switch engines. Ported in `ep8_mutteqi/build/lib8.js`: text-as-mask hook (giant number filled with the scene, then pushes through), crash-zoom-punch, spotlight-sweep, glow-flyline, grain-dissolve, ChecklistTally (5-sign tracker), PaperCutout stickers (white die-cut border; NOT for thin objects like trees/ewers — use plain sprites), LiquidGlass lens, ep6 kinetic word pops (`kwLine`).
+- Engine is size-aware (`common.js`: W/H from the canvas). 16:9: canvas 1920×1080 + `VW=1920 VH=1080 PAGE=long.html node r8.mjs …`.
 - Always render check stills (contact sheets) and look at them before the full render; fix overlaps, unreadable red-on-red, emoji typed letter by letter, text below y≈1650 (platform UI).
 
 ## 5a. Pacing and sync — user rule after ep6 (the user lost an hour fixing sync in CapCut)
@@ -67,7 +74,7 @@ Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from
 
 ## 8. Series status
 1 Bismillah · 2 Əlhəmdülillah · 3 Maliki yəvmiddin · 4 İyyakə nəbudu · 5 İhdinəs-sıratəl-mustəqim (best) · 6 Fatihə 1:7 (kinetic format, posted; user re-timed it in CapCut).
-**Fatihə surəsi tamamlandı.** 7 Bəqərə 2:1–2 (Əlif-Lam-Mim, 3 sirr + müjdə; `esgarow_out/ep7_beqere/`). **Next: Bəqərə 2:3–5** — teaser promised "Müttəqi kimdir? Quran onun beş əlamətini sayır".
+**Fatihə surəsi tamamlandı.** 7 Bəqərə 2:1–2 (Əlif-Lam-Mim, 3 sirr + müjdə; `esgarow_out/ep7_beqere/`). 8 Bəqərə 2:3–5 "Müttəqinin 5 əlaməti" — first Short + Long pair (`esgarow_out/ep8_mutteqi/`). **Next: Bəqərə 2:6–7** — teaser promised "Allah bəzi qəlblərə niyə möhür vurur?". Plan: 2:8–9, 2:10, 2:11–12, 2:13, 2:14–15, 2:16, 2:17–18, 2:19–20 (short ayahs in pairs, long ones alone). Saved story ideas: Bilal's footsteps in Jannah (Buxari 1149), Abu Bakr & Umar sadaqa (Tirmizi 3675).
 
 ## 9. Environment notes
 Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyPI, npm, Zapier S3. Chromium + Playwright preinstalled.
@@ -76,3 +83,4 @@ Blocked: Openverse, TikTok, Pexels, HuggingFace. Open: Google Fonts, GitHub, PyP
 - Ep5: fracture hook, "Quranın … ayəsi cəmi N sözdür" hook, word-meaning cards with glass lens, real SFX samples, no music, green-screen props.
 - Ep6: kinetic-typography format (`esgarow_out/ep6_kinetic/build/kin_main.js`, `kin_icons.js`: flying words, highlighter pills, code-drawn 3D props, white/black scenes, Poppins). Worked visually, but **sync failed**: pauses were tightened to 0.36 s and word times were estimated by syllables, and the intro cut 3 times in 7 s → user re-timed in CapCut. Rules in section 5a fix this. Shorts cover drawn in code (`cover2.js`, white style matching the video) was accepted.
 - Ep7: first video on the calm rules (5a). Word times MEASURED by `ep7_beqere/build/walign.py` (phrases→pauses DP, words→syllable-energy peaks; Whisper/HF are blocked here), `mk_timeline.py` → `timeline.js`. LEAD = 0.4 s with 0.5 s fade so each word is ~90 % visible when spoken (0.15 s was too late). Verified with stills at 12 word onsets. One-scene 15 s hook, 0.9 s dissolves, Nano Banana photos + keyed icons + code-drawn Arabic (alphabet grid with the 14 muqattaʿat letters lit, custom ۛ marks + lens, +10 savab counters). User's "sirr" rule: a hadith about reward is a *müjdə*, not a sirr — sirr = something hidden/surprising.
+- Ep8: first Short + Long pair. Subtitles in a reserved band, 5-sign tracker, text-as-mask "5" hook, dog-and-well story completed in the Short, locked padlock → "TAM VİDEO" grain-dissolve outro; long: lock dissolves into حَيَّ عَلَى الْفَلَاحِ and the shared root ف ل ح is linked to الْمُفْلِحُونَ. Music silence before the sirr. Verified overlaps with contact sheets and sync with frames at 14 word onsets.
