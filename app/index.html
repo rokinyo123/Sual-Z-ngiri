@@ -6,7 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Almond Anbar Zənciri</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#5C2E0E">
+<meta name="theme-color" content="#160f09" id="thc">
+<script>/* Görünüş: standart tünd "lampa" rejimi; ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Almond Anbar">
 <link rel="apple-touch-icon" href="../icon-192.png">
@@ -337,6 +338,48 @@ header .who{border:none;background:none;cursor:default}
 .sent.new{background:var(--wait-bg);color:var(--wait)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* ===== İçəri dizayn: şöbə rəngi (--dc), tünd "lampa" görünüşü, halqalı sifariş zənciri, salam kartı ===== */
+:root{--dc:247,213,148;--dcx:color-mix(in srgb,rgb(var(--dc)) 45%,#3b1c06)}
+:root[data-theme="dark"]{--dcx:rgb(var(--dc));--bg:#120d09;--surface:#1c150f;--sunk:#271d15;--line:#3a2c20}
+.abrand i{font-style:normal;color:rgb(var(--c));transition:text-shadow .4s}
+:root[data-theme="dark"] .abrand i{text-shadow:0 0 10px rgba(var(--c),.45)}
+:root:not([data-theme="dark"]) .abrand i{color:color-mix(in srgb,rgb(var(--c)) 80%,#fff)}
+.tabs button{transition:background .25s,color .25s,opacity .25s}
+.tabs button.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:rgb(var(--dc));box-shadow:0 0 10px rgba(var(--dc),.7)}
+h2::before{content:"";width:4px;height:1em;border-radius:2px;background:var(--dcx);flex:none}
+.oc.act{box-shadow:0 0 0 2px var(--dcx) inset,0 4px 14px rgba(60,25,5,.08)}
+.thb{min-width:34px}
+:root[data-theme="dark"] body{background:radial-gradient(110% 55% at 50% -8%,rgba(var(--dc),.13),transparent 62%) fixed,var(--bg)}
+:root[data-theme="dark"] header{background:linear-gradient(180deg,#1d130b,#140d08);border-bottom:1px solid rgba(var(--dc),.35);box-shadow:0 8px 26px rgba(0,0,0,.45),0 1px 18px rgba(var(--dc),.14)}
+:root[data-theme="dark"] body::before{background:#1d130b}
+:root[data-theme="dark"] .tabs button.on{background:rgba(var(--dc),.14);color:rgb(var(--dc))}
+:root[data-theme="dark"] .who select{background:#24180f;border-color:rgba(var(--dc),.45)}
+:root[data-theme="dark"] .outb{background:rgba(var(--dc),.16);color:rgb(var(--dc));border:1px solid rgba(var(--dc),.35)}
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .oc{background:linear-gradient(180deg,rgba(255,236,205,.03),transparent 40%),var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.28)}
+:root[data-theme="dark"] button.pri{background:rgb(var(--dc));color:#1a0f06;border-color:rgb(var(--dc));box-shadow:0 4px 16px rgba(var(--dc),.25)}
+:root[data-theme="dark"] .oc.act{box-shadow:0 0 0 1.5px rgba(var(--dc),.85) inset,0 0 22px rgba(var(--dc),.14),0 6px 20px rgba(0,0,0,.28)}
+/* salam kartı */
+.greet{position:relative;overflow:hidden;border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--dc),.35);
+  background:linear-gradient(120deg,rgba(var(--dc),.22),rgba(var(--dc),.04) 65%),var(--surface)}
+.greet b{display:block;font-family:var(--display);font-size:19px;line-height:1.25}
+.greet span{font-size:13px;color:var(--muted)}
+.greet::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(rgba(var(--dc),.35),transparent 70%);pointer-events:none}
+/* halqalı sifariş zənciri */
+.ring{display:flex;align-items:flex-start;margin:2px 0 0}
+.ring .st{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--muted);text-align:center}
+.ring .st::before{content:"";position:absolute;top:6px;right:calc(50% + 9px);left:calc(-50% + 9px);height:2px;border-radius:2px;background:var(--line)}
+.ring .st:first-child::before{display:none}
+.ring .st.done::before,.ring .st.cur::before{background:var(--ok)}
+.ring .o{width:18px;height:13px;border-radius:7px;border:2.5px solid var(--line);background:transparent;z-index:1;transition:.3s}
+.ring .st.done .o{border-color:var(--ok)}
+.ring .st.cur .o{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 25%,transparent);box-shadow:0 0 0 0 var(--sc);animation:ringP 2s ease-out infinite}
+.ring .st.cur span{color:var(--sc);font-weight:700}
+@keyframes ringP{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--sc) 55%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+/* tab keçidi */
+main.tabin>*{animation:tabIn .38s cubic-bezier(.2,.8,.2,1) both}
+main.tabin>:nth-child(2){animation-delay:.03s} main.tabin>:nth-child(3){animation-delay:.06s} main.tabin>:nth-child(4){animation-delay:.09s} main.tabin>:nth-child(5){animation-delay:.12s} main.tabin>:nth-child(n+6){animation-delay:.15s}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){main.tabin>*,.ring .st.cur .o{animation:none}}
 /* ===== Giriş: zəncirdən asılan lampa — zənciri çəkəndə lampa yanır, "Almond" hərfləri halqalarla birləşir ===== */
 body.lg-on{overflow:hidden}
 #lg{--lgc:#FFF3E0;--lgm:#b59a80;--lgg:#E9B45A;--lgg2:#F7D594;--lgl:rgba(255,230,190,.14);--lgt:255,198,120;
@@ -492,7 +535,7 @@ body.lg-on{overflow:hidden}
 <header>
   <div class="wrap">
     <div class="top">
-      <div class="brand"><div class="bn"><b>Almond</b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
+      <div class="brand"><div class="bn"><b class="abrand" aria-label="Almond"><i style="--c:247,213,148">A</i><i style="--c:255,143,177">l</i><i style="--c:142,219,138">m</i><i style="--c:183,156,255">o</i><i style="--c:255,168,87">n</i><i style="--c:124,196,255">d</i></b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
       <div class="who"><select id="role" aria-label="Kim kimi baxırsınız"></select></div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -1218,12 +1261,42 @@ async function hardRefresh(){
   if (b){ b.disabled = false; b.classList.remove("spin"); }
   toast(ok ? "Yeniləndi ✓" : "İnternet yoxdur — bağlantını yoxlayın");
 }
+// ----- İçəri dizayn köməkçiləri -----
+const DEPT_C = { "Anbar":"247,213,148","Anbar (İnqilab)":"255,168,87","Satınalma":"255,143,177","Keyfiyyət":"142,219,138","Texnoloq":"183,156,255",
+  "İstehsalat":"255,128,106","Çeşidləmə":"110,218,205","Satış":"255,206,84","Rəhbərlik":"124,196,255","Admin":"205,200,215" };
+function setTheme(t){ document.documentElement.dataset.theme = t; try { localStorage.setItem("almond-theme", t); } catch(e){}
+  const m = document.getElementById("thc"); if (m) m.content = t==="dark" ? "#160f09" : "#5C2E0E";
+  const b = $("thm"); if (b){ b.textContent = t==="dark" ? "☀️" : "🌙"; b.title = t==="dark" ? "Gündüz görünüşü" : "Gecə (lampa) görünüşü"; } }
+function greet(){
+  const d = new Date(), h = d.getHours();
+  const hi = h<5 ? "Gecəniz xeyrə 🌙" : h<12 ? "Sabahınız xeyir ☀️" : h<18 ? "Günortanız xeyir 🌤" : "Axşamınız xeyir 🌙";
+  const W = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"], M = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avqust","sentyabr","oktyabr","noyabr","dekabr"];
+  return '<div class="greet"><b>'+hi+'</b><span>'+esc(role)+' · '+W[d.getDay()]+', '+d.getDate()+' '+M[d.getMonth()]+'</span></div>';
+}
+// Sifarişin yolu halqalar kimi: Sifariş → Satınalma → Yolda → Anbar → Bağlandı
+function chainRings(o, st){
+  if (o.status==="redd") return "";
+  const idx = { acik:1, yolda:2, anbar:3, bagli:4 }[o.status]; if (idx==null) return "";
+  const sc = "var(--"+({ chk:"qc", arch:"arch" }[st.k] || st.k)+")";
+  return '<div class="ring" style="--sc:'+sc+'" aria-hidden="true">'+["Sifariş","Satınalma","Yolda","Anbar","Bağlandı"].map((l,i)=>
+    '<div class="st'+(i<idx?" done":i===idx?" cur":"")+'"><i class="o"></i><span>'+l+'</span></div>').join("")+'</div>';
+}
+// tab dəyişəndə: məzmun yumşaq girir, rəqəmlər 0-dan sayılır
+let lastTab = null;
+function tabFx(){
+  if (tab===lastTab) return; lastTab = tab;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const m = $("main"); m.classList.remove("tabin"); void m.offsetWidth; m.classList.add("tabin");
+  m.querySelectorAll(".pipe b, h2 .cnt").forEach(el=>{ const n = parseInt(el.textContent, 10); if (!(n>0) || String(n)!==el.textContent.trim()) return;
+    const t0 = performance.now(); (function f(t){ const k = Math.min(1,(t-t0)/550); el.textContent = Math.round(n*(1-Math.pow(1-k,3))); if (k<1) requestAnimationFrame(f); })(t0); });
+}
 function renderRole(){
   const me = ONLINE ? Cloud.me() : null;
   const list = me && !me.is_admin ? [me.dept] : DEPTS;
   $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
   $("role").disabled = list.length < 2;
   if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="rf" class="outb rfb" title="Yenilə">🔄</button><button id="out" class="outb" title="Hesabdan çıxış">🚪<span class="tx"> Çıxış</span></button>'); $("out").onclick = () => Cloud.logout(); $("rf").onclick = hardRefresh; }
+  if (!$("thm")){ $("role").insertAdjacentHTML("afterend", '<button id="thm" class="outb thb"></button>'); $("thm").onclick = () => setTheme(document.documentElement.dataset.theme==="dark" ? "light" : "dark"); setTheme(document.documentElement.dataset.theme||"dark"); }
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
 function renderTabs(){
@@ -1237,10 +1310,12 @@ function renderTabs(){
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
   autoMissing(); stuckSignals(); reportSignals(); pushNotify(); dlDone = false;
+  document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
+  tabFx();
 }
 
 // ----- Keyfiyyət: Anbar "Gəldi" basan mallar — yoxlama vaxtıdır -----
@@ -1376,7 +1451,7 @@ function pipe(){
 }
 function vHome(){
   const work = myWork();
-  let html = alertsHtml();
+  let html = greet() + alertsHtml();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (WORK_TITLE[role] || work.length){
     html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>';
@@ -1460,7 +1535,7 @@ function orderCard(o){
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'" title="Sifarişi düzəlt">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
-    '<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
+    chainRings(o, st)+'<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     waitPill(o) + bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
     (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + '</article>';
@@ -1949,7 +2024,7 @@ function orderBrief(o){
     return '<span class="ic'+(pr?" bad":"")+'">'+thumb(i.pid,1)+esc(pname(i.pid))+' <b>'+esc(i.qty)+'</b>'+depTag(i)+(pr?' <span class="pill p-bad">'+esc(/^Keyfiyyət/.test(pr)?"Keyfiyyət ✗":/^Texnoloq/.test(pr)?"Texnoloq ✗":/^Satınalma/.test(pr)?"Yoxdur":pr.split(" ·")[0])+'</span>':"")+'</span>'; }).join("")+'</div>';
   return '<article class="oc s-'+st.k+'" id="o-'+o.id+'"><div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+
     (canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sil</button>':"")+'</div>'+
-    '<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
+    chainRings(o, st)+'<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
     waitPill(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
     '<button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı: Satınalma, Keyfiyyət, Anbar</button></article>';
 }
