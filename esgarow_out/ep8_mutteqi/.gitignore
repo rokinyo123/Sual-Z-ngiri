@@ -3,3 +3,5 @@ raw2/
 *.jpg
 !build/img/*.jpg
 raw3/
+# rendered videos: still rendering / large; final copies are committed explicitly
+mutteqi_*.mp4
