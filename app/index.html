@@ -6,7 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Almond Anbar Zənciri</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#5C2E0E">
+<meta name="theme-color" content="#160f09" id="thc">
+<script>/* Görünüş: standart tünd "lampa" rejimi; ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Almond Anbar">
 <link rel="apple-touch-icon" href="../icon-192.png">
@@ -156,12 +157,6 @@ button.big{width:100%;padding:11px;font-size:16px}
 .ic.bad{border-color:var(--bad)}
 .box.late{border:1px solid var(--wait);background:var(--wait-bg)}
 .chk{gap:6px;font-size:14px}
-.chain{display:flex;flex-wrap:wrap;align-items:center;gap:3px;font-size:11px;font-weight:600}
-.chain i{font-style:normal;color:var(--muted);opacity:.6}
-.chain .cs{border-radius:999px;padding:1px 7px;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
-.chain .cs.done{background:var(--ok-bg);color:var(--ok);border-color:transparent}
-.chain .cs.cur{background:var(--wait);color:#fff;border-color:transparent}
-.chain .cs.bad{background:var(--bad);color:#fff;border-color:transparent}
 .adm{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px}
 .ansopt{display:flex;flex-direction:column;gap:6px;border:1px dashed var(--line);border-radius:10px;padding:8px;margin-top:6px}
 .stk{background:var(--bad-bg,#fde8e8);color:var(--bad,#b42318);border-radius:8px;padding:6px 10px;font-size:13px;margin:4px 0}
@@ -347,19 +342,63 @@ header .who{border:none;background:none;cursor:default}
 .sent.new{background:var(--wait-bg);color:var(--wait)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+/* ===== İçəri dizayn: şöbə rəngi (--dc), tünd "lampa" görünüşü, halqalı sifariş zənciri, salam kartı ===== */
+:root{--dc:247,213,148;--dcx:color-mix(in srgb,rgb(var(--dc)) 45%,#3b1c06)}
+:root[data-theme="dark"]{--dcx:rgb(var(--dc));--bg:#120d09;--surface:#1c150f;--sunk:#271d15;--line:#3a2c20}
+.abrand i{font-style:normal;color:rgb(var(--c));transition:text-shadow .4s}
+:root[data-theme="dark"] .abrand i{text-shadow:0 0 10px rgba(var(--c),.45)}
+:root:not([data-theme="dark"]) .abrand i{color:color-mix(in srgb,rgb(var(--c)) 80%,#fff)}
+.tabs button{transition:background .25s,color .25s,opacity .25s}
+.tabs button.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:rgb(var(--dc));box-shadow:0 0 10px rgba(var(--dc),.7)}
+h2::before{content:"";width:4px;height:1em;border-radius:2px;background:var(--dcx);flex:none}
+.oc.act{box-shadow:0 0 0 2px var(--dcx) inset,0 4px 14px rgba(60,25,5,.08)}
+.thb{min-width:34px}
+:root[data-theme="dark"] body{background:radial-gradient(110% 55% at 50% -8%,rgba(var(--dc),.13),transparent 62%) fixed,var(--bg)}
+:root[data-theme="dark"] header{background:linear-gradient(180deg,#1d130b,#140d08);border-bottom:1px solid rgba(var(--dc),.35);box-shadow:0 8px 26px rgba(0,0,0,.45),0 1px 18px rgba(var(--dc),.14)}
+:root[data-theme="dark"] body::before{background:#1d130b}
+:root[data-theme="dark"] .tabs button.on{background:rgba(var(--dc),.14);color:rgb(var(--dc))}
+:root[data-theme="dark"] .who select{background:#24180f;border-color:rgba(var(--dc),.45)}
+:root[data-theme="dark"] .outb{background:rgba(var(--dc),.16);color:rgb(var(--dc));border:1px solid rgba(var(--dc),.35)}
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .oc{background:linear-gradient(180deg,rgba(255,236,205,.03),transparent 40%),var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.28)}
+:root[data-theme="dark"] button.pri{background:rgb(var(--dc));color:#1a0f06;border-color:rgb(var(--dc));box-shadow:0 4px 16px rgba(var(--dc),.25)}
+:root[data-theme="dark"] .oc.act{box-shadow:0 0 0 1.5px rgba(var(--dc),.85) inset,0 0 22px rgba(var(--dc),.14),0 6px 20px rgba(0,0,0,.28)}
+/* salam kartı */
+.greet{position:relative;overflow:hidden;border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--dc),.35);
+  background:linear-gradient(120deg,rgba(var(--dc),.22),rgba(var(--dc),.04) 65%),var(--surface)}
+.greet b{display:block;font-family:var(--display);font-size:19px;line-height:1.25}
+.greet span{font-size:13px;color:var(--muted)}
+.greet::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(rgba(var(--dc),.35),transparent 70%);pointer-events:none}
+/* halqalı sifariş zənciri */
+.ring{display:flex;align-items:flex-start;margin:2px 0 0}
+.ring .st{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--muted);text-align:center}
+.ring .st::before{content:"";position:absolute;top:6px;right:calc(50% + 9px);left:calc(-50% + 9px);height:2px;border-radius:2px;background:var(--line)}
+.ring .st:first-child::before{display:none}
+.ring .st.done::before,.ring .st.cur::before{background:var(--ok)}
+.ring .o{width:18px;height:13px;border-radius:7px;border:2.5px solid var(--line);background:transparent;z-index:1;transition:.3s}
+.ring .st.done .o{border-color:var(--ok)}
+.ring .st.cur .o{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 25%,transparent);box-shadow:0 0 0 0 var(--sc);animation:ringP 2s ease-out infinite}
+.ring .st.cur span{color:var(--sc);font-weight:700}
+.ring .st span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes ringP{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--sc) 55%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+/* tab keçidi */
+main.tabin>*{animation:tabIn .38s cubic-bezier(.2,.8,.2,1) both}
+main.tabin>:nth-child(2){animation-delay:.03s} main.tabin>:nth-child(3){animation-delay:.06s} main.tabin>:nth-child(4){animation-delay:.09s} main.tabin>:nth-child(5){animation-delay:.12s} main.tabin>:nth-child(n+6){animation-delay:.15s}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){main.tabin>*,.ring .st.cur .o{animation:none}}
 /* ===== Giriş: zəncirdən asılan lampa — zənciri çəkəndə lampa yanır, "Almond" hərfləri halqalarla birləşir ===== */
 body.lg-on{overflow:hidden}
 #lg{--lgc:#FFF3E0;--lgm:#b59a80;--lgg:#E9B45A;--lgg2:#F7D594;--lgl:rgba(255,230,190,.14);--lgt:255,198,120;
   position:fixed;inset:0;z-index:40;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;color:var(--lgc);
   display:flex;flex-direction:column;align-items:center;padding:0 16px 32px;background:radial-gradient(120% 70% at 50% 0%,#1a120c,#0f0a07 70%)}
 #lg .lamp{position:relative;width:200px;height:250px;flex:none;z-index:3}
-#lg .lamp svg{width:100%;height:100%;overflow:visible}
+#lg .lamp svg{width:100%;height:100%;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none}
 #lg .swing{transform-origin:100px 0;animation:lgSway 6s ease-in-out infinite}
 @keyframes lgSway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
 #lg .bulb{fill:#4a3a2a;transition:fill .25s}
 #lg .bulb-glow{opacity:0;transition:opacity .35s}
 #lg .shade-in{fill:#2a1d13;transition:fill .35s}
-#lg.on .bulb{fill:#FFE7B3} #lg.on .bulb-glow{opacity:1} #lg.on .shade-in{fill:#7a5320}
+#lg.on .bulb{fill:color-mix(in srgb,rgb(var(--lgt)) 45%,#fff)} #lg.on .bulb-glow{opacity:1}
+#lg.on .pull .knob{fill:rgb(var(--lgt))} #lg.on .shade-in{fill:#7a5320}
 #lg .pull{cursor:grab;touch-action:none;outline:none}
 #lg .pull .knob{fill:var(--lgg);stroke:#7a5320;stroke-width:1.5}
 #lg .pull:focus-visible .knob{stroke:#fff;stroke-width:3}
@@ -374,11 +413,15 @@ body.lg-on{overflow:hidden}
 #lg .lhint .arr{display:inline-block;animation:lgNudge 1.4s ease-in-out infinite}
 @keyframes lgNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 #lg.on .lhint{opacity:0}
+#lg .lhint.nudge{animation:lgHint .6s ease}
+@keyframes lgHint{0%,100%{transform:none;color:var(--lgm)}30%{transform:scale(1.12);color:var(--lgc)}}
 #lg .word{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;margin:22px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(40px,12vw,64px);line-height:1;letter-spacing:.5px}
-#lg .word .ch{color:rgba(255,236,205,.07);transition:color .45s ease,text-shadow .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);transform:translateY(6px)}
+#lg .word .ch{color:rgba(255,236,205,.07);transition:color .45s ease,opacity .45s ease,text-shadow .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);transform:translateY(6px)}
 #lg .word .lk{width:.42em;height:.42em;margin:0 -.02em;opacity:0;transform:scale(.4) rotate(-30deg);transition:opacity .3s ease,transform .35s cubic-bezier(.2,1.4,.4,1)}
 #lg .word .lk path{fill:none;stroke:var(--lgg);stroke-width:2.2;stroke-linecap:round}
-#lg.lit .word .ch{color:var(--lgg2);text-shadow:0 0 18px rgba(var(--lgt),.55),0 2px 0 #5a3a12;transform:none}
+/* hər hərfin öz rəngi (--c); lampa yananda növbəti hərfin rəngini alır, o hərf parlayır */
+#lg.lit .word .ch{color:rgb(var(--c));opacity:.5;text-shadow:0 2px 0 #3a2410;transform:none}
+#lg.lit .word .ch.act{opacity:1;text-shadow:0 0 14px rgba(var(--c),.9),0 0 36px rgba(var(--c),.55),0 2px 0 #3a2410;transform:translateY(-3px) scale(1.08)}
 #lg.lit .word .lk{opacity:1;transform:none}
 #lg.done .word{animation:lgPulse .7s ease}
 @keyframes lgPulse{40%{filter:drop-shadow(0 0 14px rgba(255,198,120,.8)) brightness(1.15)}}
@@ -386,8 +429,26 @@ body.lg-on{overflow:hidden}
 #lg.lit .tag{opacity:.9}
 #lg .lform{position:relative;z-index:3;width:100%;max-width:360px;margin-top:22px;padding:20px;border-radius:16px;background:rgba(32,22,15,.72);border:1px solid var(--lgl);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:12px;
-  opacity:0;transform:translateY(16px) scale(.98);pointer-events:none;transition:opacity .45s ease .15s,transform .5s cubic-bezier(.2,.8,.2,1) .15s}
-#lg.open .lform{opacity:1;transform:none;pointer-events:auto}
+  overflow:hidden;transform-origin:50% 0;opacity:0;transform:perspective(900px) rotateX(-75deg) translateY(-24px) scale(.88);clip-path:inset(0 0 100% 0 round 16px);pointer-events:none;
+  transition:opacity .25s ease,transform .35s ease,clip-path .3s ease,border-color .6s,box-shadow .6s}
+/* açılış: kart işıq şüasından aşağı "qatlanaraq" açılır, üstündən lampa rəngində işıq zolağı keçir, içindəkilər bir-bir görünür */
+#lg.open .lform{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 16px);pointer-events:auto;border-color:rgba(var(--lgt),.35);
+  box-shadow:0 20px 50px rgba(0,0,0,.45),0 0 34px rgba(var(--lgt),.16);
+  transition:opacity .3s ease,transform .9s cubic-bezier(.2,1.25,.35,1),clip-path .75s cubic-bezier(.2,.8,.2,1),border-color .6s,box-shadow .6s}
+#lg .lform::after{content:"";position:absolute;left:-10%;right:-10%;top:0;height:70px;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg,transparent,rgba(var(--lgt),.35) 50%,transparent);transform:translateY(-80px)}
+#lg.open .lform::after{animation:lgSweep 1.1s .25s cubic-bezier(.4,0,.2,1)}
+@keyframes lgSweep{0%{opacity:0;transform:translateY(-80px)}15%{opacity:1}100%{opacity:0;transform:translateY(420px)}}
+#lg .lform>*{opacity:0;transform:translateY(12px);transition:opacity .2s,transform .2s}
+#lg.open .lform>*{opacity:1;transform:none;transition:opacity .45s ease,transform .55s cubic-bezier(.2,1.3,.4,1)}
+#lg.open .lform>:nth-child(1){transition-delay:.28s} #lg.open .lform>:nth-child(2){transition-delay:.36s}
+#lg.open .lform>:nth-child(3){transition-delay:.44s} #lg.open .lform>:nth-child(4){transition-delay:.52s}
+#lg.open .lform>:nth-child(5){transition-delay:.6s} #lg.open .lform>:nth-child(6){transition-delay:.68s} #lg.open .lform>:nth-child(7){transition-delay:.76s}
+#lg .lrem{flex-direction:row!important;align-items:center;gap:10px!important;font-size:13px!important;cursor:pointer;-webkit-user-select:none;user-select:none}
+#lg .lrem input{appearance:none;-webkit-appearance:none;flex:none;width:22px!important;height:22px;padding:0!important;margin:0;border-radius:6px!important;border:1.5px solid var(--lgm)!important;background:rgba(15,10,7,.6);display:grid;place-content:center;cursor:pointer;transition:background .2s,border-color .2s}
+#lg .lrem input::after{content:"";width:6px;height:11px;border:solid #2a1708;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) scale(0);margin-top:-2px;transition:transform .2s cubic-bezier(.2,1.6,.4,1)}
+#lg .lrem input:checked{background:rgb(var(--lgt));border-color:rgb(var(--lgt))!important}
+#lg .lrem input:checked::after{transform:rotate(45deg) scale(1)}
 #lg .lform h2{font-family:var(--display);font-size:20px;color:var(--lgc);margin:0}
 #lg .lform .sub{font-size:13px;color:var(--lgm);margin-top:-6px}
 #lg .lform label{font-size:12px;font-weight:600;color:var(--lgm);display:flex;flex-direction:column;gap:6px}
@@ -397,10 +458,79 @@ body.lg-on{overflow:hidden}
 #lg .pin{letter-spacing:10px;text-align:center;font-weight:700}
 #lg .pin::placeholder{letter-spacing:1px;font-weight:400;color:#7d6553}
 #lg .lbtn{font:inherit;font-weight:700;font-size:16px;color:#2a1708;background:linear-gradient(180deg,var(--lgg2),var(--lgg));border:0;border-radius:10px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(233,180,90,.25)}
-#lg .lbtn:disabled{opacity:.6}
+#lg .lbtn:disabled{opacity:.85}
+#lg .lbtn.landed{animation:lbLand .45s ease}
+@keyframes lbLand{35%{transform:translateY(2px) scale(.97);filter:brightness(1.15)}}
 #lg .lnote{font-size:13px;color:#ff9a8a;text-align:center;min-height:16px}
+#lg .snap{z-index:3;margin-top:10px;font:inherit;font-size:12px;color:var(--lgm);background:rgba(32,22,15,.6);border:1px solid var(--lgl);border-radius:999px;padding:6px 12px;cursor:pointer}
+#lg .snap.live{color:var(--lgc);border-color:rgba(var(--lgt),.6);box-shadow:0 0 12px rgba(var(--lgt),.25)}
+#lg .snap.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#e5484d;margin-right:6px;vertical-align:1px;animation:lgRec 1.2s ease-in-out infinite}
+@keyframes lgRec{50%{opacity:.3}}
 #lg .lskip{z-index:3;margin-top:14px;background:none;border:0;color:var(--lgm);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
 #lg.open .lskip{display:none}
+/* ===== Açılış səhnəsi: qara ekran, "Almond" hərfləri öz rənglərində işıq şüası ilə bir-bir yanır, halqalarla birləşir, parlayır (≈3.5 san) ===== */
+/* ===== Pərvanə: qaranlıqda lampanın üstündə oturur; hər yandırmada sıradakı hərfə uçub qonur ===== */
+#lg .moth{position:absolute;left:0;top:0;width:36px;height:28px;z-index:5;pointer-events:none;will-change:transform;
+  filter:brightness(.5) saturate(.6);transition:filter .5s ease}
+#lg.on .moth{filter:brightness(1) drop-shadow(0 0 5px rgba(var(--lgt),.65))}
+#lg .moth svg{width:100%;height:100%;overflow:visible;display:block}
+#lg .moth .wl,#lg .moth .wr{transform-box:view-box;transform-origin:20px 15px}
+#lg .moth .wl{animation:mtTwL 5.5s ease-in-out infinite} #lg .moth .wr{animation:mtTwR 5.5s ease-in-out infinite}
+#lg .moth.fly .wl{animation:mtFlapL .11s ease-in-out infinite alternate} #lg .moth.fly .wr{animation:mtFlapR .11s ease-in-out infinite alternate}
+@keyframes mtFlapL{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
+@keyframes mtFlapR{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
+@keyframes mtTwL{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
+@keyframes mtTwR{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
+#lgi{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:opacity .7s ease,transform .9s cubic-bezier(.4,0,.2,1)}
+#lgi.out{opacity:0;transform:scale(1.08);pointer-events:none}
+#lgi .iw{position:relative;z-index:2;display:flex;align-items:center;margin:0;font-family:var(--display);font-weight:700;font-size:clamp(46px,15vw,84px);line-height:1.1;padding:0 .1em}
+#lgi .iw .c{color:rgb(var(--c));opacity:0;filter:blur(10px);transform:translateY(16px) scale(.8)}
+#lgi .iw .lk{width:.38em;height:.38em;opacity:0;transform:scale(.2) rotate(-40deg)}
+#lgi .iw .lk path{fill:none;stroke:rgba(255,236,205,.6);stroke-width:2.2;stroke-linecap:round}
+#lgi .itag{z-index:2;margin-top:14px;font-family:var(--body);font-size:12px;text-transform:uppercase;letter-spacing:16px;color:rgba(255,236,205,.8);opacity:0}
+#lgi .beam{position:absolute;left:0;top:27%;height:46%;width:3px;border-radius:3px;background:linear-gradient(180deg,transparent,#fff 50%,transparent);box-shadow:0 0 18px 4px rgba(255,236,205,.5);opacity:0;z-index:3;pointer-events:none}
+#lgi .bloom{position:absolute;width:80vmin;height:80vmin;border-radius:50%;opacity:0;filter:blur(60px);z-index:1;pointer-events:none;
+  background:conic-gradient(rgb(247,213,148),rgb(255,143,177),rgb(142,219,138),rgb(183,156,255),rgb(255,168,87),rgb(124,196,255),rgb(247,213,148))}
+#lgi .p{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:0;pointer-events:none}
+#lgi .itap{position:absolute;bottom:20%;z-index:4;background:none;border:0;font-family:var(--body);font-size:12px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.6);display:flex;flex-direction:column;align-items:center;gap:14px;transition:opacity .4s;pointer-events:none}
+#lgi .itap i{width:46px;height:46px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);animation:liRing 1.8s ease-in-out infinite}
+#lgi .iskip{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));z-index:4;font-family:var(--body);font-size:11px;color:rgba(255,255,255,.35);opacity:0;transition:opacity .5s 1s}
+#lgi.play .iskip{opacity:1}
+#lgi.play .itap{opacity:0}
+#lgi.play .iw .c{animation:liIn .9s cubic-bezier(.2,.9,.2,1) forwards,liGlow 1.8s ease forwards,liShine .5s ease;animation-delay:calc(.45s + var(--i)*.17s),calc(.45s + var(--i)*.17s),calc(2.05s + var(--i)*.08s)}
+#lgi.play .iw .lk{animation:liLink .5s cubic-bezier(.2,1.6,.4,1) forwards;animation-delay:calc(.66s + var(--i)*.17s)}
+#lgi.play .iw{animation:liFlash 1s 1.85s ease}
+#lgi.play .beam{animation:liBeam 1.45s .3s cubic-bezier(.45,0,.55,1) forwards}
+#lgi.play .bloom{animation:liBloom 2.4s 1.75s ease-out forwards}
+#lgi.play .itag{animation:liTag 1.3s 2.05s ease-out forwards}
+#lgi.play .p{animation:liPt 3.4s var(--d) ease-out forwards}
+@keyframes liIn{to{opacity:1;filter:blur(0);transform:none}}
+@keyframes liGlow{0%{text-shadow:0 0 30px rgba(var(--c),1),0 0 70px rgba(var(--c),.7)}100%{text-shadow:0 0 16px rgba(var(--c),.45)}}
+@keyframes liLink{to{opacity:1;transform:none}}
+@keyframes liFlash{30%{filter:brightness(1.7) drop-shadow(0 0 20px rgba(255,255,255,.55))}}
+@keyframes liShine{40%{filter:brightness(1.9) drop-shadow(0 0 10px rgba(255,255,255,.7))}}
+@keyframes liBeam{0%{opacity:0;transform:translateX(12vw)}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(88vw)}}
+@keyframes liBloom{0%{opacity:0;transform:scale(.35) rotate(0)}30%{opacity:.55}100%{opacity:.2;transform:scale(1.15) rotate(70deg)}}
+@keyframes liTag{to{opacity:.85;letter-spacing:4px}}
+@keyframes liPt{0%{opacity:0;transform:none}25%{opacity:var(--o)}100%{opacity:0;transform:translate(var(--x),var(--y))}}
+@keyframes liRing{0%,100%{transform:scale(.85);opacity:.35}50%{transform:scale(1.05);opacity:.9}}
+
+/* bütün yazılar lampanın indiki rəngini (--lgt) alır: işıq hansı hərfin rəngindədirsə, aşağıdakı forma da o rəngdə olur */
+#lg .tag,#lg .lhint,#lg .snap,#lg .lskip,#lg .lform h2,#lg .lform .sub,#lg .lform label,#lg .lform select,#lg .lform input,#lg .lbtn{transition-property:color,background,border-color,box-shadow,opacity,transform,clip-path;transition-duration:.5s}
+#lg .word .lk path{stroke:rgb(var(--lgt));transition:stroke .5s}
+#lg.lit .tag{color:rgba(var(--lgt),.8)}
+#lg .lhint,#lg .lskip{color:rgba(var(--lgt),.7)}
+#lg .snap{color:rgba(var(--lgt),.8);border-color:rgba(var(--lgt),.25)}
+#lg .snap.live{color:rgb(var(--lgt))}
+#lg .lform h2{color:rgb(var(--lgt));text-shadow:0 0 16px rgba(var(--lgt),.35)}
+#lg .lform .sub,#lg .lform label{color:rgba(var(--lgt),.72)}
+#lg .lform select,#lg .lform input{color:rgb(var(--lgt));border-color:rgba(var(--lgt),.22)}
+#lg .lform select:focus,#lg .lform input:focus{border-color:rgb(var(--lgt));box-shadow:0 0 0 3px rgba(var(--lgt),.2)}
+#lg .lform select option{color:rgb(var(--lgt))}
+#lg .pin::placeholder{color:rgba(var(--lgt),.45)}
+#lg .lrem input{border-color:rgba(var(--lgt),.6)!important}
+#lg .lbtn{color:#1a0f06;background:linear-gradient(180deg,color-mix(in srgb,rgb(var(--lgt)) 65%,#fff),rgb(var(--lgt)));box-shadow:0 6px 18px rgba(var(--lgt),.3)}
 @media (prefers-reduced-motion:reduce){#lg *{animation:none!important;transition:none!important}}
 </style>
 
@@ -410,7 +540,7 @@ body.lg-on{overflow:hidden}
 <header>
   <div class="wrap">
     <div class="top">
-      <div class="brand"><div class="bn"><b>Almond</b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
+      <div class="brand"><div class="bn"><b class="abrand" aria-label="Almond"><i style="--c:247,213,148">A</i><i style="--c:255,143,177">l</i><i style="--c:142,219,138">m</i><i style="--c:183,156,255">o</i><i style="--c:255,168,87">n</i><i style="--c:124,196,255">d</i></b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
       <div class="who"><select id="role" aria-label="Kim kimi baxırsınız"></select></div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -664,10 +794,19 @@ const Cloud = (() => {
   // Giriş siyahısı: şöbə adı → istifadəçi adı (Supabase-də <ad>@almond.local)
   const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["admin","Admin"]];
   const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || ""; } catch(e){ return ""; } };
+  // "Parolu yadda saxla": işarələnibsə, uğurlu girişdən sonra şöbənin parolu YALNIZ bu cihazın brauzerində saxlanır;
+  // işarəni götürəndə dərhal silinir. Parol səhv çıxsa da silinir.
+  const REM = "almond-remember";
+  const remAll = () => { try { return JSON.parse(localStorage.getItem(REM)) || {}; } catch(e){ return {}; } };
+  const remSet = (u, p) => { const m = remAll(); if (p) m[u] = p; else delete m[u]; try { if (Object.keys(m).length) localStorage.setItem(REM, JSON.stringify(m)); else localStorage.removeItem(REM); } catch(e){} };
   function loginView(msg){
     $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true; $("main").innerHTML = "";
     lampLogin(msg, '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>');
     const note = t => { $("lnote").textContent = t; };
+    const fillRem = () => { const p = remAll()[$("lu").value]; $("lrem").checked = !!p; $("lp").value = p || ""; };
+    fillRem();
+    $("lu").onchange = fillRem;
+    $("lrem").onchange = () => { if (!$("lrem").checked) remSet($("lu").value, ""); };
     $("lf").onsubmit = async e => { e.preventDefault();
       const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u) return note("Şöbəni seçin"); if (!p) return note("Parolu yazın");
       try { localStorage.setItem("almond-last-login", u); } catch(e){}
@@ -675,8 +814,9 @@ const Cloud = (() => {
       // 4 rəqəmli PIN → Supabase parolu "almond"+PIN (Supabase ən az 6 simvol istəyir)
       const pw = /^\d{4}$/.test(p) ? "almond"+p : p;
       note("");
-      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); keepSess(); await start(); }
-      catch(err){ if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
+      const rem = $("lrem").checked;
+      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); remSet(u, rem ? p : ""); keepSess(); lgHold = lgMothToButton(); await start(); }
+      catch(err){ if (!C.sess && /^Parol səhvdir/.test(err.message)) remSet(u, ""); if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
   }
   async function start(){
     if (!C.sess) return loginView();
@@ -689,6 +829,7 @@ const Cloud = (() => {
     if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
+    if (lgHold){ await lgHold; lgHold = null; }
     lampClose(); $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
@@ -1126,12 +1267,60 @@ async function hardRefresh(){
   if (b){ b.disabled = false; b.classList.remove("spin"); }
   toast(ok ? "Yeniləndi ✓" : "İnternet yoxdur — bağlantını yoxlayın");
 }
+// ----- İçəri dizayn köməkçiləri -----
+const DEPT_C = { "Anbar":"247,213,148","Anbar (İnqilab)":"255,168,87","Satınalma":"255,143,177","Keyfiyyət":"142,219,138","Texnoloq":"183,156,255",
+  "İstehsalat":"255,128,106","Çeşidləmə":"110,218,205","Satış":"255,206,84","Rəhbərlik":"124,196,255","Admin":"205,200,215" };
+function setTheme(t){ document.documentElement.dataset.theme = t; try { localStorage.setItem("almond-theme", t); } catch(e){}
+  const m = document.getElementById("thc"); if (m) m.content = t==="dark" ? "#160f09" : "#5C2E0E";
+  const b = $("thm"); if (b){ b.textContent = t==="dark" ? "☀️" : "🌙"; b.title = t==="dark" ? "Gündüz görünüşü" : "Gecə (lampa) görünüşü"; } }
+function greet(){
+  const d = new Date(), h = d.getHours();
+  const hi = h<5 ? "Gecəniz xeyrə 🌙" : h<12 ? "Sabahınız xeyir ☀️" : h<18 ? "Günortanız xeyir 🌤" : "Axşamınız xeyir 🌙";
+  const W = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"], M = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avqust","sentyabr","oktyabr","noyabr","dekabr"];
+  return '<div class="greet"><b>'+hi+'</b><span>'+esc(role)+' · '+W[d.getDay()]+', '+d.getDate()+' '+M[d.getMonth()]+'</span></div>';
+}
+// Sifarişin zənciri halqalar kimi: sifariş verən → Satınalma → Gəldi → Keyfiyyət (yalnız Anbarın öz sifarişi)
+// → Anbar/İnqilab qəbul → Texnoloq (Texnoloq sifarişi / nümunə) → (problem varsa: Satınalma cavabı) → Bitdi
+function chainRings(o, st){
+  if (o.status==="redd") return "";
+  const tech = o.items.some(i=>i.tech) || o.techOrder || o.sample;
+  const short = w => w==="Anbar (İnqilab)" ? "İnqilab" : w;
+  const L = [short(o.from), "Satınalma", "Gəldi"];
+  if (hasQC(o)) L.push("Keyfiyyət");
+  L.push("Qəbul");
+  if (tech) L.push("Texnoloq");
+  const prob = o.recvDone && needsAnswer(o);
+  if (prob) L.push("Cavab");
+  L.push("Bitdi");
+  const at = n => L.lastIndexOf(n);
+  let idx;
+  if (held(o) || o.status==="acik") idx = 1;
+  else if (o.status==="yolda") idx = at("Gəldi");
+  else if (o.status==="anbar") idx = hasQC(o) && !o.qcAt ? at("Keyfiyyət") : at("Qəbul");
+  else if (o.recvDone && techPending(o)) idx = at("Texnoloq");
+  else if (prob) idx = at("Cavab");
+  else idx = L.length;                                   // hamısı bitib
+  const bad = held(o) || prob || stuck(o);
+  const sc = bad ? "var(--bad)" : "var(--"+({ chk:"qc", arch:"arch" }[st.k] || st.k)+")";
+  return '<div class="ring" style="--sc:'+sc+'" aria-label="Zəncir">'+L.map((l,i)=>
+    '<div class="st'+(i<idx?" done":i===idx?" cur":"")+'" title="'+esc(l)+'"><i class="o"></i><span>'+esc(l)+'</span></div>').join("")+'</div>';
+}
+// tab dəyişəndə: məzmun yumşaq girir, rəqəmlər 0-dan sayılır
+let lastTab = null;
+function tabFx(){
+  if (tab===lastTab) return; lastTab = tab;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const m = $("main"); m.classList.remove("tabin"); void m.offsetWidth; m.classList.add("tabin");
+  m.querySelectorAll(".pipe b, h2 .cnt").forEach(el=>{ const n = parseInt(el.textContent, 10); if (!(n>0) || String(n)!==el.textContent.trim()) return;
+    const t0 = performance.now(); (function f(t){ const k = Math.min(1,(t-t0)/550); el.textContent = Math.round(n*(1-Math.pow(1-k,3))); if (k<1) requestAnimationFrame(f); })(t0); });
+}
 function renderRole(){
   const me = ONLINE ? Cloud.me() : null;
   const list = me && !me.is_admin ? [me.dept] : DEPTS;
   $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
   $("role").disabled = list.length < 2;
   if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="rf" class="outb rfb" title="Yenilə">🔄</button><button id="out" class="outb" title="Hesabdan çıxış">🚪<span class="tx"> Çıxış</span></button>'); $("out").onclick = () => Cloud.logout(); $("rf").onclick = hardRefresh; }
+  if (!$("thm")){ $("role").insertAdjacentHTML("afterend", '<button id="thm" class="outb thb"></button>'); $("thm").onclick = () => setTheme(document.documentElement.dataset.theme==="dark" ? "light" : "dark"); setTheme(document.documentElement.dataset.theme||"dark"); }
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
 function renderTabs(){
@@ -1145,10 +1334,12 @@ function renderTabs(){
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
   autoMissing(); stuckSignals(); reportSignals(); pushNotify(); dlDone = false;
+  document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
+  tabFx();
 }
 
 // ----- Keyfiyyət: Anbar "Gəldi" basan mallar — yoxlama vaxtıdır -----
@@ -1156,28 +1347,6 @@ function render(){
 // Satınalma firma ilə danışıb nümunəni özü yazır (gün + mallar) → Anbar və Texnoloq görür.
 // Xəbərsiz gələn nümunəni Anbar qeyd edir → Satınalma və Rəhbərlik xəbər tutur, hesabatda sayılır.
 const held = o => !!(o.hold && !o.holdDone && o.status!=="redd");     // xəbərsiz nümunə: Satınalma adını yazana qədər saxlanılır
-// Zəncir: sifariş verən → Satınalma → Gəldi → Keyfiyyət (Anbar) → Qəbul → Texnoloq (Texnoloq/nümunə) → Bitdi
-function chainHtml(o){
-  if (o.status==="redd") return "";
-  const tech = o.items.some(i=>i.tech) || o.techOrder || o.sample;
-  const S2 = [["📝",o.from==="Anbar (İnqilab)"?"İnqilab":o.from], ["🛒","Satınalma"], ["📦","Gəldi"]];
-  if (hasQC(o)) S2.push(["🔍","Keyfiyyət"]);
-  S2.push(["✅",(o.wh==="Anbar (İnqilab)"?"İnqilab":"Anbar")+" qəbul"]);
-  if (tech) S2.push(["🧪","Texnoloq"]);
-  const prob = o.recvDone && needsAnswer(o);
-  if (prob) S2.push(["⚠","Satınalma cavabı"]);
-  S2.push(["🏁","Bitdi"]);
-  const idx = name => S2.findIndex(x=>x[1]===name || x[1].endsWith(name));
-  let cur;
-  if (held(o) || o.status==="acik") cur = 1;
-  else if (o.status==="yolda") cur = idx("Gəldi");
-  else if (o.status==="anbar") cur = hasQC(o) && !o.qcAt ? idx("Keyfiyyət") : idx(" qəbul");
-  else if (o.recvDone && techPending(o)) cur = idx("Texnoloq");
-  else if (prob) cur = idx("Satınalma cavabı");
-  else cur = S2.length;
-  const bad = k => k===cur && (S2[k][0]==="⚠" || held(o) || stuck(o));
-  return '<div class="chain">'+S2.map((x,k)=>'<span class="cs '+(k<cur?"done":bad(k)?"bad":k===cur?"cur":"next")+'">'+(k<cur?"✓":x[0])+' '+esc(x[1])+'</span>').join('<i>›</i>')+'</div>';
-}
 const sampleTag = o => (o.sample?'<span class="pill p-qc">🧪 Nümunə</span>':"")+(o.unannounced?'<span class="pill p-bad">⚠ Xəbərsiz</span>':"");
 let sDraft = null;
 function sampleBox(mode){
@@ -1306,7 +1475,7 @@ function pipe(){
 }
 function vHome(){
   const work = myWork();
-  let html = alertsHtml();
+  let html = greet() + alertsHtml();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (WORK_TITLE[role] || work.length){
     html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>';
@@ -1327,7 +1496,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v32</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v33</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1390,7 +1559,7 @@ function orderCard(o){
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'" title="Sifarişi düzəlt">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
-    chainHtml(o)+'<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
+    chainRings(o, st)+'<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     waitPill(o) + bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
     (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + '</article>';
@@ -1879,8 +2048,8 @@ function orderBrief(o){
     return '<span class="ic'+(pr?" bad":"")+'">'+thumb(i.pid,1)+esc(pname(i.pid))+' <b>'+esc(i.qty)+'</b>'+leftTag(i)+depTag(i)+(pr?' <span class="pill p-bad">'+esc(/^Keyfiyyət/.test(pr)?"Keyfiyyət ✗":/^Texnoloq/.test(pr)?"Texnoloq ✗":/^Satınalma/.test(pr)?"Yoxdur":pr.split(" ·")[0])+'</span>':"")+'</span>'; }).join("")+'</div>';
   return '<article class="oc s-'+st.k+'" id="o-'+o.id+'"><div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+
     (canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sil</button>':"")+'</div>'+
-    '<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
-    chainHtml(o)+waitPill(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
+    chainRings(o, st)+'<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
+    waitPill(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
     '<button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı: Satınalma, Keyfiyyət, Anbar</button></article>';
 }
 let ofrom = "all";
@@ -2711,6 +2880,64 @@ draft = newDraft();
   setTimeout(tickClock, (60 - new Date().getSeconds())*1000 + 50);
 })();
 
+// ===================== Açılış səhnəsi (giriş ekranından əvvəl) =====================
+// Qara ekran → "Toxunun" (brauzerlər səsi yalnız toxunuşdan sonra açır) → ≈3.5 san səs + işıq şousu → lampa ekranı. İkinci toxunuş ötürür.
+const LG_COLORS = ["247,213,148","255,143,177","142,219,138","183,156,255","255,168,87","124,196,255"];
+const LG_LINK = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
+var lgIntroShown = false, lgMoth = null, lgHold = null;
+// Parol düzdürsə: pərvanə "Daxil ol" düyməsinə uçub qonur, düymə yüngülcə basılır, sonra proqram açılır (yükləmə bu vaxt arxada gedir)
+function lgMothToButton(){
+  const b = $("lb"); if (!lgMoth || !b) return Promise.resolve();
+  return lgMoth.go(b).then(()=>{ b.classList.add("landed"); return new Promise(r=>setTimeout(r, 450)); });
+}
+function lgIntroSound(){
+  const a = lgAC(); if (!a) return null; const t = a.currentTime+.05;
+  const master = a.createGain(); master.gain.value = .9; master.connect(a.destination);
+  // sadə otaq əks-sədası (yaradılmış impuls)
+  const rev = a.createConvolver(), len = Math.floor(a.sampleRate*2.6), ir = a.createBuffer(2, len, a.sampleRate);
+  for (let ch=0; ch<2; ch++){ const d = ir.getChannelData(ch); for (let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2.4); }
+  rev.buffer = ir; const wet = a.createGain(); wet.gain.value = .4; rev.connect(wet).connect(master);
+  const out = n => { n.connect(master); n.connect(rev); };
+  const tone = (type, f, at, peak, dur, attack) => { const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, at); g.gain.linearRampToValueAtTime(peak, at+(attack||.01)); g.gain.exponentialRampToValueAtTime(.0001, at+dur);
+    o.connect(g); out(g); o.start(at); o.stop(at+dur+.05); };
+  // 1) alçaq, yavaş qalxan uğultu
+  [55, 82.5].forEach((f,i)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(i ? .07 : .16, t+1.7); g.gain.exponentialRampToValueAtTime(.0001, t+3.9);
+    o.connect(g); out(g); o.start(t); o.stop(t+4); });
+  // 2) zərbəyə qədər yüksələn "vuş" (süzgəcdən keçən küy)
+  const nb = a.createBuffer(1, a.sampleRate*2, a.sampleRate), nd = nb.getChannelData(0); for (let i=0;i<nd.length;i++) nd[i] = Math.random()*2-1;
+  const ns = a.createBufferSource(), lp = a.createBiquadFilter(), ng = a.createGain(); ns.buffer = nb; lp.type = "lowpass";
+  lp.frequency.setValueAtTime(250, t); lp.frequency.exponentialRampToValueAtTime(4000, t+1.8);
+  ng.gain.setValueAtTime(.0001, t); ng.gain.linearRampToValueAtTime(.05, t+1.6); ng.gain.exponentialRampToValueAtTime(.0001, t+2.05);
+  ns.connect(lp).connect(ng); out(ng); ns.start(t); ns.stop(t+2.1);
+  // 3) hər hərfə bir zəng notu (pentatonik, yuxarı qalxır)
+  [523.25, 587.33, 659.25, 783.99, 880, 1046.5].forEach((f,i)=>{ const at = t+.45+i*.17; tone("triangle", f, at, .07, 1.3); tone("sine", f*2, at, .025, .7); });
+  // 4) bütün hərflər parlayanda isti akkord + parıltı
+  const hit = t+1.85;
+  [130.81, 196, 261.63, 329.63, 392, 523.25].forEach(f=>tone("triangle", f, hit, .045, 2.4, .05));
+  [2093, 2637, 3136].forEach((f,i)=>tone("sine", f, hit+i*.06, .02, .9));
+  return master;
+}
+function lgIntro(){
+  if (lgIntroShown || matchMedia("(prefers-reduced-motion: reduce)").matches) return; lgIntroShown = true;
+  const L = "Almond".split(""), el = document.createElement("div"); el.id = "lgi"; el.setAttribute("role", "button"); el.setAttribute("aria-label", "Açılış — başlamaq üçün toxunun"); el.tabIndex = 0;
+  let pts = ""; for (let i=0;i<26;i++){ const ang = Math.random()*Math.PI*2, r = 60+Math.random()*180;
+    pts += '<span class="p" style="left:'+(20+Math.random()*60)+'%;top:'+(35+Math.random()*30)+'%;--x:'+(Math.cos(ang)*r).toFixed(0)+'px;--y:'+(Math.sin(ang)*r).toFixed(0)+'px;--o:'+(.3+Math.random()*.6).toFixed(2)+';--d:'+(1.7+Math.random()*.5).toFixed(2)+'s"></span>'; }
+  el.innerHTML = '<div class="bloom"></div>'+pts+'<div class="beam"></div>'+
+    '<h1 class="iw" aria-label="Almond">'+L.map((c,i)=>'<span class="c" style="--c:'+LG_COLORS[i]+';--i:'+i+'">'+c+'</span>'+(i<L.length-1 ? LG_LINK.replace('class="lk"','class="lk" style="--i:'+i+'"') : "")).join("")+'</h1>'+
+    '<div class="itag">Anbar zənciri</div>'+
+    '<div class="itap"><i></i>Toxunun</div><div class="iskip">Ötürmək üçün toxunun</div>';
+  document.body.appendChild(el);
+  let T = 0, snd = null;
+  const finish = () => { clearTimeout(T); if (el.classList.contains("out")) return; el.classList.add("out");
+    if (snd){ try { const a = lgAC(); snd.gain.setTargetAtTime(.0001, a.currentTime, .25); } catch(e){} }
+    setTimeout(()=>el.remove(), 900); };
+  const start = () => { if (el.classList.contains("play")) return finish(); el.classList.add("play"); snd = lgIntroSound(); T = setTimeout(finish, 3700); };
+  el.addEventListener("click", start);
+  el.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); start(); } });
+  el.focus({ preventScroll:true });
+}
 // ===================== Giriş ekranı: zəncirdən asılan lampa =====================
 // Zənciri çək (və ya bas) → klik səsi, lampa yanır, "Almond" hərfləri bir-bir yanır, aralarına halqalar düşür → giriş forması açılır.
 let lgAudio = null;
@@ -2725,31 +2952,53 @@ function lgClick(){ const a = lgAC(); if (!a) return; const t = a.currentTime;
 function lgClink(delay){ const a = lgAC(); if (!a) return; const t = a.currentTime+(delay||0);
   [[2200,.12],[3300,.08],[4400,.04]].forEach(([f,v])=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
     g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.35); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.4); }); }
-function lampClose(){ const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey); }
+function lampClose(){ lgSnapStop(); const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey); }
 let lampOn = null;
+// Barmaq çırtması: mikrofonda qısa, kəskin, yüksək tezlikli səs → lampa yanır/sönür. Mikrofon yalnız istifadəçi düyməyə basanda açılır
+// və giriş ekranı bağlananda dərhal söndürülür. Səs heç yerə yazılmır/göndərilmir.
+let lgSnap = null;
+function lgSnapStop(){ if (!lgSnap) return; cancelAnimationFrame(lgSnap.raf); lgSnap.stream.getTracks().forEach(t=>t.stop()); try { lgSnap.src.disconnect(); } catch(e){} lgSnap = null; }
+async function lgSnapStart(onSnap){
+  const a = lgAC(); if (!a || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("dəstəklənmir");
+  const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+  const src = a.createMediaStreamSource(stream), hp = a.createBiquadFilter(), an = a.createAnalyser();
+  hp.type = "highpass"; hp.frequency.value = 1800; an.fftSize = 512; src.connect(hp).connect(an);
+  const buf = new Float32Array(an.fftSize); let bg = .01, quietUntil = performance.now()+600, hot = 0;
+  lgSnap = { stream, src, raf:0 };
+  (function tick(){
+    an.getFloatTimeDomainData(buf); let pk = 0, sq = 0;
+    for (let i=0;i<buf.length;i++){ const v = Math.abs(buf[i]); if (v>pk) pk = v; sq += v*v; }
+    const rms = Math.sqrt(sq/buf.length), now = performance.now();
+    // kəskin zirvə: fon səviyyəsindən çox yüksək və zirvə/rms nisbəti böyük (çırtma qısa impulsdur, danışıq deyil)
+    if (now > quietUntil && pk > Math.max(.12, bg*9) && pk/(rms+1e-6) > 3.2){ if (++hot >= 1){ hot = 0; quietUntil = now+900; onSnap(); } }
+    else { hot = 0; bg = bg*.97 + rms*.03; }
+    lgSnap.raf = requestAnimationFrame(tick); })();
+}
 function lampKey(e){ if (lampOn && /^[0-9a-z]$/i.test(e.key) && !$("lg").classList.contains("open")) lampOn(true); }
 function lampLogin(msg, selectHtml){
   lampClose();
   const NS = "http://www.w3.org/2000/svg";
-  const L = "Almond".split(""), link = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
+  const L = "Almond".split(""), LC = LG_COLORS, link = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
   const el = document.createElement("div"); el.id = "lg";
   el.innerHTML = '<div class="cone" aria-hidden="true"></div>'+
     '<div class="lamp"><svg viewBox="0 0 200 250" role="img" aria-label="Zəncirdən asılan lampa"><defs>'+
-      '<radialGradient id="lgBulb" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF4D6"/><stop offset=".35" stop-color="#FFD48A" stop-opacity=".75"/><stop offset="1" stop-color="#FFB347" stop-opacity="0"/></radialGradient>'+
+      '<radialGradient id="lgBulb" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF4D6"/><stop offset=".35" style="stop-color:rgb(var(--lgt));stop-opacity:.75"/><stop offset="1" style="stop-color:rgb(var(--lgt));stop-opacity:0"/></radialGradient>'+
       '<linearGradient id="lgShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1c130c"/><stop offset=".45" stop-color="#3a2717"/><stop offset="1" stop-color="#140d08"/></linearGradient></defs>'+
       '<g class="swing"><g id="lgHang" fill="none" stroke="#6b5136" stroke-width="3"></g>'+
       '<rect x="90" y="108" width="20" height="14" rx="3" fill="#2a1d13" stroke="#6b5136" stroke-width="1.5"/>'+
       '<path d="M100 118 C70 120 42 146 34 178 L166 178 C158 146 130 120 100 118 Z" fill="url(#lgShade)" stroke="#6b5136" stroke-width="1.5"/>'+
       '<path class="shade-in" d="M42 176 C56 168 144 168 158 176 L166 178 L34 178 Z"/>'+
       '<circle class="bulb-glow" cx="100" cy="182" r="52" fill="url(#lgBulb)"/><circle class="bulb" cx="100" cy="182" r="12"/>'+
-      '<g class="pull" id="lgPull" tabindex="0" role="button" aria-label="Lampanı yandırmaq üçün zənciri çəkin"><rect class="pull-hit" x="122" y="168" width="40" height="80"/><g id="lgBeads"></g><circle class="knob" id="lgKnob" cx="142" cy="226" r="7"/></g>'+
+      '<g class="pull" id="lgPull" tabindex="0" role="button" aria-label="Lampanı yandırmaq üçün zənciri çəkin"><rect class="pull-hit" x="112" y="160" width="60" height="100"/><g id="lgBeads"></g><circle class="knob" id="lgKnob" cx="142" cy="226" r="7"/></g>'+
       '</g></svg></div>'+
     '<div class="lhint"><span class="arr">↓</span> Zənciri çəkin</div>'+
-    '<h1 class="word" aria-label="Almond">'+L.map((c,i)=>'<span class="ch" aria-hidden="true">'+c+'</span>'+(i<L.length-1?link:"")).join("")+'</h1>'+
+    '<button class="snap" id="lgSnap" type="button" aria-pressed="false">🫰 Barmaq çırtması ilə yandır</button>'+
+    '<h1 class="word" aria-label="Almond">'+L.map((c,i)=>'<span class="ch" aria-hidden="true" style="--c:'+LC[i]+'">'+c+'</span>'+(i<L.length-1?link:"")).join("")+'</h1>'+
     '<div class="tag">Anbar zənciri</div>'+
     '<form class="lform" id="lf"><h2>Daxil olun</h2><div class="sub">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>'+
       '<label>Şöbə'+selectHtml+'</label>'+
       '<label>Parol<input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="• • • •"></label>'+
+      '<label class="lrem"><input type="checkbox" id="lrem">Parolu yadda saxla</label>'+
       '<button class="lbtn" id="lb">Daxil ol</button><div class="lnote" id="lnote">'+esc(msg||"")+'</div></form>'+
     '<button class="lskip" id="lgSkip" type="button">Animasiyasız aç</button>';
   document.body.appendChild(el); document.body.classList.add("lg-on");
@@ -2760,18 +3009,26 @@ function lampLogin(msg, selectHtml){
     g.appendChild(e); }
   const beads = $("lgBeads");
   for (let y=176; y<=216; y+=6){ const c = document.createElementNS(NS,"circle"); c.setAttribute("class","bead"); c.setAttribute("cx",142); c.setAttribute("cy",y); c.setAttribute("r",1.9); beads.appendChild(c); }
-  let lit = false;
+  let lit = false, cur = -1, openT = 0;
+  const chs = [...el.querySelectorAll(".word .ch")];
+  // hər yandırmada sıradakı hərf: A → l → m → o → n → d → A …; işıq onun rəngini alır, o hərf parlayır
+  let moth = null;
+  const next = () => { cur = (cur+1) % chs.length; el.style.setProperty("--lgt", LC[cur]); chs.forEach((c,i)=>c.classList.toggle("act", i===cur)); if (moth) moth.go(cur); };
   lampOn = quiet => {
-    if (lit){ el.classList.toggle("on"); return; }
-    lit = true; if (!quiet) lgClick(); el.classList.add("on");
+    // sonrakı yandırmalarda: işıq yananda forma yenidən açılır, sönəndə qatlanıb gizlənir
+    if (lit){ clearTimeout(openT);
+      if (el.classList.toggle("on")){ if (!quiet) lgClick(); next(); openT = setTimeout(()=>el.classList.add("open"), quiet ? 0 : 180); }
+      else { chs.forEach(c=>c.classList.remove("act")); el.classList.remove("open"); }
+      return; }
+    lit = true; if (!quiet) lgClick(); el.classList.add("on"); next();
     const fast = quiet || matchMedia("(prefers-reduced-motion: reduce)").matches, step = fast ? 0 : 85;
-    const chs = [...el.querySelectorAll(".word .ch")], lks = [...el.querySelectorAll(".word .lk")];
+    const lks = [...el.querySelectorAll(".word .lk")];
     chs.forEach((c,i)=>{ c.style.transitionDelay = (120+i*step)+"ms"; });
     lks.forEach((l,i)=>{ l.style.transitionDelay = (160+i*step+step/2)+"ms"; });
     requestAnimationFrame(()=>el.classList.add("lit"));
     const end = fast ? 0 : 120+chs.length*step+120;
     if (!quiet) lgClink(end/1000);
-    setTimeout(()=>el.classList.add("done","open"), end);
+    setTimeout(()=>{ el.classList.add("done","open"); chs.forEach(c=>{ c.style.transitionDelay = ""; }); }, end);
   };
   if (msg) lampOn(true);                         // səhv mesajı varsa (məs. parol səhvdir) — birbaşa açıq
   const pull = $("lgPull"), knob = $("lgKnob");
@@ -2779,13 +3036,77 @@ function lampLogin(msg, selectHtml){
   const setPull = v => { knob.setAttribute("cy", 226+v); beads.setAttribute("transform", "translate(0,"+v*.6+")"); };
   pull.addEventListener("pointerdown", e => { y0 = e.clientY; dy = 0; try { pull.setPointerCapture(e.pointerId); } catch(x){} lgAC(); });
   pull.addEventListener("pointermove", e => { if (y0 == null) return; dy = Math.max(0, Math.min(34, e.clientY-y0)); setPull(dy); });
-  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null; const from = dy, t0 = performance.now();
-    (function back(t){ const k = Math.min(1,(t-t0)/220); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); lampOn(); });
-  pull.addEventListener("pointercancel", () => { y0 = null; setPull(0); });
+  // yalnız zəncir həqiqətən aşağı çəkiləndə yanır; sadəcə basanda zəncir yüngülcə titrəyir və ipucu göstərilir
+  const PULL_MIN = 14;
+  const spring = (from, ms) => { const t0 = performance.now();
+    (function back(t){ const k = Math.min(1,(t-t0)/ms); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); };
+  const hint = el.querySelector(".lhint");
+  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null;
+    if (dy >= PULL_MIN){ spring(dy, 220); lampOn(); return; }
+    spring(8, 420); hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); });
+  pull.addEventListener("pointercancel", () => { if (y0 == null) return; y0 = null; if (dy >= PULL_MIN){ spring(dy, 220); lampOn(); } else setPull(0); });
+  const snapBtn = $("lgSnap");
+  const snapOn = on => { snapBtn.classList.toggle("live", on); snapBtn.setAttribute("aria-pressed", on); snapBtn.textContent = on ? "Çırtın — dinləyirəm (söndür)" : "🫰 Barmaq çırtması ilə yandır"; };
+  snapBtn.onclick = async () => {
+    if (lgSnap){ lgSnapStop(); snapOn(false); return; }
+    snapBtn.disabled = true;
+    try { await lgSnapStart(() => { spring(18, 300); lampOn(); }); snapOn(true); }
+    catch(e){ snapBtn.textContent = "Mikrofona icazə verilmədi"; }
+    snapBtn.disabled = false; };
   pull.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); lampOn(); } });
-  el.querySelector(".lamp").addEventListener("click", e => { if (!e.target.closest("#lgPull")) lampOn(); });
   $("lgSkip").onclick = () => lampOn(true);
   document.addEventListener("keydown", lampKey);
+  // ---- Pərvanə ----
+  moth = (() => {
+    const m = document.createElement("div"); m.className = "moth"; m.setAttribute("aria-hidden", "true");
+    const wing = (side) => { const k = side < 0 ? 1 : -1, X = v => 20 + k*v;   // sol/sağ qanad (yuxarıdan görünüş)
+      return '<g class="'+(side<0?"wl":"wr")+'">'+
+        '<path d="M'+X(1)+' 13 C'+X(6)+' 4 '+X(17)+' 2 '+X(19)+' 8 C'+X(19)+' 13 '+X(10)+' 17 '+X(1)+' 16 Z" fill="#cdb894" stroke="#7a6446" stroke-width=".8"/>'+
+        '<path d="M'+X(1)+' 17 C'+X(8)+' 17 '+X(14)+' 21 '+X(11)+' 26 C'+X(7)+' 28 '+X(3)+' 23 '+X(1)+' 19 Z" fill="#b39d78" stroke="#7a6446" stroke-width=".8"/>'+
+        '<circle cx="'+X(11)+'" cy="9" r="2.2" fill="#8a7152" opacity=".7"/></g>'; };
+    m.innerHTML = '<svg viewBox="0 0 40 30">'+wing(-1)+wing(1)+
+      '<path d="M19.2 7.5 C17 4 15 2 13 1.5 M20.8 7.5 C23 4 25 2 27 1.5" fill="none" stroke="#6b5538" stroke-width=".9" stroke-linecap="round"/>'+
+      '<ellipse cx="20" cy="17" rx="2.3" ry="8" fill="#6b5538"/><circle cx="20" cy="8.6" r="2.1" fill="#5a4630"/></svg>';
+    el.appendChild(m);
+    const W = 36, H = 28;
+    let pos = null, rot = 0, raf = 0, target = -1;     // target: -1 = lampa, 0..5 = hərf
+    // nöqtə #lg-in içində (sürüşdürmə nəzərə alınır)
+    const local = (x, y) => { const r = el.getBoundingClientRect(); return { x: x - r.left + el.scrollLeft, y: y - r.top + el.scrollTop }; };
+    const spot = t => {
+      if (t instanceof Element){ const r = t.getBoundingClientRect(); return { ...local(r.left + r.width*.8, r.top + 5), a: -12 }; }   // düymənin üst kənarı, yazının yanında
+      if (t < 0){ const r = el.querySelector(".lamp svg").getBoundingClientRect(); return { ...local(r.left + r.width*.64, r.top + r.height*.51), a: 28 }; }
+      const r = chs[t].getBoundingClientRect(), low = "mon".includes(chs[t].textContent);   // kiçik hərflərin üstü aşağıdadır
+      return { ...local(r.left + r.width/2, r.top + r.height*(low ? .36 : .13)), a: [-8,6,-4,10,-6,4][t] }; };
+    const place = (p, a) => { pos = p; rot = a; m.style.transform = "translate("+(p.x - W/2).toFixed(1)+"px,"+(p.y - H*.7).toFixed(1)+"px) rotate("+a.toFixed(1)+"deg)"; };
+    const snap = () => { const s = spot(target); place(s, s.a); };
+    snap();
+    addEventListener("resize", () => { if (!raf && document.body.contains(m)) snap(); });
+    let done = null;
+    return { go(t){ return new Promise(res => {
+      if (done) done(); done = res;                                                   // əvvəlki uçuş yarımçıq qalıbsa, onu da bitmiş say
+      target = t; cancelAnimationFrame(raf);
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches){ raf = 0; snap(); done = null; return res(); }
+      const p0 = { ...pos }, a0 = rot, t0 = performance.now(), dist = Math.hypot(spot(t).x - p0.x, spot(t).y - p0.y);
+      const dur = Math.min(1700, 750 + dist*2.2), lift = 40 + dist*.35, side = Math.random() < .5 ? -1 : 1;
+      m.classList.add("fly");
+      (function step(now){
+        const k = Math.min(1, (now - t0)/dur), e = k<.5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2, end = spot(t);   // hədəf hər kadrda yenidən ölçülür
+        // əyri yol: yuxarı qalxıb enən qövs + yana yellənmə (pərvanə düz uçmur)
+        const c1 = { x: p0.x + side*30, y: Math.min(p0.y, end.y) - lift }, c2 = { x: end.x - side*25, y: Math.min(p0.y, end.y) - lift*.6 };
+        const u = 1 - e, bx = u*u*u*p0.x + 3*u*u*e*c1.x + 3*u*e*e*c2.x + e*e*e*end.x, by = u*u*u*p0.y + 3*u*u*e*c1.y + 3*u*e*e*c2.y + e*e*e*end.y;
+        const wob = Math.sin(k*Math.PI*6) * 7 * Math.sin(k*Math.PI);
+        const p = { x: bx + wob, y: by + Math.cos(k*Math.PI*5) * 4 * Math.sin(k*Math.PI) };
+        let a = Math.atan2(p.y - pos.y, p.x - pos.x) * 180/Math.PI + 90;            // baş uçuş istiqamətinə baxır
+        if (k > .85) a = a + (end.a - a) * ((k - .85)/.15);                          // qonarkən düzəlir
+        if (k < .1) a = a0 + (a - a0) * (k/.1);
+        place(p, isFinite(a) ? a : rot);
+        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; m.classList.remove("fly"); place(end, end.a); if (done === res){ done = null; res(); } }
+      })(t0);
+    }); } };
+  })();
+  lgMoth = moth;
+  if (cur >= 0) moth.go(cur);                    // lampa artıq yanıbsa (səhv parol mesajı) — pərvanə hərfə keçir
+  if (!msg) lgIntro();                           // səhifə açılanda bir dəfə: qara ekranda loqo şousu
 }
 // Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
 function openDeep(){

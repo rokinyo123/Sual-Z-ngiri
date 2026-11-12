@@ -1,0 +1,240 @@
+[
+ {
+  "t0": 0,
+  "t1": 4.6,
+  "rate": 4.79,
+  "text": "Quranın ilk surəsi ilə son surəsi arasında gizli bir bağ var."
+ },
+ {
+  "t0": 4.8,
+  "t1": 7.23,
+  "rate": 5.36,
+  "text": "O bağ bu üç sözdədir... Maliki yəvmiddin."
+ },
+ {
+  "t0": 7.36,
+  "t1": 11.58,
+  "rate": 5.21,
+  "text": "Hər namazda deyirik, amma içindəki sirləri çoxumuz bilmirik."
+ },
+ {
+  "t0": 11.9,
+  "t1": 13.7,
+  "rate": 5.56,
+  "text": "Gəl, bu üç sözün içinə baxaq."
+ },
+ {
+  "t0": 14.02,
+  "t1": 14.81,
+  "rate": 5.09,
+  "text": "Birinci sir."
+ },
+ {
+  "t0": 15.13,
+  "t1": 18.91,
+  "rate": 4.23,
+  "text": "Bu ayə iki cür oxunur, ikisi də səhihdir."
+ },
+ {
+  "t0": 19.2,
+  "t1": 21.38,
+  "rate": 3.21,
+  "text": "Mâliki... yəni sahib.",
+  "words": {
+   "Mâliki": [
+    19.2,
+    20.38
+   ],
+   "yəni sahib": [
+    20.7,
+    21.38
+   ]
+  }
+ },
+ {
+  "t0": 21.66,
+  "t1": 22.74,
+  "rate": 6.48,
+  "text": "Məliki... yəni hökmdar.",
+  "words": {
+   "Məliki": [
+    21.66,
+    22.1
+   ],
+   "yəni hökmdar": [
+    22.1,
+    22.74
+   ]
+  }
+ },
+ {
+  "t0": 23.06,
+  "t1": 27.06,
+  "rate": 6.49,
+  "text": "Mushafda isə bu söz elə yazılıb ki, hər iki oxunuşu birlikdə daşıyır."
+ },
+ {
+  "t0": 27.38,
+  "t1": 29.83,
+  "rate": 5.31,
+  "text": "Çünki sahib olan hər kəs hökm edə bilmir."
+ },
+ {
+  "t0": 30.14,
+  "t1": 32.22,
+  "rate": 4.82,
+  "text": "Hökm edən hər kəs də sahib deyil."
+ },
+ {
+  "t0": 32.53,
+  "t1": 35.52,
+  "rate": 3.69,
+  "text": "Allah isə həm sahibdir, həm hökmdar."
+ },
+ {
+  "t0": 35.85,
+  "t1": 36.57,
+  "rate": 5.51,
+  "text": "İkinci sir."
+ },
+ {
+  "t0": 36.89,
+  "t1": 39.92,
+  "rate": 3.95,
+  "text": "Burada din, hesab və əvəz deməkdir."
+ },
+ {
+  "t0": 40.24,
+  "t1": 42.31,
+  "rate": 5.8,
+  "text": "Bəs Allah hər günün sahibi deyilmi?"
+ },
+ {
+  "t0": 42.63,
+  "t1": 43.62,
+  "rate": 5.08,
+  "text": "Niyə məhz o gün?"
+ },
+ {
+  "t0": 43.94,
+  "t1": 47.73,
+  "rate": 5.79,
+  "text": "Bir zaman Firon camaatına dedi: Misirin mülkü mənim deyilmi?"
+ },
+ {
+  "t0": 48.62,
+  "t1": 52.5,
+  "rate": 3.87,
+  "text": "O gün isə soruşulacaq: Bu gün mülk kimindir?"
+ },
+ {
+  "t0": 52.7,
+  "t1": 56.24,
+  "rate": 4.52,
+  "text": "Və cavab tək olacaq: Bir olan, qəhhar Allahındır."
+ },
+ {
+  "t0": 56.55,
+  "t1": 57.31,
+  "rate": 5.28,
+  "text": "Üçüncü sir."
+ },
+ {
+  "t0": 57.64,
+  "t1": 61.46,
+  "rate": 4.96,
+  "text": "Fatihədə Allah əvvəl Rəbb, sonra Malik kimi tanıdılır."
+ },
+ {
+  "t0": 61.77,
+  "t1": 64.61,
+  "rate": 5.27,
+  "text": "Sonra deyilir: yalnız Sənə ibadət edirik."
+ },
+ {
+  "t0": 64.95,
+  "t1": 71.47,
+  "rate": 3.83,
+  "text": "Quranın son surəsində də eyni sıra var: Rəbbin-nas... Məlikin-nas... İlahin-nas.",
+  "words": {
+   "Rəbbin-nas": [
+    67.55,
+    68.65
+   ],
+   "Məlikin-nas": [
+    68.94,
+    70.06
+   ],
+   "İlahin-nas": [
+    70.34,
+    71.47
+   ]
+  }
+ },
+ {
+  "t0": 71.8,
+  "t1": 75.65,
+  "rate": 5.71,
+  "text": "Yəni Quran eyni sıra ilə açılır, eyni sıra ilə bağlanır."
+ },
+ {
+  "t0": 75.98,
+  "t1": 85.14,
+  "rate": 4.91,
+  "text": "Peyğəmbərimiz, sallallahu aleyhi və səlləm, xəbər verir ki, qul namazda Maliki yəvmiddin deyəndə, Allah buyurur: Qulum Məni ucaltdı."
+ },
+ {
+  "t0": 85.47,
+  "t1": 89.03,
+  "rate": 5.34,
+  "text": "Başqa bir rəvayətdə isə: Qulum işini Mənə tapşırdı."
+ },
+ {
+  "t0": 89.36,
+  "t1": 93.36,
+  "rate": 5.5,
+  "text": "Bəs sən bu gün namazda bu ayəni deyəndə, nəyini Ona tapşırdın?"
+ },
+ {
+  "t0": 93.68,
+  "t1": 95.18,
+  "rate": 4.66,
+  "text": "Qorxunu? Sabahını?"
+ },
+ {
+  "t0": 95.51,
+  "t1": 96.82,
+  "rate": 6.9,
+  "text": "Bəlkə də heç fikir vermədin."
+ },
+ {
+  "t0": 97.14,
+  "t1": 100.14,
+  "rate": 5.99,
+  "text": "Növbəti namazda bu ayəyə çatanda, bir anlıq dayan."
+ },
+ {
+  "t0": 100.47,
+  "t1": 101.99,
+  "rate": 3.94,
+  "text": "Bil ki, cavab gəlir."
+ },
+ {
+  "t0": 102.31,
+  "t1": 104.85,
+  "rate": 5.11,
+  "text": "Növbəti videoda: İyyakə nəbudu."
+ },
+ {
+  "t0": 105.17,
+  "t1": 109.15,
+  "rate": 5.03,
+  "text": "Bu ayədə bir söz yerini dəyişib, və bu, hər şeyi dəyişir."
+ },
+ {
+  "t0": 109.47,
+  "t1": 110.84,
+  "rate": 6.53,
+  "text": "Abunə olmağı unutma."
+ }
+]
