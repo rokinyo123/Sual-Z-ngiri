@@ -419,6 +419,18 @@ body.lg-on{overflow:hidden}
 #lg .lskip{z-index:3;margin-top:14px;background:none;border:0;color:var(--lgm);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
 #lg.open .lskip{display:none}
 /* ===== Açılış səhnəsi: qara ekran, "Almond" hərfləri öz rənglərində işıq şüası ilə bir-bir yanır, halqalarla birləşir, parlayır (≈3.5 san) ===== */
+/* ===== Pərvanə: qaranlıqda lampanın üstündə oturur; hər yandırmada sıradakı hərfə uçub qonur ===== */
+#lg .moth{position:absolute;left:0;top:0;width:36px;height:28px;z-index:5;pointer-events:none;will-change:transform;
+  filter:brightness(.5) saturate(.6);transition:filter .5s ease}
+#lg.on .moth{filter:brightness(1) drop-shadow(0 0 5px rgba(var(--lgt),.65))}
+#lg .moth svg{width:100%;height:100%;overflow:visible;display:block}
+#lg .moth .wl,#lg .moth .wr{transform-box:view-box;transform-origin:20px 15px}
+#lg .moth .wl{animation:mtTwL 5.5s ease-in-out infinite} #lg .moth .wr{animation:mtTwR 5.5s ease-in-out infinite}
+#lg .moth.fly .wl{animation:mtFlapL .11s ease-in-out infinite alternate} #lg .moth.fly .wr{animation:mtFlapR .11s ease-in-out infinite alternate}
+@keyframes mtFlapL{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
+@keyframes mtFlapR{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
+@keyframes mtTwL{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
+@keyframes mtTwR{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
 #lgi{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:opacity .7s ease,transform .9s cubic-bezier(.4,0,.2,1)}
 #lgi.out{opacity:0;transform:scale(1.08);pointer-events:none}
@@ -2883,7 +2895,8 @@ function lampLogin(msg, selectHtml){
   let lit = false, cur = -1, openT = 0;
   const chs = [...el.querySelectorAll(".word .ch")];
   // hər yandırmada sıradakı hərf: A → l → m → o → n → d → A …; işıq onun rəngini alır, o hərf parlayır
-  const next = () => { cur = (cur+1) % chs.length; el.style.setProperty("--lgt", LC[cur]); chs.forEach((c,i)=>c.classList.toggle("act", i===cur)); };
+  let moth = null;
+  const next = () => { cur = (cur+1) % chs.length; el.style.setProperty("--lgt", LC[cur]); chs.forEach((c,i)=>c.classList.toggle("act", i===cur)); if (moth) moth.go(cur); };
   lampOn = quiet => {
     // sonrakı yandırmalarda: işıq yananda forma yenidən açılır, sönəndə qatlanıb gizlənir
     if (lit){ clearTimeout(openT);
@@ -2926,6 +2939,52 @@ function lampLogin(msg, selectHtml){
   pull.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); lampOn(); } });
   $("lgSkip").onclick = () => lampOn(true);
   document.addEventListener("keydown", lampKey);
+  // ---- Pərvanə ----
+  moth = (() => {
+    const m = document.createElement("div"); m.className = "moth"; m.setAttribute("aria-hidden", "true");
+    const wing = (side) => { const k = side < 0 ? 1 : -1, X = v => 20 + k*v;   // sol/sağ qanad (yuxarıdan görünüş)
+      return '<g class="'+(side<0?"wl":"wr")+'">'+
+        '<path d="M'+X(1)+' 13 C'+X(6)+' 4 '+X(17)+' 2 '+X(19)+' 8 C'+X(19)+' 13 '+X(10)+' 17 '+X(1)+' 16 Z" fill="#cdb894" stroke="#7a6446" stroke-width=".8"/>'+
+        '<path d="M'+X(1)+' 17 C'+X(8)+' 17 '+X(14)+' 21 '+X(11)+' 26 C'+X(7)+' 28 '+X(3)+' 23 '+X(1)+' 19 Z" fill="#b39d78" stroke="#7a6446" stroke-width=".8"/>'+
+        '<circle cx="'+X(11)+'" cy="9" r="2.2" fill="#8a7152" opacity=".7"/></g>'; };
+    m.innerHTML = '<svg viewBox="0 0 40 30">'+wing(-1)+wing(1)+
+      '<path d="M19.2 7.5 C17 4 15 2 13 1.5 M20.8 7.5 C23 4 25 2 27 1.5" fill="none" stroke="#6b5538" stroke-width=".9" stroke-linecap="round"/>'+
+      '<ellipse cx="20" cy="17" rx="2.3" ry="8" fill="#6b5538"/><circle cx="20" cy="8.6" r="2.1" fill="#5a4630"/></svg>';
+    el.appendChild(m);
+    const W = 36, H = 28;
+    let pos = null, rot = 0, raf = 0, target = -1;     // target: -1 = lampa, 0..5 = hərf
+    // nöqtə #lg-in içində (sürüşdürmə nəzərə alınır)
+    const local = (x, y) => { const r = el.getBoundingClientRect(); return { x: x - r.left + el.scrollLeft, y: y - r.top + el.scrollTop }; };
+    const spot = t => {
+      if (t < 0){ const r = el.querySelector(".lamp svg").getBoundingClientRect(); return { ...local(r.left + r.width*.64, r.top + r.height*.51), a: 28 }; }
+      const r = chs[t].getBoundingClientRect(), low = "mon".includes(chs[t].textContent);   // kiçik hərflərin üstü aşağıdadır
+      return { ...local(r.left + r.width/2, r.top + r.height*(low ? .36 : .13)), a: [-8,6,-4,10,-6,4][t] }; };
+    const place = (p, a) => { pos = p; rot = a; m.style.transform = "translate("+(p.x - W/2).toFixed(1)+"px,"+(p.y - H*.7).toFixed(1)+"px) rotate("+a.toFixed(1)+"deg)"; };
+    const snap = () => { const s = spot(target); place(s, s.a); };
+    snap();
+    addEventListener("resize", () => { if (!raf && document.body.contains(m)) snap(); });
+    return { go(t){
+      target = t; cancelAnimationFrame(raf);
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches){ raf = 0; return snap(); }
+      const p0 = { ...pos }, a0 = rot, t0 = performance.now(), dist = Math.hypot(spot(t).x - p0.x, spot(t).y - p0.y);
+      const dur = Math.min(1700, 750 + dist*2.2), lift = 40 + dist*.35, side = Math.random() < .5 ? -1 : 1;
+      m.classList.add("fly");
+      (function step(now){
+        const k = Math.min(1, (now - t0)/dur), e = k<.5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2, end = spot(t);   // hədəf hər kadrda yenidən ölçülür
+        // əyri yol: yuxarı qalxıb enən qövs + yana yellənmə (pərvanə düz uçmur)
+        const c1 = { x: p0.x + side*30, y: Math.min(p0.y, end.y) - lift }, c2 = { x: end.x - side*25, y: Math.min(p0.y, end.y) - lift*.6 };
+        const u = 1 - e, bx = u*u*u*p0.x + 3*u*u*e*c1.x + 3*u*e*e*c2.x + e*e*e*end.x, by = u*u*u*p0.y + 3*u*u*e*c1.y + 3*u*e*e*c2.y + e*e*e*end.y;
+        const wob = Math.sin(k*Math.PI*6) * 7 * Math.sin(k*Math.PI);
+        const p = { x: bx + wob, y: by + Math.cos(k*Math.PI*5) * 4 * Math.sin(k*Math.PI) };
+        let a = Math.atan2(p.y - pos.y, p.x - pos.x) * 180/Math.PI + 90;            // baş uçuş istiqamətinə baxır
+        if (k > .85) a = a + (end.a - a) * ((k - .85)/.15);                          // qonarkən düzəlir
+        if (k < .1) a = a0 + (a - a0) * (k/.1);
+        place(p, isFinite(a) ? a : rot);
+        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; m.classList.remove("fly"); place(end, end.a); }
+      })(t0);
+    } };
+  })();
+  if (cur >= 0) moth.go(cur);                    // lampa artıq yanıbsa (səhv parol mesajı) — pərvanə hərfə keçir
   if (!msg) lgIntro();                           // səhifə açılanda bir dəfə: qara ekranda loqo şousu
 }
 // Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
