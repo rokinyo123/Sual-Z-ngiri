@@ -1553,7 +1553,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v39 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v40 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2854,9 +2854,25 @@ if ("serviceWorker" in navigator && location.protocol==="https:" && !/claude/.te
 let fmReport = "";
 async function importFirmMap(file){
   if (!window.XLSX) return toast("Excel oxuyucu yüklənmədi, internet bağlantısını yoxlayın");
-  let wb; try { wb = XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:"array"}); } catch(e){ return toast("Faylı oxumaq olmadı"); }
+  let wb; try { wb = XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:"array", cellStyles:true}); } catch(e){ return toast("Faylı oxumaq olmadı"); }
   const pairs = [];
+  // Rəngli forma: firmanın adı rəngli (məs. sarı) xanada, malları altında eyni sütunda; bir vərəqdə bir neçə sütun ola bilər
+  const colored = c => !!(c && c.s && c.s.patternType && c.s.patternType!=="none" && c.s.fgColor && (c.s.fgColor.rgb ? !/^(FF)?FFFFFF$/i.test(c.s.fgColor.rgb) : c.s.fgColor.theme!=null));
+  const clean = v => String(v??"").replace(/\s+/g," ").trim();
   wb.SheetNames.forEach(sn=>{
+    const ws = wb.Sheets[sn]; if (!ws["!ref"]) return;
+    const rg = XLSX.utils.decode_range(ws["!ref"]); const before = pairs.length; let nColored = 0;
+    for (let C=rg.s.c; C<=rg.e.c; C++){
+      let firm = "";
+      for (let R=rg.s.r; R<=rg.e.r; R++){
+        const c = ws[XLSX.utils.encode_cell({r:R,c:C})], v = clean(c && (c.w ?? c.v));
+        if (!v) continue;
+        if (colored(c)){ firm = v; nColored++; continue; }
+        if (firm) pairs.push([v, firm]);
+      }
+    }
+    if (nColored && pairs.length>before) return;
+    pairs.length = before;
     const A = XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:false,defval:""}).map(r=>r.map(c=>String(c??"").replace(/\s+/g," ").trim()));
     let hr = -1, cN = -1, cF = -1;
     for (let r=0; r<Math.min(A.length,10) && hr<0; r++){
@@ -2869,17 +2885,18 @@ async function importFirmMap(file){
       if (cells.length===1 && !pidByName(cells[0])){ firm = cells[0]; return; }
       if (firm) pairs.push([r.find(Boolean), firm]); });
   });
-  if (!pairs.length){ fmReport = "Faylda firma–mal cütü tapılmadı. Sütun başlıqları <b>Mal</b> və <b>Firma</b> olmalıdır."; render(); return; }
+  if (!pairs.length){ fmReport = "Faylda firma–mal cütü tapılmadı. İki forma tanınır: 1) firmanın adı <b>rəngli (sarı)</b> xanada, malları altında; 2) sütun başlıqları <b>Mal</b> və <b>Firma</b>."; render(); return; }
   let linked = 0, created = 0; const newF = new Set(), firmOf = n => S.firms.find(f=>normName(f)===normName(n)) || findFirm(n);
   pairs.forEach(([n,f])=>{
     let firm = firmOf(f); if (!firm){ firm = f; S.firms.push(f); newF.add(f); }
-    let id = pidByName(n);
-    if (!id){ const p = { id:newPid(), name:n, firm, size:guessSize(n), unit:"" }; S.products.push(p); created++; }
+    let id = matchPid(n);
+    if (!id){ const p = { id:newPid(), name:n, firm, size:guessSize(n), unit:"", fromExcel:true }; S.products.push(p); created++; }
     else { prod(id).firm = firm; delete prod(id).deleted; linked++; }
   });
   S.firms.sort((a,b)=>a.localeCompare(b,"az"));
   S.log.push({by:role,act:"Firma–mal siyahısı yükləndi",note:file.name+" · "+pairs.length+" mal",at:now()});
-  fmReport = "<b>"+esc(file.name)+"</b>: "+pairs.length+" mal firmaya bağlandı"+(created?" (<span class=\"newtag\">"+created+" yeni mal</span> kataloqa əlavə olundu)":"")+(newF.size?" · yeni firmalar: "+[...newF].map(esc).join(", "):"")+".";
+  const perF = {}; pairs.forEach(([n,f])=>{ const k = firmOf(f)||f; perF[k] = (perF[k]||0)+1; });
+  fmReport = "<b>"+esc(file.name)+"</b>: "+pairs.length+" mal "+Object.keys(perF).length+" firmaya bağlandı"+(created?" (<span class=\"newtag\">"+created+" yeni mal</span> kataloqa əlavə olundu)":"")+(newF.size?" · yeni firmalar: "+[...newF].map(esc).join(", "):"")+".<div class=\"meta\">"+Object.entries(perF).map(([f,n])=>esc(f)+" — "+n).join(" · ")+"</div>";
   save(); render(); toast(pairs.length+" mal firmalara bağlandı");
 }
 // ----- Admin: kataloq əməliyyatları -----
