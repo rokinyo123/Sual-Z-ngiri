@@ -1069,6 +1069,21 @@ function itemState(o,i){
   return daysTo(o.eta)>0 ? ["Gözlənilir","p-mute"] : ["Bu gün gəlməlidir","p-info"];
 }
 const rowCls = st => ({"p-ok":"okr","p-warn":"warnr","p-bad":"miss"})[st[1]] || "";
+// Toplu sifariş: qəbul bitəndə tam gələn mallar öz sifarişində qalıb bağlanır, gəlməyən / az gələn / qəbul olunmayan
+// mallar ayrıca sifarişə keçir — ümumi sifariş ilişmir, Satınalma yalnız problemli mallarla məşğul olur.
+function splitProblems(o){
+  const bad = o.items.filter(i=>problem(o,i)), ok = o.items.filter(i=>!problem(o,i));
+  if (!bad.length || !ok.length) return null;
+  const kid = JSON.parse(JSON.stringify(Object.assign({}, o, { photos:[], files:[], history:[], comments:[] })));
+  Object.assign(kid, { id:nextId(), items:bad, parent:o.id, splitFrom:o.id, note:"#"+o.id+" sifarişinin gəlməyən / az gələn malları" });
+  delete kid.split; delete kid.lates; delete kid.stuckN;
+  o.items = ok; o.split = kid.id;
+  const names = bad.map(i=>pname(i.pid)+" ("+problem(o,i)+")").join(", ");
+  addLog(o, "Problemli mallar ayrıldı → #"+kid.id, names); addLog(kid, "#"+o.id+" sifarişindən ayrıldı", names);
+  S.orders.unshift(kid);
+  return kid;
+}
+const isFull = o => archived(o) && o.items.every(i=>!problem(o,i));   // hər şey tam gəlib, hamı qəbul edib
 function finishReceive(o, by, note){
   o.items.forEach(i=>{ if (i.qc==="bad"||i.qc==="none"||i.techRes==="bad") i.got = 0; else if (i.got==null) i.got = 0; });
   o.recvDone = true; o.status = "bagli"; o.last_move = o.recvAt = new Date().toISOString();
@@ -1447,7 +1462,7 @@ function vBuy(){
 function vQc(){
   const w = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).sort((a,b)=>(a.arrivedAt||"").localeCompare(b.arrivedAt||""));
   const rej = resultRows().filter(r=>r.cat==="qc" && (!r.i.ans || rDate(r)>=plusDays(-30))).sort((a,b)=>(!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)));
-  const done = S.orders.filter(o=>hasQC(o) && o.qcAt && daysTo(o.qcAt.slice(0,10))>=-7).sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
+  const done = S.orders.filter(o=>hasQC(o) && o.qcAt && !isFull(o) && daysTo(o.qcAt.slice(0,10))>=-7).sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
   return '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
     
     (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
@@ -1498,7 +1513,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v35 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v36 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2055,24 +2070,33 @@ function orderBrief(o){
     '<button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı: Satınalma, Keyfiyyət, Anbar</button></article>';
 }
 let ofrom = "all";
+let osec = "aktiv";
 function vOrders(){
-  const picked = !!(RF || RT) || /^#\d+$/.test((oq||"").trim());   // tarix seçilibsə və ya #nömrə ilə axtarılırsa — heç nə gizlədilmir
-  // Tarix seçilməyibsə: qəbul olunub bağlanmış sifariş 24 saatdan sonra, Satınalmanın cavab/açıqlama borcu olanlar isə dərhal burada görünmür
-  const owed = o => needsAnswer(o) || lateNeedsAns(o);
-  const oldDone = o => o.status==="redd" || (archived(o) && (Date.now()-new Date(o.recvAt||o.last_move).getTime()) > DAY);
-  const hidden = picked ? [] : S.orders.filter(o=>oldDone(o) || owed(o));
-  const hid = new Set(hidden.map(o=>o.id));
-  const base = S.orders.filter(o=>inRange(odate(o)) && !hid.has(o.id));
-  const nOld = hidden.filter(oldDone).length, nOwed = hidden.filter(o=>!oldDone(o) && owed(o)).length;
-  const F = [["all","Hamısı"],["Anbar","Anbar"],["Anbar (İnqilab)","İnqilab"],["Texnoloq","Texnoloq"]];
-  const fit = k => k==="all" ? ()=>true : (o=>o.from===k);
+  const W = WAREHOUSES.includes(role);                 // tam gələnləri yalnız Anbar və İnqilab görür
+  if (osec==="tam" && !W) osec = "aktiv";
+  const byNum = /^#\d+$/.test((oq||"").trim());
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
-  const list = base.filter(fit(ofrom)).filter(hit).sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
+  const fit = k => k==="all" ? ()=>true : (o=>o.from===k);
+  // gözlənilən / yolda / yoxlanan — problemli və tam bağlanmışlar öz bölmələrindədir
+  const active = S.orders.filter(o=>o.status!=="redd" && (byNum || (!isFull(o) && !needsAnswer(o) && !lateNeedsAns(o))) && inRange(odate(o)) && (byNum || !archived(o)));
+  const full = W ? S.orders.filter(o=>o.wh===role && isFull(o) && inRange(odate(o))) : [];
+  const rows = resultRows().filter(r=>r.cat==="miss" && (!r.i.ans || rDate(r)>=plusDays(-7)) && inRange(rDate(r)));
+  const notCame = rows.filter(r=>/^(Gəlmədi|Satınalma: mal yoxdur|Sürücü tapmadı)/.test(r.pr)), short = rows.filter(r=>/^Az/.test(r.pr));
+  const SEC = [["aktiv","📦 Gözlənilir",active.length]].concat(W?[["tam","✅ Tam gələn",full.length]]:[]).concat([["gelmeyen","⛔ Gəlməyən",notCame.length],["az","🟡 Az gələn",short.length]]);
+  const F = [["all","Hamısı"],["Anbar","Anbar"],["Anbar (İnqilab)","İnqilab"],["Texnoloq","Texnoloq"]];
+  const sortR = rs => rs.sort((a,b)=> (!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)) || b.o.id-a.o.id);
+  let body;
+  if (osec==="aktiv"){ const list = active.filter(fit(ofrom)).filter(hit).sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
+    body = '<div class="seg">'+F.map(([k,l])=>'<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+active.filter(fit(k)).length+'</span></button>').join("")+'</div>'+
+      (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Gözlənilən sifariş yoxdur</div>'); }
+  else if (osec==="tam"){ const list = full.filter(hit).sort((a,b)=>(b.recvAt||"").localeCompare(a.recvAt||"")||b.id-a.id);
+    body = '<div class="meta">Hamısı tam gəlib və qəbul olunub. Bu siyahını yalnız '+esc(role)+' görür.</div>'+(list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə tam gələn sifariş yoxdur</div>'); }
+  else { const rs = sortR((osec==="az"?short:notCame).filter(r=>hit(r.o)));
+    body = '<div class="meta">'+(osec==="az"?"Əskik gələn mallar":"Heç gəlməyən mallar")+' — Satınalma '+ANS_H+' saat ərzində cavab verməlidir.</div>'+(rs.length ? '<div class="irows">'+rs.map(resRow).join("")+'</div>' : '<div class="empty">✓ Yoxdur</div>'); }
   return '<h2>Sifarişlər</h2>'+
     '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
-    '<div class="seg">'+F.map(([k,l])=>'<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+base.filter(fit(k)).length+'</span></button>').join("")+'</div>'+
-    rangeBar() + (picked ? "" : (nOld||nOwed) ? '<div class="meta">'+[nOld?nOld+" qəbul olunmuş köhnə sifariş gizlədilib — görmək üçün tarix seçin":"", nOwed?'<button class="linkb" data-go="buy">'+nOwed+" sifariş Satınalmanın cavabını gözləyir → 🛒 Satınalma</button>":""].filter(Boolean).join(" · ")+'</div>' : "") +
-    (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə sifariş yoxdur</div>');
+    '<div class="seg osec">'+SEC.map(([k,l,n])=>'<button class="'+(osec===k?"on":"")+'" data-osec="'+k+'">'+l+'<span class="k">'+n+'</span></button>').join("")+'</div>'+
+    rangeBar() + body;
 }
 
 // ----- Gəlişlər: həftə zolağı → seçilən günün hər malı -----
@@ -2525,6 +2549,7 @@ $("main").addEventListener("click", e => {
   if (d.go){ tab=d.go; render(); window.scrollTo(0,0); return; }
   if (d.filter){ filter=d.filter; render(); return; }
   if (d.ofrom){ ofrom=d.ofrom; render(); return; }
+  if (d.osec){ osec=d.osec; render(); return; }
   if (d.resf){ resF=d.resf; render(); return; }
   if (d.arm){ arM=d.arm; render(); return; }
   if (d.gostat){ tab="arch"; arM=d.gostat; if (d.gostat==="week") arW = today()===addD(monday(today()),6) ? monday(today()) : addD(monday(today()),-7); else arMon = today()===dstr(new Date(Number(today().slice(0,4)),Number(today().slice(5,7)),0)) ? today().slice(0,7) : dstr(new Date(Number(today().slice(0,4)),Number(today().slice(5,7))-2,1)).slice(0,7); render(); window.scrollTo(0,0); return; }
@@ -2548,7 +2573,7 @@ $("main").addEventListener("click", e => {
     const firstRed = S.orders.filter(o=>o.status==="yolda" && o.eta && o.eta.startsWith(mk)).map(o=>o.eta).sort()[0];
     dSel = today().startsWith(mk) ? today() : firstRed || dstr(x); render(); return; }
   if (d.jf){ jf=d.jf; render(); return; }
-  if (d.goorder){ tab="orders"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); fullSet.add(Number(d.goorder)); render(); window.scrollTo(0,0); return; }
+  if (d.goorder){ tab="orders"; osec="aktiv"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); fullSet.add(Number(d.goorder)); render(); window.scrollTo(0,0); return; }
   if (d.full){ const id = Number(d.full); fullSet.has(id) ? fullSet.delete(id) : fullSet.add(id); render(); const el=$("o-"+id); if (el) el.scrollIntoView({block:"start"}); return; }
   if (d.seenall){ myAlerts().forEach(a=>{ if (role!=="Texnoloq" || !techDecide(a).includes("data-techres")) a.seen.push(role); }); alAll=false; save(); render(); return; }
   if (d.alall){ alAll=!alAll; render(); return; }
@@ -2761,14 +2786,16 @@ function orderAct(act, id){
     if (hasQC(o) && !o.qcAt) return toast("Keyfiyyət hələ yoxlamayıb");
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
     const n = finishReceive(o, role, v("rn"));
-    const tr = o.items.filter(i=>techReady(o,i));
-    if (tr.length) (S.alerts||[]).forEach(x=>{ if (x.oid===o.id && x.to && x.to.includes("Texnoloq") && !x.seen.includes("Texnoloq")) x.seen.push("Texnoloq"); });
-    if (tr.length) notify(["Texnoloq"], "arr", "#"+o.id+" Anbara qəbul olundu · baxın", (o.supplier||"Firmasız")+" → "+o.wh, tr.map(i=>pname(i.pid)+" "+i.qty), o.id);
-    const c = {ok:0,warn:0,bad:0}; o.items.forEach(i=>{ const k=itemCat(itemState(o,i)); if (c[k]!=null) c[k]++; });
-    notify(["Satınalma",o.from,"Rəhbərlik"], "res", "#"+o.id+" qəbul olundu", [c.ok?c.ok+" tam":"", c.warn?c.warn+" az":"", c.bad?c.bad+" qəbul olunmadı / gəlmədi":""].filter(Boolean).join(" · ")+(n?" · cavabınız lazımdır":""),
-      o.items.filter(i=>problem(o,i)).map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
-    const re = o.items.filter(i=>problem(o,i) && i.ans).length;
-    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : re ? "Qəbul bitdi · "+re+" mal yenidən sifariş olunub, gözlənilir" : "Hamısı qəbul olundu ✓");
+    const kid = splitProblems(o), P = kid || o;           // P — problemli malların sifarişi (ayrılıbsa yeni nömrə)
+    const both = kid ? [o, kid] : [o];
+    const tr = both.flatMap(x=>x.items.filter(i=>techReady(x,i)).map(i=>({x,i})));
+    if (tr.length) (S.alerts||[]).forEach(a=>{ if (a.oid===o.id && a.to && a.to.includes("Texnoloq") && !a.seen.includes("Texnoloq")) a.seen.push("Texnoloq"); });
+    if (tr.length) notify(["Texnoloq"], "arr", "#"+o.id+" Anbara qəbul olundu · baxın", (o.supplier||"Firmasız")+" → "+o.wh, tr.map(r=>pname(r.i.pid)+" "+r.i.qty), o.id);
+    const pr = P.items.filter(i=>problem(P,i));
+    // tam gələnlər üçün başqa şöbələrə bildiriş getmir — yalnız problem olanda
+    if (pr.length) notify(["Satınalma",o.from,"Rəhbərlik"], "late", "#"+P.id+" · "+pr.length+" mal gəlmədi / az gəldi"+(kid?" (#"+o.id+"-dən ayrıldı)":""),
+      (o.supplier||"Firmasız")+" → "+o.wh+(kid?" · qalan "+o.items.length+" mal tam gəldi":"")+" · Satınalma cavab verməlidir", pr.map(i=>pname(i.pid)+": "+problem(P,i)), P.id);
+    toast(kid ? "Qəbul bitdi · "+o.items.length+" mal tam · "+pr.length+" problemli mal #"+kid.id+"-ə ayrıldı" : n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
@@ -3121,7 +3148,7 @@ function openDeep(){
   try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
   const id = Number(m[1]), o = S.orders.find(x=>x.id===id) || (S.trash||[]).find(x=>x.id===id);
   if (!o) return toast("#"+id+" sifarişi tapılmadı (silinib ola bilər)");
-  tab = "orders"; filter = "all"; oq = "#"+id; RF = RT = ""; openMore.add(id); fullSet.add(id); render();
+  tab = "orders"; osec = "aktiv"; filter = "all"; oq = "#"+id; RF = RT = ""; openMore.add(id); fullSet.add(id); render();
   const el = $("o-"+id); if (el) el.scrollIntoView({block:"start"});
 }
 window.addEventListener("hashchange", ()=>{ if ((!ONLINE || Cloud.me()) && /o=\d+/.test(location.hash)) openDeep(); });
