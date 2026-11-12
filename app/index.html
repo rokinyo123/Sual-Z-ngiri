@@ -365,6 +365,8 @@ body.lg-on{overflow:hidden}
 #lg .lhint .arr{display:inline-block;animation:lgNudge 1.4s ease-in-out infinite}
 @keyframes lgNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 #lg.on .lhint{opacity:0}
+#lg .lhint.nudge{animation:lgHint .6s ease}
+@keyframes lgHint{0%,100%{transform:none;color:var(--lgm)}30%{transform:scale(1.12);color:var(--lgc)}}
 #lg .word{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;margin:22px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(40px,12vw,64px);line-height:1;letter-spacing:.5px}
 #lg .word .ch{color:rgba(255,236,205,.07);transition:color .45s ease,opacity .45s ease,text-shadow .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);transform:translateY(6px)}
 #lg .word .lk{width:.42em;height:.42em;margin:0 -.02em;opacity:0;transform:scale(.4) rotate(-30deg);transition:opacity .3s ease,transform .35s cubic-bezier(.2,1.4,.4,1)}
@@ -2742,11 +2744,16 @@ function lampLogin(msg, selectHtml){
   const setPull = v => { knob.setAttribute("cy", 226+v); beads.setAttribute("transform", "translate(0,"+v*.6+")"); };
   pull.addEventListener("pointerdown", e => { y0 = e.clientY; dy = 0; try { pull.setPointerCapture(e.pointerId); } catch(x){} lgAC(); });
   pull.addEventListener("pointermove", e => { if (y0 == null) return; dy = Math.max(0, Math.min(34, e.clientY-y0)); setPull(dy); });
-  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null; const from = dy, t0 = performance.now();
-    (function back(t){ const k = Math.min(1,(t-t0)/220); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); lampOn(); });
+  // yalnız zəncir həqiqətən aşağı çəkiləndə yanır; sadəcə basanda zəncir yüngülcə titrəyir və ipucu göstərilir
+  const PULL_MIN = 14;
+  const spring = (from, ms) => { const t0 = performance.now();
+    (function back(t){ const k = Math.min(1,(t-t0)/ms); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); };
+  const hint = el.querySelector(".lhint");
+  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null;
+    if (dy >= PULL_MIN){ spring(dy, 220); lampOn(); return; }
+    spring(8, 420); hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); });
   pull.addEventListener("pointercancel", () => { y0 = null; setPull(0); });
   pull.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); lampOn(); } });
-  el.querySelector(".lamp").addEventListener("click", e => { if (!e.target.closest("#lgPull")) lampOn(); });
   $("lgSkip").onclick = () => lampOn(true);
   document.addEventListener("keydown", lampKey);
 }
