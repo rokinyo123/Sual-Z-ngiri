@@ -890,22 +890,28 @@ const depTag = i => i.dep ? ' <span class="deptag">→ '+esc(i.dep)+'</span>' : 
 const depSel = (attr, v, ph) => '<select class="depsel" '+attr+' aria-label="Hansı şöbəyə"><option value="">'+(ph||"Şöbə…")+'</option>'+SOBELER.map(d=>'<option'+(v===d?" selected":"")+'>'+d+'</option>').join("")+'</select>';
 const depOf = n => { const f = foldName(n); return SOBELER.find(d=>f.includes(foldName(d))) || ""; };
 const isAdminUser = () => ONLINE ? !!(Cloud.me()||{}).is_admin : role==="Admin";
+// Admin düymələri (Sil, Bağla, bərpa, sıfırla) yalnız Admin ekranında — Admin başqa şöbəyə baxanda o şöbənin gördüyünü görür
+const adminView = () => isAdminUser() && role==="Admin";
 // Admin sifarişi silir: hamının ekranından çıxır, bazada "silinib" qeydi ilə qalır (geri qaytarmaq olar)
 // Göndərən şöbə öz sifarişini Satınalma qəbul edənə qədər silə və düzəldə bilər
-const canOwnEdit = o => !!o && o.from===role && o.status==="acik";
-const canDelete = o => isAdminUser() || canOwnEdit(o);
+// Sifarişi verən (Anbar, İnqilab, Texnoloq) öz sifarişini HƏMİN GÜN silə, dəyişə, əlavə edə bilər — mal gəlməyənə qədər.
+// Satınalma artıq qəbul edibsə, dəyişiklikdən sonra sifariş yenidən Satınalmaya qayıdır. Admin həmişə silə bilər.
+const canOwnEdit = o => !!o && !o.deleted && o.from===role && ["Anbar","Anbar (İnqilab)","Texnoloq"].includes(role) &&
+  String(o.created||"").slice(0,10)===today() && ["acik","yolda"].includes(o.status) && o.items.every(i=>i.got==null && !i.qc);
+const canDelete = o => !!o && !o.deleted && (adminView() || canOwnEdit(o));
 function deleteOrder(id){
   const k = S.orders.findIndex(o=>o.id===id); if (k<0) return;
   const o = S.orders[k];
-  if (!canDelete(o)) return toast("Satınalma qəbul edibsə, sifarişi yalnız Admin silə bilər");
-  addLog(o, (isAdminUser()?"Admin":role)+" sifarişi sildi", "");
+  if (!canDelete(o)) return toast("Öz sifarişinizi yalnız həmin gün silə bilərsiniz — sonra Admin silir");
+  addLog(o, (adminView()?"Admin":role)+" sifarişi sildi", "");
+  if (!adminView() && o.status==="yolda") notify(["Satınalma"], "late", "#"+o.id+" sifarişi "+role+" tərəfindən silindi", "Satınalma artıq qəbul etmişdi"+(o.supplier?" ("+o.supplier+", "+fmtD(o.eta)+")":"")+" — firmaya xəbər verin", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   o.deleted = { by: role, at: new Date().toISOString() };
   S.orders.splice(k,1); (S.trash = S.trash || []).push(o);
   save(); render(); toast("Sifariş #"+id+" silindi");
 }
 // ----- Admin: ilişib qalan malı / sifarişi bağlamaq, malı silmək, silinəni geri qaytarmaq -----
-const adminBar = (o,k) => isAdminUser() ? '<div class="adm">Admin: <button class="sm" data-aclose="'+o.id+'-'+k+'">🔒 Bağla</button><button class="sm badb" data-adel="'+o.id+'-'+k+'">🗑 Malı sil</button></div>' : "";
-const canAdminClose = o => isAdminUser() && !o.deleted && o.status!=="redd" && !archived(o);
+const adminBar = (o,k) => adminView() ? '<div class="adm">Admin: <button class="sm" data-aclose="'+o.id+'-'+k+'">🔒 Bağla</button><button class="sm badb" data-adel="'+o.id+'-'+k+'">🗑 Malı sil</button></div>' : "";
+const canAdminClose = o => adminView() && !o.deleted && o.status!=="redd" && !archived(o);
 function adminCloseItem(o,i){
   const now = new Date().toISOString();
   if (problem(o,i) && !i.ans) i.ans = { closed:true, note:"Admin bağladı", by:role, at:now };
@@ -1494,7 +1500,7 @@ function expList(){
 function expRow({o,i,k,d}){
   return '<div class="irow '+(d<0?"miss":"warnr")+'"><div class="in pn"><span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(d<0?"p-bad":"p-warn")+' st">'+(d<0?"vaxtı keçib":d===0?"bu gün bitir":d+" gün qalıb")+'</span></div>'+
     '<div class="rmeta">Son istifadə: <b>'+esc(i.exp)+'</b>'+(i.mfg?' · istehsal '+esc(i.mfg):"")+' · <button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"")+' → '+esc(o.wh)+'</div>'+
-    ((role==="Keyfiyyət"||isAdminUser()) ? '<div class="row"><button class="sm" data-expdone="'+o.id+'-'+k+'">✓ İstifadə olunub / anbarda yoxdur</button></div>' : "")+'</div>';
+    ((role==="Keyfiyyət"||adminView()) ? '<div class="row"><button class="sm" data-expdone="'+o.id+'-'+k+'">✓ İstifadə olunub / anbarda yoxdur</button></div>' : "")+'</div>';
 }
 function expirySignals(){
   if (ONLINE && !(["Keyfiyyət","Rəhbərlik","Anbar","Anbar (İnqilab)"].includes(role) || (Cloud.me()||{}).is_admin)) return;
@@ -1547,7 +1553,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v38 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v39 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1802,17 +1808,19 @@ function editBox(o){
 }
 function editSave(id){
   const o = S.orders.find(x=>x.id===id), d = editDraft[id] || [];
-  if (!canOwnEdit(o)) { delete editDraft[id]; render(); return toast("Satınalma artıq qəbul edib — dəyişmək olmaz"); }
+  if (!canOwnEdit(o)) { delete editDraft[id]; render(); return toast("Bu sifarişi artıq dəyişmək olmaz — yalnız həmin gün, mal gəlməmiş"); }
   const rows = d.filter(r=>r.n.trim() || r.q.trim());
   if (rows.some(r=>!r.n.trim())) return toast("Malın adını yazın");
   const noQ = rows.find(r=>!r.q.trim()); if (noQ) return toast(noQ.n+": miqdarı yazın");
-  if (!rows.length) return toast("Heç bir mal qalmadı — sifarişi silmək üçün “🗑 Sil” basın");
+  if (!rows.length) return toast("Heç bir mal qalmadı — sifarişi silmək lazımdırsa, Admin-ə yazın");
   const old = o.items.slice(), before = old.map(i=>pname(i.pid)+" "+i.qty+(i.dep?" → "+i.dep:"")).join(", ");
   o.items = rows.map(r=>{ const pid = ensureProd(r.n), k = old.findIndex(i=>i.pid===pid), base = k>=0 ? old.splice(k,1)[0] : {};
     const x = Object.assign({}, base, {pid, qty:withUnit(r.q,pid)}); if (r.dep) x.dep = r.dep; else delete x.dep; return x; });
   const after = o.items.map(i=>pname(i.pid)+" "+i.qty+(i.dep?" → "+i.dep:"")).join(", ");
   delete editDraft[id];
-  if (after!==before){ o.last_move = new Date().toISOString(); addLog(o,"Sifariş düzəldildi",after); save(); toast("Sifariş #"+id+" yeniləndi"); }
+  if (after!==before){ o.last_move = new Date().toISOString(); addLog(o,"Sifariş düzəldildi",after);
+    if (o.status==="yolda"){ o.status = "acik"; notify(["Satınalma"], "note", "#"+o.id+" sifarişi dəyişdirildi · yenidən baxın", role+" malları dəyişdi — gəliş gününü yenidən təsdiqləyin", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id); }
+    save(); toast("Sifariş #"+id+" yeniləndi"+(o.status==="acik"?" · Satınalma görür":"")); }
   render();
 }
 
@@ -1961,14 +1969,14 @@ function deptBoard(){
   }).join("")+'</div>';
 }
 function trashBlock(){
-  if (!isAdminUser() || !(S.trash||[]).length) return "";
+  if (!adminView() || !(S.trash||[]).length) return "";
   const list = S.trash.slice().sort((a,b)=>(b.deleted&&b.deleted.at||"").localeCompare(a.deleted&&a.deleted.at||"")).slice(0,30);
   return '<details class="dcard"><summary><span class="dn">🗑 Silinən sifarişlər</span><span class="pill p-mute">'+S.trash.length+'</span></summary>'+
     list.map(o=>'<div class="dl">#'+o.id+' · '+esc(o.from)+' → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+' <span class="meta">'+o.items.length+' mal · silinib '+(o.deleted&&o.deleted.at?shortT(new Date(o.deleted.at)):"")+(o.deleted&&o.deleted.by?' ('+esc(o.deleted.by)+')':"")+'</span> <button class="sm" data-restore="'+o.id+'">♻ Bərpa et</button></div>').join("")+'</details>';
 }
 // Admin: proqramı sıfırla — sınaq bitəndə təmiz başlamaq üçün
 function resetBlock(){
-  if (!isAdminUser()) return "";
+  if (!adminView()) return "";
   return '<details class="dcard bad"><summary><span class="dn">⚠ Proqramı sıfırla</span><span class="pill p-bad">Admin</span></summary>'+
     '<div class="dl">Bütün <b>sifarişlər</b> (silinənlər də), <b>bildirişlər</b>, <b>tarixçə</b> və <b>hesabatlar</b> bazadan silinir. <b>Kataloq, firmalar, istifadəçilər və parollar, Telegram qrupları qalır.</b> Geri qaytarmaq olmur.</div>'+
     '<div class="dl"><input id="rsTxt" placeholder="Təsdiq üçün SIFIRLA yazın" autocomplete="off"></div>'+
