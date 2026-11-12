@@ -418,6 +418,21 @@ body.lg-on{overflow:hidden}
 @keyframes lgRec{50%{opacity:.3}}
 #lg .lskip{z-index:3;margin-top:14px;background:none;border:0;color:var(--lgm);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
 #lg.open .lskip{display:none}
+/* bütün yazılar lampanın indiki rəngini (--lgt) alır: işıq hansı hərfin rəngindədirsə, aşağıdakı forma da o rəngdə olur */
+#lg .tag,#lg .lhint,#lg .snap,#lg .lskip,#lg .lform h2,#lg .lform .sub,#lg .lform label,#lg .lform select,#lg .lform input,#lg .lbtn{transition-property:color,background,border-color,box-shadow,opacity,transform,clip-path;transition-duration:.5s}
+#lg .word .lk path{stroke:rgb(var(--lgt));transition:stroke .5s}
+#lg.lit .tag{color:rgba(var(--lgt),.8)}
+#lg .lhint,#lg .lskip{color:rgba(var(--lgt),.7)}
+#lg .snap{color:rgba(var(--lgt),.8);border-color:rgba(var(--lgt),.25)}
+#lg .snap.live{color:rgb(var(--lgt))}
+#lg .lform h2{color:rgb(var(--lgt));text-shadow:0 0 16px rgba(var(--lgt),.35)}
+#lg .lform .sub,#lg .lform label{color:rgba(var(--lgt),.72)}
+#lg .lform select,#lg .lform input{color:rgb(var(--lgt));border-color:rgba(var(--lgt),.22)}
+#lg .lform select:focus,#lg .lform input:focus{border-color:rgb(var(--lgt));box-shadow:0 0 0 3px rgba(var(--lgt),.2)}
+#lg .lform select option{color:rgb(var(--lgt))}
+#lg .pin::placeholder{color:rgba(var(--lgt),.45)}
+#lg .lrem input{border-color:rgba(var(--lgt),.6)!important}
+#lg .lbtn{color:#1a0f06;background:linear-gradient(180deg,color-mix(in srgb,rgb(var(--lgt)) 65%,#fff),rgb(var(--lgt)));box-shadow:0 6px 18px rgba(var(--lgt),.3)}
 @media (prefers-reduced-motion:reduce){#lg *{animation:none!important;transition:none!important}}
 </style>
 
