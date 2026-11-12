@@ -75,7 +75,7 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   return { orders, pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
-const hasQC = (o: any) => o.wh === "Anbar" && !o.sample;
+const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder;
 const held = (o: any) => !!(o.hold && !o.holdDone);
 function problem(o: any, i: any) {
   if (i.unav) return "Satınalma: mal yoxdur";
