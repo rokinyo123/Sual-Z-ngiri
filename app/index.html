@@ -410,7 +410,9 @@ body.lg-on{overflow:hidden}
 #lg .pin{letter-spacing:10px;text-align:center;font-weight:700}
 #lg .pin::placeholder{letter-spacing:1px;font-weight:400;color:#7d6553}
 #lg .lbtn{font:inherit;font-weight:700;font-size:16px;color:#2a1708;background:linear-gradient(180deg,var(--lgg2),var(--lgg));border:0;border-radius:10px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(233,180,90,.25)}
-#lg .lbtn:disabled{opacity:.6}
+#lg .lbtn:disabled{opacity:.85}
+#lg .lbtn.landed{animation:lbLand .45s ease}
+@keyframes lbLand{35%{transform:translateY(2px) scale(.97);filter:brightness(1.15)}}
 #lg .lnote{font-size:13px;color:#ff9a8a;text-align:center;min-height:16px}
 #lg .snap{z-index:3;margin-top:10px;font:inherit;font-size:12px;color:var(--lgm);background:rgba(32,22,15,.6);border:1px solid var(--lgl);border-radius:999px;padding:6px 12px;cursor:pointer}
 #lg .snap.live{color:var(--lgc);border-color:rgba(var(--lgt),.6);box-shadow:0 0 12px rgba(var(--lgt),.25)}
@@ -765,7 +767,7 @@ const Cloud = (() => {
       const pw = /^\d{4}$/.test(p) ? "almond"+p : p;
       note("");
       const rem = $("lrem").checked;
-      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); remSet(u, rem ? p : ""); keepSess(); await start(); }
+      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); remSet(u, rem ? p : ""); keepSess(); lgHold = lgMothToButton(); await start(); }
       catch(err){ if (!C.sess && /^Parol səhvdir/.test(err.message)) remSet(u, ""); if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
   }
   async function start(){
@@ -779,6 +781,7 @@ const Cloud = (() => {
     if (S.catalogV!==2){ if (C.me.is_admin){ prepareCatalog(); queue(); } else toast("Kataloq hələ yüklənməyib — Admin bir dəfə daxil olmalıdır"); }
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
+    if (lgHold){ await lgHold; lgHold = null; }
     lampClose(); $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
@@ -2772,7 +2775,12 @@ draft = newDraft();
 // Qara ekran → "Toxunun" (brauzerlər səsi yalnız toxunuşdan sonra açır) → ≈3.5 san səs + işıq şousu → lampa ekranı. İkinci toxunuş ötürür.
 const LG_COLORS = ["247,213,148","255,143,177","142,219,138","183,156,255","255,168,87","124,196,255"];
 const LG_LINK = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
-let lgIntroShown = false;
+var lgIntroShown = false, lgMoth = null, lgHold = null;
+// Parol düzdürsə: pərvanə "Daxil ol" düyməsinə uçub qonur, düymə yüngülcə basılır, sonra proqram açılır (yükləmə bu vaxt arxada gedir)
+function lgMothToButton(){
+  const b = $("lb"); if (!lgMoth || !b) return Promise.resolve();
+  return lgMoth.go(b).then(()=>{ b.classList.add("landed"); return new Promise(r=>setTimeout(r, 450)); });
+}
 function lgIntroSound(){
   const a = lgAC(); if (!a) return null; const t = a.currentTime+.05;
   const master = a.createGain(); master.gain.value = .9; master.connect(a.destination);
@@ -2956,6 +2964,7 @@ function lampLogin(msg, selectHtml){
     // nöqtə #lg-in içində (sürüşdürmə nəzərə alınır)
     const local = (x, y) => { const r = el.getBoundingClientRect(); return { x: x - r.left + el.scrollLeft, y: y - r.top + el.scrollTop }; };
     const spot = t => {
+      if (t instanceof Element){ const r = t.getBoundingClientRect(); return { ...local(r.left + r.width*.8, r.top + 5), a: -12 }; }   // düymənin üst kənarı, yazının yanında
       if (t < 0){ const r = el.querySelector(".lamp svg").getBoundingClientRect(); return { ...local(r.left + r.width*.64, r.top + r.height*.51), a: 28 }; }
       const r = chs[t].getBoundingClientRect(), low = "mon".includes(chs[t].textContent);   // kiçik hərflərin üstü aşağıdadır
       return { ...local(r.left + r.width/2, r.top + r.height*(low ? .36 : .13)), a: [-8,6,-4,10,-6,4][t] }; };
@@ -2963,9 +2972,11 @@ function lampLogin(msg, selectHtml){
     const snap = () => { const s = spot(target); place(s, s.a); };
     snap();
     addEventListener("resize", () => { if (!raf && document.body.contains(m)) snap(); });
-    return { go(t){
+    let done = null;
+    return { go(t){ return new Promise(res => {
+      if (done) done(); done = res;                                                   // əvvəlki uçuş yarımçıq qalıbsa, onu da bitmiş say
       target = t; cancelAnimationFrame(raf);
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches){ raf = 0; return snap(); }
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches){ raf = 0; snap(); done = null; return res(); }
       const p0 = { ...pos }, a0 = rot, t0 = performance.now(), dist = Math.hypot(spot(t).x - p0.x, spot(t).y - p0.y);
       const dur = Math.min(1700, 750 + dist*2.2), lift = 40 + dist*.35, side = Math.random() < .5 ? -1 : 1;
       m.classList.add("fly");
@@ -2980,10 +2991,11 @@ function lampLogin(msg, selectHtml){
         if (k > .85) a = a + (end.a - a) * ((k - .85)/.15);                          // qonarkən düzəlir
         if (k < .1) a = a0 + (a - a0) * (k/.1);
         place(p, isFinite(a) ? a : rot);
-        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; m.classList.remove("fly"); place(end, end.a); }
+        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; m.classList.remove("fly"); place(end, end.a); if (done === res){ done = null; res(); } }
       })(t0);
-    } };
+    }); } };
   })();
+  lgMoth = moth;
   if (cur >= 0) moth.go(cur);                    // lampa artıq yanıbsa (səhv parol mesajı) — pərvanə hərfə keçir
   if (!msg) lgIntro();                           // səhifə açılanda bir dəfə: qara ekranda loqo şousu
 }
