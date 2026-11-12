@@ -1,0 +1,4 @@
+raw1/
+raw2/
+*.jpg
+!build/img/*.jpg
