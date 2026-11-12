@@ -647,9 +647,11 @@ function save(){
 const Cloud = (() => {
   const URL0 = TEST_API || "https://qzvyawuhmqdhzawfihzy.supabase.co", AKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnlhd3VobXFkaHphd2ZpaHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDgwMzYsImV4cCI6MjEwODU4NDAzNn0.Csy6z2xsfBGxX_6m5WqpZV4PwK8_LTXn7uEF_K2311s", DOMAIN = "almond.local", BUCKET = "almond-fayllar";
   const C = { sess:null, me:null, ver:{}, snap:{}, last:"", timer:null, busy:false, again:false, fails:0 };
-  // Giriş yadda saxlanmır: link açılanda və ya yenilənəndə hər dəfə şöbə + parol soruşulur
-  try { localStorage.removeItem("almond-sess"); } catch(e){}
-  const keepSess = () => {};
+  // SINAQ dövrü: giriş bu cihazda yadda qalır — link açılanda / yenilənəndə parol soruşulmur ("🚪 Çıxış" basana qədər).
+  // Proqram işə düşəndə SINAQ = false edilir: onda hər dəfə şöbə + parol soruşulur.
+  const SINAQ = true;
+  try { if (SINAQ) C.sess = JSON.parse(localStorage.getItem("almond-sess")); else localStorage.removeItem("almond-sess"); } catch(e){}
+  const keepSess = () => { if (!SINAQ) return; try { C.sess ? localStorage.setItem("almond-sess", JSON.stringify(C.sess)) : localStorage.removeItem("almond-sess"); } catch(e){} };
   async function auth(path, body){
     const r = await fetch(URL0+"/auth/v1/"+path, { method:"POST", headers:{ apikey:AKEY, "Content-Type":"application/json" }, body:JSON.stringify(body) });
     const j = await r.json().catch(()=>({}));
@@ -1496,7 +1498,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v33</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v34 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
