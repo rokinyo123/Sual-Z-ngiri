@@ -1350,7 +1350,7 @@ function renderTabs(){
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  autoMissing(); stuckSignals(); reportSignals(); pushNotify(); dlDone = false;
+  autoMissing(); stuckSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
@@ -1462,13 +1462,40 @@ function vBuy(){
 function vQc(){
   const w = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).sort((a,b)=>(a.arrivedAt||"").localeCompare(b.arrivedAt||""));
   const rej = resultRows().filter(r=>r.cat==="qc" && (!r.i.ans || rDate(r)>=plusDays(-30))).sort((a,b)=>(!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)));
-  const done = S.orders.filter(o=>hasQC(o) && o.qcAt && !isFull(o) && daysTo(o.qcAt.slice(0,10))>=-7).sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
+  // Keyfiyyətin yoxladığı bütün sifarişlər (tam gələnlər də) — son 30 gün, istəsə hamısı
+  const doneAll = S.orders.filter(o=>o.qcAt && o.items.some(i=>i.qc) && o.status!=="redd").sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
+  const done = qcAll ? doneAll : doneAll.filter(o=>daysTo(o.qcAt.slice(0,10))>=-30);
+  const ex = expList();
   return '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
     
     (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
     '<h2>🔍 Keyfiyyətin qəbul etmədiyi mallar <span class="cnt">'+rej.length+'</span></h2>'+
     (rej.length ? '<div class="irows">'+rej.map(resRow).join("")+'</div>' : '<div class="empty">Son 30 gündə yoxdur</div>')+
-    (done.length ? '<h2>Son 7 gündə yoxlananlar <span class="cnt">'+done.length+'</span></h2>'+done.map(o=>orderBrief(o)).join("") : "");
+    (ex.length ? '<h2>⏳ Son istifadə tarixi yaxınlaşır <span class="cnt">'+ex.length+'</span></h2><div class="meta">Tarixi 7 gün içində bitən və ya keçmiş mallar. Mal istifadə olunubsa, “İstifadə olunub” basın.</div><div class="irows">'+ex.map(expRow).join("")+'</div>' : "")+
+    '<h2>Yoxlanılanlar · '+(qcAll?"hamısı":"son 30 gün")+' <span class="cnt">'+done.length+'</span></h2>'+
+    (done.length ? done.map(o=>orderBrief(o)).join("") : '<div class="empty">Hələ yoxlanılan yoxdur</div>')+
+    (doneAll.length>done.length || qcAll ? '<button class="sm linkb" data-qcall2="1">'+(qcAll?"▴ Yalnız son 30 gün":"▾ Hamısını göstər ("+doneAll.length+")")+'</button>' : "");
+}
+// ⏳ Son istifadə tarixi: Keyfiyyətin yazdığı tarix 7 gün içində bitirsə — xəbərdarlıq (bir dəfə), keçibsə — qırmızı
+let qcAll = false;
+const EXP_D = 7;
+function expList(){
+  return S.orders.filter(o=>o.status!=="redd").flatMap(o=>o.items.map((i,k)=>({o,i,k})))
+    .filter(({i})=>i.exp && dtISO(i.exp) && i.qc==="ok" && (i.got==null || i.got>0) && !i.expDone)
+    .map(r=>Object.assign(r, { d: daysTo(dtISO(r.i.exp)) })).filter(r=>r.d<=EXP_D).sort((a,b)=>a.d-b.d);
+}
+function expRow({o,i,k,d}){
+  return '<div class="irow '+(d<0?"miss":"warnr")+'"><div class="in pn"><span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(d<0?"p-bad":"p-warn")+' st">'+(d<0?"vaxtı keçib":d===0?"bu gün bitir":d+" gün qalıb")+'</span></div>'+
+    '<div class="rmeta">Son istifadə: <b>'+esc(i.exp)+'</b>'+(i.mfg?' · istehsal '+esc(i.mfg):"")+' · <button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"")+' → '+esc(o.wh)+'</div>'+
+    ((role==="Keyfiyyət"||isAdminUser()) ? '<div class="row"><button class="sm" data-expdone="'+o.id+'-'+k+'">✓ İstifadə olunub / anbarda yoxdur</button></div>' : "")+'</div>';
+}
+function expirySignals(){
+  if (ONLINE && !(["Keyfiyyət","Rəhbərlik","Anbar","Anbar (İnqilab)"].includes(role) || (Cloud.me()||{}).is_admin)) return;
+  let n = 0;
+  expList().forEach(({o,i,d})=>{ if (i.expWarn) return; i.expWarn = today(); n++;
+    notify(["Keyfiyyət", o.wh], "late", "⏳ Son istifadə tarixi yaxınlaşır · "+pname(i.pid)+" — "+i.exp+" ("+(d<0?"vaxtı keçib":d===0?"bu gün bitir":d+" gün qalıb")+")",
+      "#"+o.id+" · "+(o.supplier||"")+" → "+o.wh+" · "+i.qty, [], o.id); });
+  if (n) save();
 }
 // Problemlər: Satınalma 12 saat ərzində cavab verməyib
 const probRows = () => resultRows().filter(r=>r.cat!=="ok" && ansLate(r.o,r.i));
@@ -1513,7 +1540,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v36 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v37 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2549,6 +2576,8 @@ $("main").addEventListener("click", e => {
   if (d.go){ tab=d.go; render(); window.scrollTo(0,0); return; }
   if (d.filter){ filter=d.filter; render(); return; }
   if (d.ofrom){ ofrom=d.ofrom; render(); return; }
+  if (d.qcall2){ qcAll = !qcAll; render(); return; }
+  if (d.expdone){ const [o,i] = itemOf(d.expdone); return sure(t, ()=>{ i.expDone = { at:new Date().toISOString(), by:role }; addLog(o, "Son istifadə xəbərdarlığı bağlandı", pname(i.pid)+" · "+i.exp); save(); render(); toast("Bağlandı"); }); }
   if (d.osec){ osec=d.osec; render(); return; }
   if (d.resf){ resF=d.resf; render(); return; }
   if (d.arm){ arM=d.arm; render(); return; }

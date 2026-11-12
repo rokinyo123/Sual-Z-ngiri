@@ -153,6 +153,15 @@ function cmdSifaris(d: Awaited<ReturnType<typeof load>>, arg: string) {
       return `• ${esc(d.pname(i.pid))} ${esc(i.qty)}` + (i.got != null && o.recvDone ? ` → gəldi ${esc(i.got)}` : "") + (pr ? ` — <b>${esc(pr)}</b>` : "") +
         (i.ans ? (i.ans.closed ? " · 🔒 Admin bağladı" : i.ans.none ? " · Satınalma: tapılmır" : ` · Satınalma: ${fmtD(i.ans.date)} gələcək`) : ""); }).join("\n");
 }
+// ⏳ Keyfiyyətin yazdığı son istifadə tarixi 7 gün içində bitənlər (və keçənlər)
+function cmdExpiry(d: Awaited<ReturnType<typeof load>>) {
+  const iso = (v: string) => { const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v || ""); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
+  const rs = d.orders.flatMap((o) => o.items.filter((i: any) => i.exp && iso(i.exp) && i.qc === "ok" && (i.got == null || i.got > 0) && !i.expDone)
+    .map((i: any) => ({ o, i, n: days(today(), iso(i.exp)) }))).filter((r) => r.n <= 7).sort((a, b) => a.n - b.n);
+  if (!rs.length) return "";
+  return `⏳ <b>Son istifadə tarixi yaxınlaşır · ${rs.length}</b>\n` + rs.slice(0, 15).map(({ o, i, n }) =>
+    `${n < 0 ? "🔴" : "🟡"} ${esc(d.pname(i.pid))} ${esc(i.qty)} — ${esc(i.exp)} (${n < 0 ? "vaxtı keçib" : n === 0 ? "bu gün bitir" : n + " gün qalıb"}) · ${link(o.id)} ${esc(o.wh)}`).join("\n");
+}
 const cut = (t: string) => t.length > 3900 ? t.slice(0, 3900) + "\n…" : t;
 
 const HELP = "Salam! Mən Almond Anbar botuyam.\n\n" +
@@ -245,7 +254,7 @@ async function morning(force: boolean) {
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const d = await load();
   const WD = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
-  const text = cut(`☀️ <b>Sabahınız xeyir! ${fmtD(t)} · ${WD[b.getUTCDay()]}</b>\n\n` + cmdBugun(d) + "\n\n" + cmdGeciken(d) + "\n\n" + cmdProblemler(d) + "\n\n📋 <b>Şöbələr</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
+  const text = cut(`☀️ <b>Sabahınız xeyir! ${fmtD(t)} · ${WD[b.getUTCDay()]}</b>\n\n` + cmdBugun(d) + "\n\n" + cmdGeciken(d) + "\n\n" + cmdProblemler(d) + ((x) => x ? "\n\n" + x : "")(cmdExpiry(d)) + "\n\n📋 <b>Şöbələr</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
   const rows: any[] = await db("tg_chats?select=chat_id").then((r) => r.json()).catch(() => []);
   let sent = 0;
   for (const c of [...new Set(rows.map((r) => r.chat_id))]) { const r = await say(c, text); if (r.ok) sent++; }
