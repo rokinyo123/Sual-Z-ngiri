@@ -1498,7 +1498,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v34 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v35 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2748,8 +2748,13 @@ function orderAct(act, id){
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", (bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur")+" · Yoxlayan: "+[...new Set(o.items.map(i=>i.qcBy).filter(Boolean))].join(", "));
     const blk = o.items.filter(i=>i.qc==="bad");
-    if (blk.length) notify(["Satınalma",o.wh,"Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
-    toast("Yoxlama bitdi · Anbar qəbulu bitirə bilər");
+    if (blk.length) notify(["Satınalma","Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
+    // Anbar həmişə xəbər tutur: yoxlama bitdi, qəbulu bitirsin
+    const okN = o.items.filter(i=>i.qc==="ok").length, who = [...new Set(o.items.map(i=>i.qcBy).filter(Boolean))].join(", ");
+    notify([o.wh], blk.length ? "late" : "ok", (blk.length ? "🔍 Keyfiyyət yoxladı · #"+o.id+" — "+blk.length+" mal qəbul olunmadı" : "✅ Keyfiyyət yoxladı · #"+o.id+" — hamısı uyğundur"),
+      (o.supplier||"Firmasız")+" · "+okN+" uyğun"+(blk.length?", "+blk.length+" uyğun deyil":"")+(who?" · yoxlayan: "+who:"")+" — "+o.wh+" qəbulu bitirsin",
+      blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
+    toast("Yoxlama bitdi · "+o.wh+" xəbər tutdu");
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
   else if (act==="receive"){
