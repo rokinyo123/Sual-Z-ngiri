@@ -1266,12 +1266,19 @@ function myWork(){
 // ===================== Ümumi görünüş =====================
 // Hər şöbə yalnız ona lazım olan bölmələri görür
 function tabsFor(r){
-  const t = [["home","🏠","Bu gün"]];
-  if (WAREHOUSES.includes(r) || r==="Texnoloq") t.push(["new","➕","Sifariş"]);
-  t.push(["orders","📦","Sifarişlər"],["buy","🛒","Satınalma"],["qc","🔍","Keyfiyyət"],["days","🚚","Gələcək mallar"],["res","⛔","Gəlməyənlər"],["prob","⚠","Problemlər"]);
-  if (r==="Rəhbərlik" || r==="Admin") t.push(["arch","📊","Statistika"]);
-  if (r==="Admin") t.push(["catalog","📚","Kataloq"]);
-  return t;
+  // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
+  const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
+    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"] };
+  const BY = {
+    "Anbar":           ["home","new","orders","days"],
+    "Anbar (İnqilab)": ["home","new","orders","days"],
+    "Satınalma":       ["home","buy","orders","days","prob"],
+    "Keyfiyyət":       ["home","qc","orders","days"],
+    "Texnoloq":        ["home","new","orders","days"],
+    "Rəhbərlik":       ["home","orders","buy","qc","days","res","prob","arch"],
+    "Admin":           ["home","orders","buy","qc","days","res","prob","arch","catalog"],
+  };
+  return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
 }
 // Donma olanda: açıq qutuları bağlayır, bazadan son vəziyyəti götürür, proqramın yeni versiyasını yoxlayır — hesabdan çıxmır
 async function hardRefresh(){
@@ -1540,7 +1547,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v37 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v38 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
