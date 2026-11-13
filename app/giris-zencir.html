@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="az" translate="no" class="notranslate">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Almond · Zəncir girişi (sınaq)</title>
+<meta name="theme-color" content="#140d08">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:wght@700&display=swap">
+<style>
+/* Giriş — sınaq: zəncir ustası zənciri atır, ekranın kənarındakı formanı dartır; forma gəlib ona dəyir, o yıxılır */
+:root{--bg:#140d08;--bg2:#24170e;--cream:#FFF3E0;--muted:#b59a80;--gold:#E9B45A;--gold2:#F7D594;--line:rgba(255,230,190,.14)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--cream);font-family:"Noto Sans",system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.stage{position:relative;height:100dvh;overflow:hidden;background:radial-gradient(90% 60% at 30% 70%,#3a2414,var(--bg) 70%)}
+.floor{position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,#2a1a0f,#160e08);border-top:1px solid rgba(255,220,170,.08)}
+.title{position:absolute;top:max(18px,env(safe-area-inset-top));left:0;right:0;text-align:center;font-family:"Noto Serif",Georgia,serif;font-size:clamp(26px,8vw,40px);color:var(--gold2);letter-spacing:.5px;text-shadow:0 2px 14px rgba(233,180,90,.35)}
+.title small{display:block;font-family:"Noto Sans";font-size:11px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.badge{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;z-index:9;font-size:11px;font-weight:700;color:#2a1708;background:var(--gold);border-radius:999px;padding:3px 9px}
+
+/* personaj */
+.hero{position:absolute;left:6%;bottom:14%;width:min(36vw,190px);z-index:3;cursor:pointer;transform-origin:50% 50%}
+.hero svg{width:100%;height:auto;display:block;overflow:visible}
+.hero .arm{transform-box:fill-box;transform-origin:20% 10%}
+.hero .blink{animation:blink 4s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.hero .eyes{transform-box:fill-box;transform-origin:center}
+.hero.idle .body{animation:breath 2.4s ease-in-out infinite}
+@keyframes breath{50%{transform:translateY(1.5px)}}
+.dizzy{position:absolute;font-size:22px;opacity:0;pointer-events:none;z-index:4}
+.hint{position:absolute;left:4%;bottom:calc(14% + min(36vw,190px)*1.62 + 8px);z-index:4;font-size:13px;color:var(--gold2);background:rgba(36,23,14,.85);border:1px solid var(--line);border-radius:12px;padding:6px 10px;transition:opacity .3s;max-width:60vw}
+.hint::after{content:"";position:absolute;left:24px;bottom:-6px;width:10px;height:10px;background:inherit;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.hint.hide{opacity:0}
+
+/* zəncir */
+.chain{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:visible}
+
+/* forma — əvvəl sağ kənarda, bir hissəsi görünür */
+.form{position:absolute;top:50%;left:50%;z-index:6;width:min(86vw,340px);padding:18px;border-radius:16px;background:rgba(36,24,15,.96);border:1px solid var(--line);
+  box-shadow:0 18px 50px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:11px;will-change:transform}
+.form h2{font-family:"Noto Serif",Georgia,serif;font-size:20px}
+.form .sub{font-size:13px;color:var(--muted);margin-top:-5px}
+.form label{font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.form select,.form input{width:100%;font:inherit;font-size:16px;color:var(--cream);background:rgba(15,10,7,.7);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+.form select option{background:#1a120c}
+.form input:focus,.form select:focus{border-color:var(--gold)}
+.pin{letter-spacing:10px;text-align:center;font-weight:700}
+.btn{font:inherit;font-weight:700;font-size:16px;color:#2a1708;background:linear-gradient(180deg,var(--gold2),var(--gold));border:0;border-radius:10px;padding:11px;cursor:pointer}
+.note{font-size:12px;color:var(--muted);text-align:center;min-height:15px}
+.form .hook-eye{position:absolute;left:-7px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;border:3px solid #9a8a72;background:#2a1d13}
+.form.locked{pointer-events:none}
+.skip{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;margin:auto;width:max-content;z-index:8;background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:12px;cursor:pointer}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(2px,-1px)}40%{transform:translate(-3px,1px)}60%{transform:translate(2px,2px)}80%{transform:translate(-1px,-1px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="badge">SINAQ</div>
+<main class="stage" id="stage">
+  <div class="title">Almond<small>Anbar zənciri</small></div>
+  <div class="floor"></div>
+
+  <div class="hint" id="hint">Mənə toxun — zənciri atım! ⛓</div>
+
+  <!-- zəncir ustası: şəklə əsasən cizgi personaj -->
+  <div class="hero idle" id="hero" role="button" tabindex="0" aria-label="Zənciri at">
+    <svg viewBox="0 0 160 260" aria-hidden="true">
+      <defs>
+        <linearGradient id="sw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f3527"/><stop offset="1" stop-color="#1c2017"/></linearGradient>
+        <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6d2b4"/><stop offset="1" stop-color="#e3b08c"/></linearGradient>
+        <linearGradient id="beard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a26"/><stop offset="1" stop-color="#4a2c18"/></linearGradient>
+        <pattern id="knit" width="6" height="4" patternUnits="userSpaceOnUse"><path d="M0 2h6" stroke="#ffffff" stroke-opacity=".05" stroke-width="1"/></pattern>
+      </defs>
+      <ellipse cx="78" cy="254" rx="52" ry="6" fill="#000" opacity=".35"/>
+      <g class="body">
+        <!-- ayaqlar -->
+        <path d="M56 186 L52 244 L70 244 L76 192 Z" fill="#2c3140"/>
+        <path d="M86 192 L92 244 L110 244 L104 186 Z" fill="#2c3140"/>
+        <path d="M46 242 h28 a4 4 0 0 1 4 4 v4 h-34 z" fill="#3b2a1d"/>
+        <path d="M88 242 h28 a4 4 0 0 1 4 4 v4 h-34 z" fill="#3b2a1d"/>
+        <!-- arxa qol -->
+        <path d="M44 112 C28 130 28 160 36 178 L48 176 C44 158 46 138 56 124 Z" fill="url(#sw)"/>
+        <circle cx="42" cy="180" r="8" fill="url(#skin)"/>
+        <!-- gövdə: tünd zeytuni trikotaj sviter -->
+        <path d="M40 112 C46 98 62 94 80 94 C98 94 114 98 120 112 L124 190 C108 196 52 196 36 190 Z" fill="url(#sw)"/>
+        <path d="M40 112 C46 98 62 94 80 94 C98 94 114 98 120 112 L124 190 C108 196 52 196 36 190 Z" fill="url(#knit)"/>
+        <path d="M64 96 C70 104 90 104 96 96" fill="none" stroke="#3c4431" stroke-width="5" stroke-linecap="round"/>
+        <!-- boyun -->
+        <rect x="70" y="86" width="20" height="12" rx="4" fill="#e3b08c"/>
+        <!-- baş -->
+        <g class="head">
+          <ellipse cx="50" cy="62" rx="6" ry="9" fill="#e9b996"/>
+          <ellipse cx="110" cy="62" rx="6" ry="9" fill="#e9b996"/>
+          <path d="M52 50 C52 26 66 16 80 16 C94 16 108 26 108 50 L108 70 C108 88 96 98 80 98 C64 98 52 88 52 70 Z" fill="url(#skin)"/>
+          <!-- qısa saç, yanları qısa -->
+          <path d="M52 48 C50 26 64 12 80 12 C97 12 110 24 108 48 C104 38 100 30 80 28 C62 28 56 38 52 48 Z" fill="#4b3322"/>
+          <path d="M52 48 C52 42 53 38 55 35 L56 52 Z M108 48 C108 42 107 38 105 35 L104 52 Z" fill="#6b4c36" opacity=".7"/>
+          <!-- alın qırışları -->
+          <path d="M70 36 q10 -3 20 0" stroke="#c99674" stroke-width="1" fill="none" opacity=".6"/>
+          <!-- qalın qaşlar -->
+          <path d="M60 46 q9 -6 17 -1" stroke="#3a2618" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <path d="M83 45 q9 -5 17 1" stroke="#3a2618" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <!-- gözlər -->
+          <g class="eyes blink"><ellipse cx="69" cy="54" rx="3.4" ry="3" fill="#2b1d14"/><ellipse cx="92" cy="54" rx="3.4" ry="3" fill="#2b1d14"/>
+            <circle cx="70" cy="53" r="1" fill="#fff"/><circle cx="93" cy="53" r="1" fill="#fff"/></g>
+          <!-- burun -->
+          <path d="M80 56 q-3 10 -1 13 q4 2 7 -1" stroke="#c48f6b" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- saqqal + bığ -->
+          <path d="M52 62 C52 74 54 84 60 92 C66 102 74 106 80 106 C86 106 94 102 100 92 C106 84 108 74 108 62 C104 70 100 74 96 74 C92 70 86 68 80 70 C74 68 68 70 64 74 C60 74 56 70 52 62 Z" fill="url(#beard)"/>
+          <path d="M66 74 C72 70 76 70 80 71 C84 70 88 70 94 74 C90 78 84 77 80 76 C76 77 70 78 66 74 Z" fill="#5a3520"/>
+          <path d="M72 82 q8 4 16 0" stroke="#e8a99a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          <path d="M58 80 q4 8 10 12 M102 80 q-4 8 -10 12" stroke="#9a5f34" stroke-width="1" fill="none" opacity=".5"/>
+        </g>
+        <!-- ön qol (zənciri atan) -->
+        <g class="arm" id="arm">
+          <path d="M112 108 C130 116 138 136 136 154 L124 156 C124 140 118 128 106 122 Z" fill="url(#sw)"/>
+          <circle id="hand" cx="131" cy="160" r="9" fill="url(#skin)"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="dizzy" id="dz">💫</div>
+
+  <svg class="chain" id="chain"><path id="chainPath" fill="none" stroke="#a8977c" stroke-width="5" stroke-dasharray="7 3" stroke-linecap="round"/>
+    <path id="chainShine" fill="none" stroke="#e6d6b8" stroke-width="1.6" stroke-dasharray="3 7" stroke-linecap="round" opacity=".7"/>
+    <g id="hook"><path d="M0 -9 C9 -9 11 3 3 8 L-2 4" fill="none" stroke="#cdbb9c" stroke-width="3.5" stroke-linecap="round"/></g></svg>
+
+  <form class="form locked" id="lf">
+    <span class="hook-eye"></span>
+    <h2>Daxil olun</h2>
+    <div class="sub">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>
+    <label>Şöbə<select id="lu"><option value="" selected disabled>— Şöbəni seçin —</option><option>Anbar</option><option>Anbar (İnqilab)</option><option>Satınalma</option><option>Keyfiyyət</option><option>Texnoloq</option><option>Rəhbərlik</option><option>Admin</option></select></label>
+    <label>Parol<input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" placeholder="• • • •"></label>
+    <button class="btn" type="submit">Daxil ol</button>
+    <div class="note" id="note"></div>
+  </form>
+  <button class="skip" id="skip" type="button">Animasiyasız aç</button>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const stage = $("stage"), hero = $("hero"), arm = $("arm"), form = $("lf"), chain = $("chainPath"), shine = $("chainShine"), hook = $("hook");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---- forma: başlanğıcda sağ kənarda, yalnız bir hissəsi görünür ----
+let fx = 0, fy = 0, frot = 0;                    // formanın yerdəyişməsi (mərkəzdən)
+const W = () => stage.clientWidth, H = () => stage.clientHeight;
+const parkedX = () => W()/2 + form.offsetWidth*0.18;   // sağdan ~30% görünür
+const placeForm = () => { form.style.transform = `translate(calc(-50% + ${fx}px), calc(-50% + ${fy}px)) rotate(${frot}deg)`; };
+function park(){ fx = parkedX(); fy = -H()*0.06; frot = -8; placeForm(); }
+park(); addEventListener("resize", () => { if (!done) park(); });
+
+// ---- səslər (brauzerdə yaradılır) ----
+let ac = null;
+const A = () => { try { ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if (ac.state==="suspended") ac.resume(); } catch(e){} return ac; };
+function noise(dur, f0, f1, vol, t0=0){ const a = A(); if (!a) return; const t = a.currentTime+t0, n = a.createBufferSource(), b = a.createBuffer(1, Math.floor(a.sampleRate*dur), a.sampleRate), d = b.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1; const bp = a.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.2;
+  bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t+dur); const g = a.createGain();
+  g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+dur*.2); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  n.buffer = b; n.connect(bp).connect(g).connect(a.destination); n.start(t); n.stop(t+dur); }
+function clank(t0=0, n=5){ const a = A(); if (!a) return; for (let k=0;k<n;k++){ const t = a.currentTime+t0+k*0.035, o = a.createOscillator(), g = a.createGain();
+  o.type = "square"; o.frequency.value = 1800+Math.random()*1600; g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.05); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.06); } }
+function thud(t0=0){ const a = A(); if (!a) return; const t = a.currentTime+t0, o = a.createOscillator(), g = a.createGain(); o.type = "sine";
+  o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(45,t+.25); g.gain.setValueAtTime(.35,t); g.gain.exponentialRampToValueAtTime(.0001,t+.3);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+.32); noise(.12, 900, 300, .25, t0); }
+
+// ---- zəncirin çəkilməsi: əldən qarmağa ----
+function handPt(){ const r = $("hand").getBoundingClientRect(), s = stage.getBoundingClientRect(); return [r.left+r.width/2-s.left, r.top+r.height/2-s.top]; }
+function eyePt(){ const r = form.querySelector(".hook-eye").getBoundingClientRect(), s = stage.getBoundingClientRect(); return [r.left+r.width/2-s.left, r.top+r.height/2-s.top]; }
+function drawChain(p, sag){            // p: 0..1 nə qədər uzanıb; sag: sallanma
+  const [hx,hy] = handPt(), [ex,ey] = eyePt();
+  const tx = hx+(ex-hx)*p, ty = hy+(ey-hy)*p, mx = (hx+tx)/2, my = (hy+ty)/2 + (sag||0);
+  const d = `M${hx},${hy} Q${mx},${my} ${tx},${ty}`;
+  chain.setAttribute("d", d); shine.setAttribute("d", d);
+  const ang = Math.atan2(ty-my, tx-mx)*180/Math.PI;
+  hook.setAttribute("transform", `translate(${tx},${ty}) rotate(${ang})`); hook.style.display = "";
+}
+function hideChain(){ chain.setAttribute("d",""); shine.setAttribute("d",""); hook.style.display = "none"; }
+hideChain();
+
+// ---- animasiya ----
+const ease = t => 1-Math.pow(1-t,3), back = t => { const c=1.70158; return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2); };
+function tween(ms, fn){ return new Promise(res => { const t0 = performance.now(); (function f(t){ const k = Math.min(1,(t-t0)/ms); fn(k); k<1 ? requestAnimationFrame(f) : res(); })(t0); }); }
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let busy = false, done = false;
+
+async function play(){
+  if (busy || done) return; busy = true; A();
+  $("hint").classList.add("hide"); hero.classList.remove("idle");
+  // 1) qolu geri, sonra irəli at — zəncir uçur
+  await tween(180, k => { arm.style.transform = `rotate(${-55*ease(k)}deg)`; });
+  noise(.35, 600, 2400, .18);
+  const throwP = tween(380, k => { arm.style.transform = `rotate(${-55+95*ease(k)}deg)`; drawChain(ease(k), -40*(1-k)); });
+  await throwP; clank(0, 6); form.classList.add("shake");
+  await wait(120); form.classList.remove("shake");
+  // 2) birinci dartma — forma yerindən oynayır, gəlmir
+  const x0 = fx;
+  await tween(220, k => { arm.style.transform = `rotate(${40-30*k}deg)`; fx = x0-28*Math.sin(k*Math.PI); frot = -8+4*Math.sin(k*Math.PI); placeForm(); drawChain(1, 6); });
+  clank(0, 3);
+  await wait(260);
+  // 3) bərk dartma — forma uçub gəlir və personaja dəyir
+  noise(.4, 2600, 500, .22);
+  await tween(160, k => { arm.style.transform = `rotate(${10-70*ease(k)}deg)`; hero.style.transform = `translateX(${-6*k}px) rotate(${-4*k}deg)`; drawChain(1, 0); });
+  const heroBox = () => hero.getBoundingClientRect(), s = stage.getBoundingClientRect();
+  const hitX = heroBox().right - s.left - W()/2 + form.offsetWidth*0.5 - 10;     // forma personajın gövdəsinə çatanda
+  const fromX = fx, fromY = fy, fromR = frot;
+  await tween(300, k => { const e = k*k; fx = fromX+(hitX-fromX)*e; fy = fromY+(0-fromY)*e; frot = fromR*(1-e); placeForm(); drawChain(1, 0); });
+  // 4) zərbə: personaj yıxılır, forma ortada dayanır
+  thud(); hideChain(); arm.style.transform = "rotate(-20deg)";
+  const L = lying(), fall = tween(650, k => { const b = back(Math.min(1,k*1.05)); hero.style.transform = `translate(${L.dx*b}px, ${L.dy*Math.min(1,b)}px) rotate(${-90*b}deg)`; });
+  const settleFrom = fx;
+  await tween(520, k => { const b = back(k); fx = settleFrom*(1-b); fy = 0; frot = 0; placeForm(); });
+  await fall;
+  const r = hero.getBoundingClientRect(), dz = $("dz");
+  dz.style.left = (r.left - s.left + r.width*0.15)+"px"; dz.style.top = (r.top - s.top - 8)+"px";
+  dz.animate([{opacity:0, transform:"rotate(0)"},{opacity:1, transform:"rotate(180deg)"},{opacity:1, transform:"rotate(540deg)"},{opacity:0, transform:"rotate(720deg)"}], {duration:1800, iterations:2});
+  form.classList.remove("locked"); done = true; busy = false;
+}
+// yıxılanda: mərkəz ətrafında -90°, yerə uzanır, tam ekranda qalır
+function lying(){ const w = hero.offsetWidth, h = hero.offsetHeight, cx = hero.offsetLeft + w/2;
+  const dy = (h - w)/2 - 4, dx = Math.max(-14, h/2 - cx + 10);
+  return { dx, dy }; }
+function openNow(){ if (done) return; done = true; hideChain(); fx = 0; fy = 0; frot = 0; placeForm(); form.classList.remove("locked"); $("hint").classList.add("hide");
+  const L = lying(); hero.style.transform = `translate(${L.dx}px, ${L.dy}px) rotate(-90deg)`; }
+
+hero.addEventListener("click", play);
+hero.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); play(); } });
+form.addEventListener("click", () => { if (!done) play(); });           // kənardakı formaya basanda da
+$("skip").onclick = openNow;
+if (reduce) openNow();
+document.addEventListener("keydown", e => { if (!done && /^[0-9a-z]$/i.test(e.key)) openNow(); });
+
+// sınaq: həqiqi giriş yoxdur
+form.onsubmit = e => { e.preventDefault();
+  if (!$("lu").value) return $("note").textContent = "Şöbəni seçin";
+  if (!/^\d{4}$/.test($("lp").value)) return $("note").textContent = "4 rəqəmli parolu yazın";
+  $("note").innerHTML = 'Bu sınaq səhifəsidir. <a href="./" style="color:var(--gold)">Əsas proqrama keç</a>'; };
+</script>
+</body>
+</html>
