@@ -1,0 +1,5 @@
+raw/
+*.jpg
+!build/img/*.jpg
+build/img/k_*.png
+mohur_short.mp4
