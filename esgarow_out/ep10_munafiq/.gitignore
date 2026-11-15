@@ -1,0 +1,5 @@
+raw/
+*.jpg
+!build/img/*.jpg
+build/img/k_*.png
+munafiq_short.mp4
