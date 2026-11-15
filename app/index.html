@@ -276,6 +276,8 @@ details.rangebar[open]{display:flex;flex-direction:column;gap:8px}
 .it.nodep{border-left:3px solid #c0392b;padding-left:4px}
 .deptag{display:inline-block;font-size:12px;font-weight:600;color:#5C2E0E;background:#F3E6D6;border-radius:8px;padding:1px 7px;white-space:nowrap}
 .it.newp input:first-child{border-color:var(--warn);background:var(--warn-bg)}
+.paste{min-height:44px;border:2px dashed var(--line,#ccc);background:transparent;font-size:13px;resize:none}
+.paste:focus{border-color:var(--accent,#2a7)}
 .imp{background:var(--wait-bg);border-radius:9px;padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:6px}
 .checks{display:flex;flex-wrap:wrap;gap:6px}
 .checks label{border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;font-size:13px;background:var(--surface)}
@@ -1553,7 +1555,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v40 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v41 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2190,8 +2192,39 @@ const findFirm = h => { const n = normName(h); return n ? S.firms.find(f=>normNa
 const ord = n => n+"-"+(["cu","ci","ci","cü","cü","ci","cı","ci","ci","cu"][n%10]);
 function blocker(out){ let b = 0, used = false;
   return { cut(){ if (used){ b++; used = false; } }, push(x){ x.blk = b; used = true; out.push(x); } }; }
-function parseOrderSheet(ws){
-  const A = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:"",blankrows:true});
+function parseOrderSheet(ws){ return parseOrderAoa(XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:"",blankrows:true})); }
+// Excel-dən kopyalanan mətn: sütunlar Tab, sətirlər yeni sətir; içində Tab/sətir olan xana dırnaq içində gəlir
+function parseTSV(t){
+  const A = []; let row = [], cell = "", q = false; t = String(t||"").replace(/\r\n?/g,"\n");
+  for (let i=0; i<t.length; i++){ const ch = t[i];
+    if (q){ if (ch==='"'){ if (t[i+1]==='"'){ cell+='"'; i++; } else q = false; } else cell += ch; continue; }
+    if (ch==='"' && cell==="") { q = true; continue; }
+    if (ch==="\t"){ row.push(cell); cell = ""; }
+    else if (ch==="\n"){ row.push(cell); A.push(row); row = []; cell = ""; }
+    else cell += ch;
+  }
+  if (cell!=="" || row.length){ row.push(cell); A.push(row); }
+  return A;
+}
+// Yalnız Anbar və İnqilab anbarı: Exceldə seçib Ctrl+C → saytda Ctrl+V; mallar siyahıya yazılır
+const canPaste = () => WAREHOUSES.includes(role);
+function pasteOrder(text){
+  const A = parseTSV(text).map(r=>r.map(c=>String(c).replace(/\s+/g," ").trim()));
+  const rows = A.some(r=>r.some(Boolean)) ? parseOrderAoa(A) : [];
+  if (!rows.length){ draft.paste = { n:0 }; render(); return toast("Yapışdırılan mətndə mal və miqdar tapılmadı"); }
+  draft.items = draft.items.filter(i=>i.src!=="paste" && (i.pid || (i.pname||"").trim()));
+  const base = draft.items.length ? Math.max(...draft.items.map(i=>i.blk||0))+1 : 0;
+  rows.forEach(r=>{ const pid = matchPid(r.name); draft.items.push({pid, pname:r.name, qty:r.qty, left:r.left||"", imp:true, src:"paste", firm:r.firm, blk:base+(r.blk||0)}); });
+  draft.paste = { n:rows.length };
+  render(); toast(rows.length+" məhsul yapışdırıldı");
+}
+function pasteInfo(){
+  const p = draft.paste; if (!p) return "";
+  if (!p.n) return '<div class="imp"><div class="rs">Yapışdırılan mətndə mal tapılmadı. Exceldə malın adı və miqdarı olan xanaları (başlıqla birlikdə) seçib kopyalayın.</div></div>';
+  const imp = draft.items.filter(i=>i.src==="paste"), miss = imp.filter(i=>!i.pid).length;
+  return '<div class="imp"><div>📋 Yapışdırılandan <b>'+imp.length+' məhsul</b> götürüldü'+(!miss?', hamısı kataloqda tapıldı':miss===imp.length?', <span class="newtag">hamısı yeni</span> (kataloqda yoxdur)':': '+(imp.length-miss)+'-i kataloqda tapıldı, <span class="newtag">'+miss+' yeni</span>')+'. Aşağıda yoxlayın. Yenidən yapışdırsanız, əvvəlki yapışdırılanın yerinə yazılır.</div></div>';
+}
+function parseOrderAoa(A){
   const txt = v => String(v??"").trim();
   const out = [], B = blocker(out);
   const heads = [];
@@ -2269,7 +2302,7 @@ function matchPid(name){
   const p = live().find(x=>foldName(x.name)===f); return p ? p.id : "";
 }
 function importInfo(){
-  return xlsInfo() + ocrInfo();
+  return pasteInfo() + xlsInfo() + ocrInfo();
 }
 function ocrInfo(){
   const o = draft.ocr; if (!o) return "";
@@ -2398,6 +2431,7 @@ function vNew(){
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
       '<label class="btnlink">📷 Şəkil<input type="file" id="nPhoto" accept="image/*" multiple class="fpick"></label></div></div>'+
+      (canPaste()?'<textarea id="nPaste" class="paste" rows="2" placeholder="📋 Exceldə malları seçin, Ctrl+C edin və bura Ctrl+V ilə yapışdırın"></textarea>':"")+
       importInfo()+items+'<button class="sm" id="addItem">+ Mal</button></div>'+
     '<textarea id="nNote" placeholder="Qeyd (istəyə görə)">'+esc(draft.note)+'</textarea>'+
     '<div class="row"><label class="btnlink">📎 Fayl<input type="file" id="nFile" multiple class="fpick"></label>'+(draft.photos.length?'<div class="photos">'+draft.photos.map((p,k)=>'<span class="ph"><img src="'+p+'" alt="" data-big="d-'+k+'"><button class="phx" data-phdel="d-'+k+'" aria-label="Şəkli sil">✕</button></span>').join("")+'</div>':"")+'</div>'+fileList(draft.files,"d")+
@@ -2410,6 +2444,10 @@ function bindNew(){
   $("nFile").onchange = e => addDraftFiles(e.target.files);
   $("nXls").onchange = e => addDraftFiles(e.target.files);
   $("nPhoto").onchange = e => addDraftPhotos(e.target.files);
+  if ($("nPaste")){ const pz = $("nPaste");
+    pz.onpaste = e => { const t = e.clipboardData && e.clipboardData.getData("text/plain"); if (t){ e.preventDefault(); pasteOrder(t); } };
+    pz.oninput = () => { const t = pz.value; if (/\t|\n/.test(t)) pasteOrder(t); };   // telefonda menyudan yapışdıranda
+  }
   if ($("nSheet")) $("nSheet").onchange = e => { draft.sheet = e.target.value; applySheet(); render(); };
   if ($("sendSheets")) $("sendSheets").onclick = sendSheets;
   $("send").onclick = sendOrder;
@@ -2465,7 +2503,14 @@ function sendSheets(){
   save(); draft = newDraft(); tab = "home"; render();
   toast(made.length+" sifariş Satınalmaya göndərildi: "+made.map(o=>"#"+o.id).join(", "));
 }
-function newDraft(){ return { sample:true, type:"Gündəlik", items:[{pid:"",qty:""}], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null }; }
+function newDraft(){ return { sample:true, type:"Gündəlik", items:[{pid:"",qty:""}], deadline:24, note:"", photos:[], files:[], xls:null, wb:null, ocr:null, paste:null }; }
+// Yeni sifariş səhifəsində heç bir xanada deyilkən Ctrl+V edilsə də götürülür
+document.addEventListener("paste", e => {
+  if (tab!=="new" || !canPaste()) return;
+  const el = e.target; if (el && (el.tagName==="INPUT" || el.tagName==="TEXTAREA" || el.isContentEditable)) return;
+  const t = e.clipboardData && e.clipboardData.getData("text/plain"); if (!t || !/\t|\n/.test(t)) return;
+  e.preventDefault(); pasteOrder(t);
+});
 
 // Bir dəfə açıb iki ölçüdə JPEG verir (telefonda böyük şəkli iki dəfə açmamaq üçün)
 function shrink2(file, a, b){
