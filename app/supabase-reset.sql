@@ -11,7 +11,7 @@ begin
   delete from almond.records where kind in ('order','alert','log') or (kind = 'meta' and id = 'reports');
   get diagnostics n = row_count;
   delete from almond.history where kind in ('order','alert','log') or (kind = 'meta' and id = 'reports');
-  if to_regclass('almond.tg_sent') is not null then execute 'delete from almond.tg_sent'; end if;
+  if to_regclass('almond.tg_sent') is not null then execute 'delete from almond.tg_sent where true'; end if;
   -- açıq olan digər cihazlar bunu görüb özləri yenilənir
   insert into almond.records (kind, id, version, data, updated_by)
     values ('meta', 'reset', 1, jsonb_build_object('at', now()), auth.uid())
