@@ -75,8 +75,10 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   return { orders, pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
-const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder;
+const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep;
 const held = (o: any) => !!(o.hold && !o.holdDone);
+const HOLDN: Record<string, string> = { sample: "🧪 xəbərsiz nümunə", noinv: "📄 qaiməsiz mal", noorder: "📦 xəbərsiz mal" };
+const holdLine = (o: any) => `⛔ ${link(o.id)} ${HOLDN[o.hold?.t || "sample"]} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} · ${hTxt((Date.now() - new Date(o.hold.at).getTime()) / H)} — Satınalma ${o.rep ? "cavab verməyib" : "yazmayıb"}` + (o.hold?.desc ? `\n   ${esc(String(o.hold.desc).slice(0, 120))}` : "");
 function problem(o: any, i: any) {
   if (i.unav) return "Satınalma: mal yoxdur";
   if (i.notFound) return "Sürücü tapmadı";
@@ -94,7 +96,7 @@ const lateOpen = (o: any) => o.status === "yolda" && !!o.eta && o.eta < today();
 const lateEntry = (o: any) => (o.lates || []).find((x: any) => x.eta === o.eta);
 const techReady = (o: any, i: any) => i.tech && !i.techRes && i.qc !== "bad" && i.qc !== "none" && !i.unav && !i.notFound && o.recvDone && i.got > 0;
 function stageTxt(o: any) {
-  if (held(o)) return "⛔ Saxlanılır — Satınalma xəbərsiz nümunəni yazmayıb";
+  if (held(o)) return o.rep ? `⛔ ${HOLDN[o.hold.t]} — Satınalmanın cavabı gözlənilir` : "⛔ Saxlanılır — Satınalma xəbərsiz nümunəni yazmayıb";
   if (o.status === "acik") return "Satınalmada (gəliş günü təyin olunmayıb)";
   if (o.status === "yolda") return lateOpen(o) ? `Gecikir · ${fmtD(o.eta)} gəlməli idi` : o.eta === today() ? "Bu gün gəlməlidir" : `Gözlənilir · ${fmtD(o.eta)}`;
   if (o.status === "anbar") return hasQC(o) && !o.qcAt ? "Gəldi · Keyfiyyət yoxlamayıb" : `Gəldi · ${o.wh} qəbulu bitirməyib`;
@@ -112,7 +114,7 @@ function board(orders: any[]) {
   const tp = orders.filter((o) => o.items.some((i: any) => techReady(o, i))).length;
   const L = (name: string, parts: string[]) => `${parts.length ? "🔸" : "✅"} <b>${name}</b>: ${parts.length ? parts.join(", ") : "işi yoxdur"}`;
   return [
-    L("Satınalma", [hl.length ? `⛔ ${hl.length} xəbərsiz nümunəni yazmayıb` : "", acc.length ? `${acc.length} sifariş qəbul edilməyib` : "", late.length ? `${late.length} gecikməyə açıqlama yoxdur` : "", un.length ? `${un.length} mala cavab yoxdur` + (unLate ? ` (⚠ ${unLate}-i 12 saatı keçib)` : "") : ""].filter(Boolean)),
+    L("Satınalma", [hl.length ? `⛔ ${hl.length} xəbərsiz / qaiməsiz mala cavab verməyib` : "", acc.length ? `${acc.length} sifariş qəbul edilməyib` : "", late.length ? `${late.length} gecikməyə açıqlama yoxdur` : "", un.length ? `${un.length} mala cavab yoxdur` + (unLate ? ` (⚠ ${unLate}-i 12 saatı keçib)` : "") : ""].filter(Boolean)),
     L("Keyfiyyət", qc.length ? [`${qc.length} sifarişi yoxlamayıb`] : []),
     L("Anbar", wh("Anbar") ? [`${wh("Anbar")} sifarişin qəbulunu bitirməyib`] : []),
     L("İnqilab", wh("Anbar (İnqilab)") ? [`${wh("Anbar (İnqilab)")} sifarişin qəbulunu bitirməyib`] : []),
@@ -137,7 +139,7 @@ function cmdProblemler(d: Awaited<ReturnType<typeof load>>) {
   const hl = d.orders.filter(held);
   if (!rs.length && !ls.length && !hl.length) return "✅ Problem yoxdur — Satınalma hamısına vaxtında cavab verib.";
   return `⚠️ <b>Problemlər · ${rs.length + ls.length + hl.length}</b>\n` +
-    (hl.length ? hl.map((o) => `⛔ ${link(o.id)} xəbərsiz nümunə ${esc(o.wh)}da saxlanılır · ${hTxt((Date.now() - new Date(o.hold.at).getTime()) / H)} — Satınalma yazmayıb`).join("\n") + "\n" : "") +
+    (hl.length ? hl.map(holdLine).join("\n") + "\n" : "") +
     `<i>Satınalma 12 saat ərzində cavab verməyib</i>\n` +
     rs.map(({ o, i }) => `• ${esc(d.pname(i.pid))} ${esc(i.qty)} — ${esc(problem(o, i))} · ${link(o.id)} ${esc(o.supplier || "")} · ${hTxt(-ansLeftH(o, i))} gecikir`).join("\n") +
     (ls.length ? "\n" + ls.map((o) => `• ${link(o.id)} ${esc(o.supplier || "Firmasız")} ${fmtD(o.eta)} gəlmədi — açıqlama yoxdur`).join("\n") : "");
@@ -266,15 +268,15 @@ async function midday(force: boolean) {
   const t = today(), b = bakuNow();
   if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 15 * 60 + 50) return json({ ok: true, skip: "tez" });
   const d = await load();
-  const list = d.orders.filter((o) => o.status === "yolda" && o.eta === t);
-  if (!list.length) return json({ ok: true, sent: 0, skip: "hamısı gəlib" });
+  const list = d.orders.filter((o) => o.status === "yolda" && o.eta === t), hl = d.orders.filter(held);
+  if (!list.length && !hl.length) return json({ ok: true, sent: 0, skip: "hamısı gəlib" });
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: (force ? "midday-test-" + Date.now() : "midday-" + t) }) });
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const by = new Map<string, any[]>();
   list.forEach((o) => { const k = o.supplier || "Firmasız"; by.set(k, [...(by.get(k) ?? []), o]); });
-  const text = cut(`⏰ <b>Saat 16:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
+  const text = cut((hl.length ? `🔔 <b>Satınalma, cavab gözlənilir · ${hl.length}</b>\n` + hl.map(holdLine).join("\n") + "\n\n" : "") + (!list.length ? "" : `⏰ <b>Saat 16:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
     [...by.entries()].map(([f, os]) => `📞 <b>${esc(f)}</b> → ${[...new Set(os.map((o) => esc(o.wh)))].join(", ")} · ${os.reduce((a, o) => a + o.items.length, 0)} mal · ${os.map((o) => link(o.id)).join(" ")}\n   ` +
-      ((ns) => esc(ns.slice(0, 6).join(", ")) + (ns.length > 6 ? "…" : ""))([...new Set(os.flatMap((o) => o.items.map((i: any) => d.pname(i.pid))))])).join("\n") +
+      ((ns) => esc(ns.slice(0, 6).join(", ")) + (ns.length > 6 ? "…" : ""))([...new Set(os.flatMap((o) => o.items.map((i: any) => d.pname(i.pid))))])).join("\n")) +
     `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
   const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
   let sent = 0;

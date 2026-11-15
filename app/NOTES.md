@@ -31,6 +31,7 @@ Technical handoff for any future session working on `app/`. The owner's own hand
 - Order statuses: `acik` (at Satınalma) → `yolda` → `anbar` (arrived) → `bagli` (closed) / `redd`.
 - `hasQC = wh==="Anbar" && !sample && !techOrder`: Keyfiyyət checks only Anbar's own orders; samples (nümunə) and Texnoloq orders skip it.
 - Unannounced sample (xəbərsiz nümunə) is held until Satınalma registers it; otherwise a problem for Rəhbərlik.
+- Warehouse reports (Anbar + İnqilab home): `hold.t` = `sample` | `noinv` (mal gəldi, qaiməsi gəlməyib) | `noorder` (xəbərsiz mal). The last two are orders with `rep`, no items; Satınalma answers with text (`holdAnswer`) → `bagli`. Open ones are listed in Problemlər, in the 09:30 morning message and in the 16:00 message to Satınalma until answered.
 - Satınalma must answer within 12h or the item shows in Problemlər. Late but accepted deliveries are **not** problems — they go to reports.
 - Bulk order: fully arrived items close; problem items split into a child order (`splitProblems`).
 - Delete: Admin always (`adminView()`); the sender (Anbar/İnqilab/Texnoloq) only on the same day, before goods arrive (`canOwnEdit`). Edit by the owner resets `yolda`→`acik` and notifies Satınalma.
