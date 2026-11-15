@@ -1555,7 +1555,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v41 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v42 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1982,7 +1982,7 @@ function resetBlock(){
   return '<details class="dcard bad"><summary><span class="dn">⚠ Proqramı sıfırla</span><span class="pill p-bad">Admin</span></summary>'+
     '<div class="dl">Bütün <b>sifarişlər</b> (silinənlər də), <b>bildirişlər</b>, <b>tarixçə</b> və <b>hesabatlar</b> bazadan silinir. <b>Kataloq, firmalar, istifadəçilər və parollar, Telegram qrupları qalır.</b> Geri qaytarmaq olmur.</div>'+
     '<div class="dl"><input id="rsTxt" placeholder="Təsdiq üçün SIFIRLA yazın" autocomplete="off"></div>'+
-    '<div class="dl"><button class="badb" id="rsGo">Hamısını sil — kataloq qalsın</button></div></details>';
+    '<div class="dl"><button class="badb" id="rsGo">Hamısını sil — kataloq qalsın</button></div><div class="dl rs" id="rsErr"></div></details>';
 }
 async function doReset(btn){
   if (!isAdminUser()) return;
@@ -1991,7 +1991,12 @@ async function doReset(btn){
   if (!ONLINE){ S.orders = []; S.trash = []; S.alerts = []; S.log = []; S.reports = {}; S.seq = 100; save(); render(); return toast("Sıfırlandı · kataloq qaldı"); }
   try { await Cloud.reset(); toast("Sıfırlandı · kataloq qaldı. Proqram yenilənir…"); setTimeout(()=>location.reload(), 1500); }
   catch(e){ btn.disabled = false; btn.textContent = "Hamısını sil — kataloq qalsın";
-    toast(/reset_data|function|404|schema cache/i.test(e.message) ? "Əvvəlcə Supabase-də sıfırlama funksiyasını yaradın (SQL)" : "Xəta: "+e.message); }
+    const m = String(e.message||"");
+    const msg = /Yalnız Admin/i.test(m) ? "Bu hesab bazada Admin kimi qeyd olunmayıb — Supabase SQL: update almond.members set is_admin = true where username = 'admin';"
+      : /reset_data|function|404|schema cache/i.test(m) ? "Sıfırlama funksiyası bazada yoxdur — Supabase SQL Editor-da supabase-reset.sql faylını işlədin"
+      : /Sessiya|JWT|401/i.test(m) ? "Sessiya bitib — çıxış edib yenidən Admin ilə daxil olun"
+      : "Xəta: "+m;
+    const d = $("rsErr"); if (d) d.textContent = msg; toast(msg); }
 }
 function vArch(){
   const seg = '<h2>Şöbələr</h2>'+deptBoard()+trashBlock()+resetBlock()+'<h2>Statistika</h2><div class="seg">'+[["arch","🗄 Arxiv"],["week","📊 Həftəlik"],["month","📅 Aylıq"]].map(([k,l])=>'<button class="'+(arM===k?"on":"")+'" data-arm="'+k+'">'+l+'</button>').join("")+'</div>';

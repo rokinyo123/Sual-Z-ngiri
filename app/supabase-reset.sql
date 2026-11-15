@@ -72,3 +72,6 @@ begin
   end loop;
   return out;
 end $$;
+
+-- Supabase API yeni funksiyanı dərhal görsün (yoxsa "schema cache" xətası verə bilər)
+notify pgrst, 'reload schema';
