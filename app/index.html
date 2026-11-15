@@ -965,7 +965,7 @@ function addLog(o, act, note, by){
 // İnqilab:     Keyfiyyət və Texnoloq yoxdur — Gözlənilir → İnqilab qeyd edir → bağlanır.
 // status: acik (Satınalmada) · yolda (Gözlənilir) · anbar (Anbar qeyd edir) · bagli · redd
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
-const hasQC = o => o.wh==="Anbar" && !o.sample && !o.techOrder;   // Keyfiyyət Anbarın öz sifarişlərinə baxır; nümunə və Texnoloq sifarişi Anbar qəbulundan sonra Texnoloqa gedir
+const hasQC = o => o.wh==="Anbar" && !o.sample && !o.techOrder && !o.rep;   // Keyfiyyət Anbarın öz sifarişlərinə baxır; nümunə və Texnoloq sifarişi Anbar qəbulundan sonra Texnoloqa gedir
 // Keyfiyyət: yoxlayan şəxs, istehsal / son istifadə tarixi, riskli mallarda temperatur
 const QC_PEOPLE = ["Məcidli Məsumə","Məmmədzadə Aysun"];
 const RISKY = /s[üu]d|sosis|kolbas|sucu|qaym|xama|k[əe]smik|pendir|qat[ıi]q|ayran|k[əe]r[əe]\s*ya|ya[ğg]\s*k[əe]r|\b[əe]t\b|[əe]t\s|toyuq|bal[ıi]q|yumurta|dondurma|ma[sş]karpon|mocarel|mozzarel|krem\s*[şs]anti|slivk|sliv|qaymaq|kefir|smetan/i;
@@ -1018,7 +1018,7 @@ const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 function waitOn(o){
   if (o.status==="redd" || o.deleted) return null;
   let w = null;
-  if (held(o)) w = { who:"Satınalma", neg:"Satınalma nümunəni yazmayıb — mal saxlanılır", what:"xəbərsiz nümunənin firmasını və adını yazmalıdır", since:o.hold.at, lim:2 };
+  if (held(o)) w = { who:"Satınalma", neg:holdOf(o).wait, what:holdOf(o).need, since:o.hold.at, lim:o.rep?ANS_H:2 };
   else if (o.status==="acik") w = { who:"Satınalma", neg:"Satınalma qəbul etməyib", what:"gəliş günü təyin etməlidir", since:o.created, lim:24 };
   else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", neg:"Keyfiyyət yoxlamayıb", what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:3 };
   else if (o.status==="anbar") w = { who:o.wh, neg:o.wh+" qəbulu bitirməyib", what:"qəbulu bitirməlidir", since:o.qcAt||o.arrivedAt||o.last_move, lim:3 };
@@ -1173,7 +1173,8 @@ function pushNotify(){
 // ===================== Mərhələ: hamı üçün eyni rəng =====================
 function stage(o){
   if (o.status==="redd") return {k:"arch", t:"Ləğv edildi"};
-  if (held(o)) return {k:"bad", t:"⛔ Saxlanılır — Satınalma nümunəni yazmayıb"};
+  if (held(o)) return {k:"bad", t:o.rep ? "⛔ "+holdOf(o).n+" — Satınalmanın cavabı gözlənilir" : "⛔ Saxlanılır — Satınalma nümunəni yazmayıb"};
+  if (o.rep) return {k:"done", t:holdOf(o).ic+" "+holdOf(o).n+" · Satınalma cavab verdi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
   if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=16 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"} : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
@@ -1378,12 +1379,26 @@ function render(){
 // ===================== 🧪 Nümunə =====================
 // Satınalma firma ilə danışıb nümunəni özü yazır (gün + mallar) → Anbar və Texnoloq görür.
 // Xəbərsiz gələn nümunəni Anbar qeyd edir → Satınalma və Rəhbərlik xəbər tutur, hesabatda sayılır.
-const held = o => !!(o.hold && !o.holdDone && o.status!=="redd");     // xəbərsiz nümunə: Satınalma adını yazana qədər saxlanılır
+const held = o => !!(o.hold && !o.holdDone && o.status!=="redd");
+// Anbarın Satınalmaya yazdığı 3 növ hal: Satınalma cavab verənə qədər problem kimi qalır, Telegramda hər gün xatırladılır
+const HOLD = { sample:{ ic:"🧪", n:"Xəbərsiz nümunə", btn:"🧪 Xəbərsiz nümunə gəldi", need:"nümunənin firmasını və adını yazmalıdır", wait:"Satınalma nümunəni yazmayıb — mal saxlanılır" },
+  noinv:{ ic:"📄", n:"Qaiməsiz mal", btn:"📄 Mal gəldi, qaiməsi gəlməyib", need:"qaimə barədə cavab verməlidir", wait:"Satınalma qaimə barədə cavab verməyib",
+    hint:"Sifariş olunmuş mal gəlib, amma <b>qaiməsi gəlməyib</b>. Satınalma dərhal Telegramda xəbər tutur və cavab verənə qədər hər gün xatırladılır.", ph:"Hansı mal gəlib, nə qədər? Sifariş nömrəsini bilirsinizsə yazın (məs. #105)" },
+  noorder:{ ic:"📦", n:"Xəbərsiz mal", btn:"📦 Xəbərsiz mal gəldi", need:"bu mal barədə cavab verməlidir", wait:"Satınalma xəbərsiz mal barədə cavab verməyib",
+    hint:"Heç kim sifariş verməyib, amma <b>mal gəlib</b>. Satınalma dərhal Telegramda xəbər tutur və cavab verənə qədər hər gün xatırladılır.", ph:"Nə gəlib, nə qədər, kim gətirib?" } };
+const hkind = o => (o.hold && o.hold.t) || "sample";
+const holdOf = o => HOLD[hkind(o)];     // xəbərsiz nümunə: Satınalma adını yazana qədər saxlanılır
 const sampleTag = o => (o.sample?'<span class="pill p-qc">🧪 Nümunə</span>':"")+(o.unannounced?'<span class="pill p-bad">⚠ Xəbərsiz</span>':"");
 let sDraft = null;
 function sampleBox(mode){
-  if (!sDraft || sDraft.mode!==mode) return '<button class="'+(mode==="buy"?"pri":"sm badb")+'" data-sopen="'+mode+'">'+(mode==="buy"?"🧪 Nümunə yaz (firma ilə razılaşdırılıb)":"🧪 Xəbərsiz nümunə gəldi")+'</button>';
+  if (!sDraft || sDraft.mode!==mode) return '<button class="'+(mode==="buy"?"pri":"sm badb")+'" data-sopen="'+mode+'">'+(mode==="buy"?"🧪 Nümunə yaz (firma ilə razılaşdırılıb)":mode==="surprise"?HOLD.sample.btn:HOLD[mode].btn)+'</button>';
   const d = sDraft;
+  if (HOLD[mode]) return '<div class="box late"><h3>'+HOLD[mode].btn+'</h3><div class="hint">'+HOLD[mode].hint+'</div>'+
+    '<input list="flist" placeholder="Firma (bilirsinizsə)" data-sd="firm" value="'+esc(d.firm)+'"><datalist id="flist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
+    '<select data-sd="wh">'+WAREHOUSES.map(w=>'<option'+(d.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select>'+
+    '<textarea placeholder="'+esc(HOLD[mode].ph)+'" data-sd="desc">'+esc(d.desc||"")+'</textarea>'+
+    '<input placeholder="Qeyd (istəyə görə)" data-sd="note" value="'+esc(d.note)+'">'+
+    '<div class="row"><button class="pri" data-ssend="1">Göndər → Satınalma (Telegram)</button><button data-scancel="1">Ləğv et</button></div></div>';
   return '<div class="box late"><h3>'+(mode==="buy"?"🧪 Yeni nümunə":"🧪 Xəbərsiz gələn nümunə")+'</h3>'+
     (mode==="surprise"?'<div class="hint">Satınalma xəbər vermədən gələn nümunə. Mal anbarda <b>saxlanılır</b> — Satınalma firmanı və adını yazandan sonra qəbul edəcəksiniz. Satınalma və Rəhbərlik dərhal xəbər tutur.</div>':"")+
     '<input list="flist" placeholder="Firma'+(mode==="surprise"?" (bilirsinizsə)":"")+'" data-sd="firm" value="'+esc(d.firm)+'"><datalist id="flist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
@@ -1398,6 +1413,16 @@ function sampleBox(mode){
 function sampleSend(){
   const d = sDraft; if (!d) return;
   const now = new Date().toISOString();
+  if (HOLD[d.mode]){
+    const H = HOLD[d.mode], desc = (d.desc||"").trim(), firm = d.firm.trim();
+    if (!desc) return toast("Nə gəldiyini qısa yazın");
+    const o = { id:nextId(), from:d.wh, wh:d.wh, rep:d.mode, hold:{ t:d.mode, at:now, desc, by:role }, created:now, items:[],
+      status:"anbar", eta:today(), supplier:firm, last_move:now, arrivedAt:now, note:d.note.trim(), photos:[], files:[], comments:[], history:[] };
+    S.orders.unshift(o);
+    addLog(o, H.n+" gəldi", [firm, desc].filter(Boolean).join(" · "));
+    notify(["Satınalma","Rəhbərlik"], "late", "⛔ "+H.n+" gəldi · #"+o.id+" · "+d.wh+(firm?" · "+firm:""), "Satınalma: proqramda cavab yazın — cavab verilənə qədər hər gün xatırladılacaq", [desc, d.note.trim()].filter(Boolean), o.id);
+    sDraft = null; save(); render(); return toast("Göndərildi → Satınalma Telegramda xəbər tutdu");
+  }
   if (d.mode==="surprise"){
     if (!(d.desc||"").trim() && !d.firm.trim()) return toast("Nə gəldiyini və ya firmanı qısa yazın");
     const o = { id:nextId(), from:d.wh, wh:d.wh, sample:true, unannounced:true, hold:{ at:now, desc:(d.desc||"").trim(), by:role }, created:now, items:[],
@@ -1431,6 +1456,15 @@ function sampleSend(){
 // Satınalma saxlanılan nümunənin firmasını və adlarını yazır → Anbar qəbul edir → Texnoloq
 const hDraft = {};
 function holdBox(o){
+  if (o.rep){
+    const H = holdOf(o), ag = '<span class="pill p-bad">⏳ '+hTxt((Date.now()-new Date(o.hold.at))/HOUR)+'</span>';
+    const inf = '<div class="spn">'+H.ic+' <b>'+esc(o.wh)+':</b> '+esc(o.hold.desc||"")+(o.supplier?' · <b>'+esc(o.supplier)+'</b>':"")+'</div>';
+    if (role!=="Satınalma") return '<div class="box late">'+inf+'<div class="stk">⛔ '+esc(H.wait)+' '+ag+'</div></div>';
+    const dd = hDraft[o.id] = hDraft[o.id] || { ans:"" };
+    return '<div class="box late">'+inf+'<div class="lbl">⛔ Cavab yazın '+ag+'</div>'+
+      '<textarea placeholder="'+(o.rep==="noinv"?"məs. Qaimə sabah gələcək / firmaya zəng etdim":"məs. Mən sifariş vermişdim, qəbul edin / geri qaytarın")+'" data-hd="'+o.id+'|ans">'+esc(dd.ans)+'</textarea>'+
+      '<button class="pri" data-hans="'+o.id+'">Cavab ver → '+esc(o.wh)+'</button></div>';
+  }
   const age = '<span class="pill p-bad">⏳ '+hTxt((Date.now()-new Date(o.hold.at))/HOUR)+' saxlanılır</span>';
   const info = '<div class="spn">📦 <b>'+esc(o.wh)+':</b> '+esc(o.hold.desc||"təsvir yoxdur")+'</div>';
   if (role!=="Satınalma") return '<div class="box late">'+info+'<div class="stk">⛔ Mal anbarda saxlanılır — Satınalma firmanı və nümunənin adını yazmalıdır '+age+'</div>'+(role===o.wh?'<div class="hint">Satınalma yazandan sonra burada “qəbul” düymələri çıxacaq.</div>':"")+'</div>';
@@ -1440,6 +1474,15 @@ function holdBox(o){
     '<div class="items-edit">'+datalist()+d.rows.map((r,k)=>'<div class="it"><input list="plist" placeholder="Nümunənin adı" data-hr="'+o.id+'|'+k+'|n" value="'+esc(r.n)+'"><input placeholder="məs. 1 kq" data-hr="'+o.id+'|'+k+'|q" value="'+esc(r.q)+'"><button class="sm" data-hrdel="'+o.id+'|'+k+'" aria-label="Sil">×</button></div>').join("")+'</div>'+
     '<div class="row"><button class="sm" data-hradd="'+o.id+'">+ Sətir</button></div>'+
     '<button class="pri" data-hsave="'+o.id+'">Yaz → Anbar qəbul etsin, Texnoloq yoxlasın</button></div>';
+}
+function holdAnswer(id){
+  const o = S.orders.find(x=>x.id===id), d = hDraft[id]; if (!o || !d) return;
+  const ans = (d.ans||"").trim(); if (!ans) return toast("Cavabı yazın");
+  const now = new Date().toISOString(), hrs = hTxt((Date.now()-new Date(o.hold.at))/HOUR), H = holdOf(o);
+  o.holdDone = { at:now, by:role, ans }; o.status = "bagli"; o.recvDone = true; o.recvAt = o.last_move = now;
+  addLog(o, "Satınalma cavab verdi ("+hrs+" sonra)", ans);
+  notify([o.wh,"Rəhbərlik"], "ok", "✓ #"+o.id+" "+H.n+" · Satınalma cavab verdi", ans, [o.hold.desc].filter(Boolean), o.id);
+  delete hDraft[id]; save(); render(); toast("Cavab göndərildi → "+o.wh);
 }
 function holdSave(id){
   const o = S.orders.find(x=>x.id===id), d = hDraft[id]; if (!o || !d) return;
@@ -1465,7 +1508,7 @@ function vBuy(){
   const hl = S.orders.filter(held);
   const todo = acc.length + late.length + ans.length + hl.length;
   return (me ? sampleBox("buy") : "") + '<h2>Satınalma · etməli olduqları <span class="cnt">'+todo+'</span></h2>'+
-    (hl.length ? '<h3>⛔ Xəbərsiz nümunə — adını yazın · '+hl.length+'</h3>'+hl.map(o=>orderCard(o)).join("") : "")+
+    (hl.length ? '<h3>⛔ Xəbərsiz gələnlər — cavab yazın · '+hl.length+'</h3>'+hl.map(o=>orderCard(o)).join("") : "")+
     (todo ? "" : '<div class="empty">✓ Satınalmanın gözləyən işi yoxdur</div>')+
     (acc.length ? '<h3>📥 Qəbul edilməli sifarişlər · '+acc.length+'</h3>'+acc.map(o=>me?orderCard(o):orderBrief(o)).join("") : "")+
     (late.length ? '<h3>⏰ Vaxtında gəlmədi — açıqlama və yeni tarix · '+late.length+'</h3>'+late.map(o=>me?orderCard(o):orderBrief(o)).join("") : "")+
@@ -1519,7 +1562,7 @@ const probCount = () => probRows().length + probLate().length + S.orders.filter(
 function vProb(){
   const rs = probRows().sort((a,b)=>ansLeftH(a.o,a.i)-ansLeftH(b.o,b.i)), ls = probLate(), hl = S.orders.filter(held);
   return '<h2>Problemlər <span class="cnt">'+(rs.length+ls.length+hl.length)+'</span></h2>'+
-    (hl.length ? '<h3>⛔ Xəbərsiz nümunə — Satınalma yazmayıb, mal saxlanılır · '+hl.length+'</h3>'+hl.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
+    (hl.length ? '<h3>⛔ Xəbərsiz nümunə / qaiməsiz / xəbərsiz mal — Satınalma cavab verməyib · '+hl.length+'</h3>'+hl.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
     '<div class="meta">Satınalma '+ANS_H+' saat ərzində cavab verməyib</div>'+
     (rs.length+ls.length+hl.length ? "" : '<div class="empty">✓ Problem yoxdur</div>')+
     (ls.length ? '<h3>⏰ Gəlmədi, Satınalma açıqlama verməyib · '+ls.length+'</h3>'+ls.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
@@ -1549,13 +1592,13 @@ function vHome(){
     if (done.length) html += '<h2>✅ Son 7 gündə verdiyiniz nəticələr <span class="cnt">'+done.length+'</span></h2><div class="irows">'+done.map(({o,i})=>'<div class="irow '+(i.techRes==="ok"?"okr":"miss")+'"><div class="in pn"><span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(i.techRes==="ok"?"p-ok":"p-bad")+' st">'+(i.techRes==="ok"?"✓ qəbul":"✗ rədd")+'</span></div><div class="rmeta"><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"")+(o.sample?" · 🧪 nümunə":"")+(i.techNote?" · “"+esc(i.techNote)+"”":"")+'</div></div>').join("")+'</div>';
   }
   else if (WAREHOUSES.includes(role)){
-    html += sampleBox("surprise");
+    html += '<div class="row wrap">'+sampleBox("surprise")+sampleBox("noinv")+sampleBox("noorder")+'</div>';
     const ids = new Set(work.map(o=>o.id));
     const mine = S.orders.filter(o=>o.wh===role && !ids.has(o.id) && isOpen(o)).sort((a,b)=>odate(a).localeCompare(odate(b)));
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v42 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v43 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1951,7 +1994,7 @@ function deptBoard(){
   const un = unanswered().filter(r=>canAnswer(r.o,r.i));
   const hl = S.orders.filter(held);
   D.push(["🛒","Satınalma",[
-    [hl.length+" xəbərsiz nümunəni yazmayıb (mal saxlanılır)", hl.length, hl.map(o=>L(o,esc(o.wh)+" · "+hTxt((Date.now()-new Date(o.hold.at))/HOUR)))],
+    [hl.length+" xəbərsiz nümunə / qaiməsiz / xəbərsiz mala cavab verməyib", hl.length, hl.map(o=>L(o,holdOf(o).ic+" "+esc(o.wh)+" · "+hTxt((Date.now()-new Date(o.hold.at))/HOUR)))],
     [acc.length+" sifariş qəbul edilməyib", acc.filter(stuck).length, acc.map(o=>L(o,esc(o.from)+" · "+hTxt((Date.now()-new Date(o.created))/HOUR)))],
     [lt.length+" gecikən sifarişə açıqlama verməyib", lt.filter(o=>(Date.now()-new Date(o.eta+"T23:59:00"))/HOUR>ANS_H).length, lt.map(o=>L(o,esc(o.supplier||"Firmasız")+" · "+fmtD(o.eta)))],
     [un.length+" gəlməyən / qəbul olunmayan mala cavab verməyib", un.filter(r=>ansLeftH(r.o,r.i)<0).length, un.map(r=>L(r.o,esc(pname(r.i.pid))+" · "+(ansLeftH(r.o,r.i)<0?'<b class="rs">'+hTxt(-ansLeftH(r.o,r.i))+' gecikir</b>':hTxt(ansLeftH(r.o,r.i))+" qalıb")))] ]]);
@@ -2707,6 +2750,7 @@ $("main").addEventListener("click", e => {
   if (d.hradd){ hDraft[d.hradd].rows.push({n:"",q:""}); render(); return; }
   if (d.hrdel){ const [id,k]=d.hrdel.split("|"); hDraft[id].rows.splice(Number(k),1); if (!hDraft[id].rows.length) hDraft[id].rows.push({n:"",q:""}); render(); return; }
   if (d.hsave) return holdSave(Number(d.hsave));
+  if (d.hans) return holdAnswer(Number(d.hans));
   if (d.sopen){ sDraft = { mode:d.sopen, firm:"", eta:plusDays(1), wh: WAREHOUSES.includes(role) ? role : "Anbar", rows:[{n:"",q:""}], note:"", desc:"" }; render(); return; }
   if (d.scancel){ sDraft = null; render(); return; }
   if (d.sradd){ sDraft.rows.push({n:"",q:""}); render(); return; }
