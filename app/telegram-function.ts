@@ -31,7 +31,7 @@ const CORS = {
 const DEPTS: Record<string, string> = {
   satinalma: "Satınalma", keyfiyyet: "Keyfiyyət", anbar: "Anbar", inqilab: "Anbar (İnqilab)",
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
-  rehberlik: "Rəhbərlik", satis: "Satış", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
+  rehberlik: "Rəhbərlik", satis: "Satış", uzeyir: "Üzeyir", elcin: "Elçin", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
 const ICON: Record<string, string> = { stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
