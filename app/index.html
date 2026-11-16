@@ -647,6 +647,7 @@ const Cloud = (() => {
     S.products.forEach(p=>out.push(["product", String(p.id), p]));
     (S.alerts||[]).forEach(a=>out.push(["alert", a.id, a]));
     S.log.forEach(l=>{ if (!l.id) l.id = "l"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); out.push(["log", l.id, l]); });
+    (S.tasks||[]).forEach(t=>out.push(["meta", "task-"+t.id, t]));
     out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
     return out;
   }
@@ -675,6 +676,7 @@ const Cloud = (() => {
     else if (row.kind==="product") put(S.products, d, x=>String(x.id)===row.id);
     else if (row.kind==="alert") put(S.alerts = S.alerts||[], d, x=>x.id===row.id);
     else if (row.kind==="log") put(S.log, d, x=>x.id===row.id);
+    else if (row.id.startsWith("task-")) put(S.tasks = S.tasks||[], d, x=>"task-"+x.id===row.id);
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
@@ -738,7 +740,7 @@ const Cloud = (() => {
   function net(t){ const el = $("net"); if (el){ el.textContent = t; el.title = t==="✓" ? "Bazaya yazıldı" : t==="⚠" ? "İnternet yoxdur — sonra göndəriləcək" : "Göndərilir…"; } }
   function out(msg){ C.sess = null; C.me = null; keepSess(); loginView(msg); throw new Error("stop"); }
   // Giriş siyahısı: şöbə adı → istifadəçi adı (Supabase-də <ad>@almond.local)
-  const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["admin","Admin"]];
+  const LOGINS = [["anbar","Anbar"],["inqilab","Anbar (İnqilab)"],["satinalma","Satınalma"],["keyfiyyet","Keyfiyyət"],["texnoloq","Texnoloq"],["rehberlik","Rəhbərlik"],["satis","Satış"],["admin","Admin"]];
   const lastLogin = () => { try { return localStorage.getItem("almond-last-login") || ""; } catch(e){ return ""; } };
   // "Parolu yadda saxla": işarələnibsə, uğurlu girişdən sonra şöbənin parolu YALNIZ bu cihazın brauzerində saxlanır;
   // işarəni götürəndə dərhal silinir. Parol səhv çıxsa da silinir.
@@ -1219,15 +1221,16 @@ function myWork(){
 function tabsFor(r){
   // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
   const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
-    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"] };
+    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"] };
   const BY = {
     "Anbar":           ["home","new","orders","days"],
     "Anbar (İnqilab)": ["home","new","orders","days"],
     "Satınalma":       ["home","buy","orders","days","prob"],
     "Keyfiyyət":       ["home","qc","orders","days"],
     "Texnoloq":        ["home","new","orders","days"],
-    "Rəhbərlik":       ["home","orders","buy","qc","days","res","prob","arch"],
-    "Admin":           ["home","orders","buy","qc","days","res","prob","arch","catalog"],
+    "Satış":           ["tasks"],
+    "Rəhbərlik":       ["home","orders","buy","qc","days","res","prob","arch","tasks"],
+    "Admin":           ["home","orders","buy","qc","days","res","prob","arch","tasks","catalog"],
   };
   return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
 }
@@ -1299,11 +1302,11 @@ function renderRole(){
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
 function renderTabs(){
-  const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = "home";
+  const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = T[0][0];
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
   const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0);
   const nq = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).length, np = probCount();
-  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : 0;
+  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : 0;
     return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("");
 }
 function render(){
@@ -1311,7 +1314,7 @@ function render(){
   autoMissing(); stuckSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch }[tab]();
+  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks }[tab]();
   if (tab==="new") bindNew();
   if (tab==="catalog") filterRows($("cQ"));
   tabFx();
@@ -1439,6 +1442,72 @@ function holdSave(id){
   notify([o.wh,"Texnoloq","Rəhbərlik"], "ok", "🧪 #"+o.id+" nümunə yazıldı · "+o.supplier, o.wh+" qəbul etsin, sonra Texnoloq nəticə verəcək · "+hrs+" saxlanıldı", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   delete hDraft[id]; save(); render(); toast("Yazıldı → "+o.wh+" qəbul edə bilər");
 }
+// ===================== 📝 Satış: menecerin tapşırıqları =====================
+// Bir ümumi "Satış" girişi; hər telefonda bir dəfə "kim"in seçilir (Menecer / Üzeyir / Elçin).
+// Menecer tapşırıq verir (bir və ya iki köməkçiyə) və son gün təyin edir. Köməkçi son günə qədər "Həll olundu" yazır;
+// edə bilmirsə və ya gün keçibsə — səbəbi yazır. Hamısı Satış qrupuna Telegramla gedir.
+const SALES_HELP = ["Üzeyir","Elçin"], SALES_WHO = ["Menecer", ...SALES_HELP];
+let tkDraft = { title:"", to:[], due:"" }; const tkWhy = {}, tkNo = {};
+function salesWho(){ if (role!=="Satış") return "Menecer"; try { const w = localStorage.getItem("almond-satis-who"); return SALES_WHO.includes(w) ? w : ""; } catch(e){ return ""; } }
+const tkList = () => (S.tasks||[]).filter(t=>!t.deleted);
+const tkOver = t => !t.done && t.due < today();
+function taskCount(){ const w = salesWho(); if (!w) return 0; return tkList().filter(t=>!t.done && (w==="Menecer" ? tkOver(t) : t.to.includes(w))).length; }
+function taskCard(t, w){
+  const st = t.done ? (t.done.st==="ok" ? '<span class="pill p-ok">✓ Həll olundu'+(t.done.late?" (gecikmə ilə)":"")+'</span>' : '<span class="pill p-bad">✗ Həll olunmadı</span>')
+    : tkOver(t) ? '<span class="pill p-bad">⏰ Vaxtı keçib · '+fmtD(t.due)+'</span>' : '<span class="pill p-wait">⏳ '+(t.due===today()?"Bu gün":fmtD(t.due))+' tamamlanmalıdır</span>';
+  let act = "";
+  const mine = role==="Satış" && t.to.includes(w);
+  if (!t.done && mine){
+    const box = '<textarea data-tkw="'+t.id+'" placeholder="Səbəbi yazın">'+esc(tkWhy[t.id]||"")+'</textarea>';
+    act = tkOver(t)
+      ? '<div class="box late"><div class="lbl">⏰ Son gün keçib — səbəbi yazın</div>'+box+'<div class="row wrap"><button class="okb" data-tklate="'+t.id+'">✓ Gecikmə ilə həll olundu</button><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı</button></div></div>'
+      : tkNo[t.id] ? '<div class="box">'+box+'<div class="row"><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı — göndər</button><button class="sm" data-tknocancel="'+t.id+'">Ləğv et</button></div></div>'
+      : '<div class="row wrap"><button class="okb" data-tkok="'+t.id+'">✓ Həll olundu</button><button class="badb sm" data-tkno="'+t.id+'">Həll olunmadı</button></div>';
+  }
+  if (!t.done && w==="Menecer" && (role==="Satış" || adminView())) act += '<div class="row"><button class="linkb" data-tkdel="'+t.id+'">🗑 Tapşırığı sil</button></div>';
+  return '<article class="oc" style="border-left-color:var('+(t.done ? (t.done.st==="ok"?"--ok":"--bad") : tkOver(t) ? "--bad" : "--wait")+')">'+
+    '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:8px"><b style="white-space:pre-wrap">'+esc(t.title)+'</b>'+st+'</div>'+
+    '<div class="meta">👤 '+esc(t.to.join(", "))+' · '+esc(t.by)+' verib · '+fmtD(t.at.slice(0,10))+' · son gün '+fmtD(t.due)+'</div>'+
+    (t.done ? '<div class="spn">'+(t.done.st==="ok"?"✓":"✗")+' <b>'+esc(t.done.by)+'</b> · '+shortT(new Date(t.done.at))+(t.done.why?': '+esc(t.done.why):"")+'</div>' : "")+act+'</article>';
+}
+function vTasks(){
+  const w = salesWho();
+  if (!w) return '<div class="card"><h2>Siz kimsiniz?</h2><div class="meta">Bir dəfə seçin — bu telefonda yadda qalır.</div><div class="row wrap">'+SALES_WHO.map(n=>'<button class="pri" data-tkme="'+n+'">'+n+'</button>').join("")+'</div></div>';
+  const mgr = w==="Menecer", T = tkList().filter(t=>mgr || t.to.includes(w));
+  const open = T.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+  const done = T.filter(t=>t.done && t.done.at >= plusDays(-30)).sort((a,b)=>b.done.at.localeCompare(a.done.at));
+  const d = tkDraft;
+  const form = mgr && (role==="Satış" || adminView()) ? '<div class="card"><h2>➕ Yeni tapşırıq</h2>'+
+    '<textarea data-tkf="title" placeholder="Tapşırığı yazın (məs. Bravo marketlə müqaviləni yeniləmək)">'+esc(d.title)+'</textarea>'+
+    '<div class="row wrap"><span class="hint">Kimə:</span>'+SALES_HELP.map(n=>'<button class="'+(d.to.includes(n)?"pri":"sm")+'" data-tkto="'+n+'">'+(d.to.includes(n)?"✓ ":"")+n+'</button>').join("")+'</div>'+
+    '<div class="row"><span class="hint" style="white-space:nowrap">Son gün:</span><input type="date" data-tkf="due" min="'+today()+'" value="'+esc(d.due||plusDays(1))+'"></div>'+
+    '<button class="pri big" data-tkadd="1">Tapşırıq ver</button></div>' : "";
+  return '<div class="row" style="justify-content:space-between"><h2>📝 Tapşırıqlar</h2>'+(role==="Satış"?'<button class="sm" data-tkme="">👤 '+esc(w)+' · dəyiş</button>':"")+'</div>'+form+
+    '<h2>Açıq <span class="cnt">'+open.length+'</span></h2>'+(open.length ? open.map(t=>taskCard(t,w)).join("") : '<div class="empty">✓ Açıq tapşırıq yoxdur</div>')+
+    (done.length ? '<h2>Son 30 gündə bağlananlar <span class="cnt">'+done.length+'</span></h2>'+done.map(t=>taskCard(t,w)).join("") : "");
+}
+function taskAct(d){
+  const nowI = new Date().toISOString(), w = salesWho(), T = id => tkList().find(t=>t.id===id);
+  const fin = (t, st, why, late) => { t.done = { st, by:w, at:nowI, why: why||undefined, late: late||undefined };
+    notify(["Satış"], st==="ok" ? "ok" : "late", (st==="ok" ? "✓ Tapşırıq həll olundu" : "✗ Tapşırıq həll olunmadı")+" · "+w, t.title, why ? ["Səbəb: "+why] : [], null);
+    delete tkWhy[t.id]; delete tkNo[t.id]; save(); render(); };
+  if (d.tkme!==undefined){ try { d.tkme ? localStorage.setItem("almond-satis-who", d.tkme) : localStorage.removeItem("almond-satis-who"); } catch(e){} render(); return true; }
+  if (d.tkto){ const a = tkDraft.to; a.includes(d.tkto) ? a.splice(a.indexOf(d.tkto),1) : a.push(d.tkto); render(); return true; }
+  if (d.tkadd){ const title = tkDraft.title.trim(), due = tkDraft.due || plusDays(1);
+    if (!title) { toast("Tapşırığı yazın"); return true; } if (!tkDraft.to.length){ toast("Kimə verildiyini seçin"); return true; }
+    const t = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), title, to: SALES_HELP.filter(n=>tkDraft.to.includes(n)), due, by: w, at: nowI };
+    (S.tasks = S.tasks||[]).push(t);
+    notify(["Satış"], "note", "📝 Yeni tapşırıq → "+t.to.join(", "), title, ["Son gün: "+fmtD(due)], null);
+    tkDraft = { title:"", to:[], due:"" }; save(); render(); toast("Tapşırıq verildi → "+t.to.join(", ")); return true; }
+  if (d.tkok){ fin(T(d.tkok), "ok"); toast("Həll olundu ✓"); return true; }
+  if (d.tkno){ tkNo[d.tkno] = true; render(); const el = document.querySelector('[data-tkw="'+d.tkno+'"]'); if (el) el.focus(); return true; }
+  if (d.tknocancel){ delete tkNo[d.tknocancel]; render(); return true; }
+  if (d.tknosend || d.tklate){ const id = d.tknosend || d.tklate, why = (tkWhy[id]||"").trim();
+    if (!why){ toast("Səbəbi yazın"); const el = document.querySelector('[data-tkw="'+id+'"]'); if (el) el.focus(); return true; }
+    fin(T(id), d.tklate ? "ok" : "no", why, !!d.tklate); toast("Göndərildi"); return true; }
+  if (d.tkdel){ if (!confirm("Tapşırıq silinsin?")) return true; const t = T(d.tkdel); t.deleted = true; save(); render(); return true; }
+  return false;
+}
 // Satınalma: nə etməlidir (gözləyən) və nə edib (son 7 gün)
 function vBuy(){
   const me = role==="Satınalma";
@@ -1540,7 +1609,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v47 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v48 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2693,6 +2762,7 @@ $("main").addEventListener("click", e => {
   if (d.hrdel){ const [id,k]=d.hrdel.split("|"); hDraft[id].rows.splice(Number(k),1); if (!hDraft[id].rows.length) hDraft[id].rows.push({n:"",q:""}); render(); return; }
   if (d.hsave) return holdSave(Number(d.hsave));
   if (d.hans) return holdAnswer(Number(d.hans));
+  if (taskAct(d)) return;
   if (d.sopen){ sDraft = { mode:d.sopen, firm:"", eta:plusDays(1), wh: WAREHOUSES.includes(role) ? role : "Anbar", rows:[{n:"",q:""}], note:"", desc:"" }; render(); return; }
   if (d.scancel){ sDraft = null; render(); return; }
   if (d.sradd){ sDraft.rows.push({n:"",q:""}); render(); return; }
@@ -2764,6 +2834,8 @@ $("main").addEventListener("input", e => {
   const el=e.target;
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
+  if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
+  if (el.dataset.tkw){ tkWhy[el.dataset.tkw] = el.value; return; }
   if (el.dataset.hr){ const [id,k,f]=el.dataset.hr.split("|"); hDraft[id].rows[Number(k)][f]=el.value; return; }
   if (el.dataset.sd && sDraft){ sDraft[el.dataset.sd] = el.value; return; }
   if (el.dataset.sr && sDraft){ const [k,f] = el.dataset.sr.split("-"); sDraft.rows[Number(k)][f] = el.value; return; }

@@ -31,7 +31,7 @@ const CORS = {
 const DEPTS: Record<string, string> = {
   satinalma: "Satınalma", keyfiyyet: "Keyfiyyət", anbar: "Anbar", inqilab: "Anbar (İnqilab)",
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
-  rehberlik: "Rəhbərlik", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
+  rehberlik: "Rəhbərlik", satis: "Satış", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
 const ICON: Record<string, string> = { stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
@@ -168,7 +168,7 @@ const cut = (t: string) => t.length > 3900 ? t.slice(0, 3900) + "\n…" : t;
 
 const HELP = "Salam! Mən Almond Anbar botuyam.\n\n" +
   "Bu söhbətə hansı şöbənin bildirişləri gəlsin — yazın:\n" +
-  "<code>/qosul Satınalma KOD</code>\n<code>/qosul Keyfiyyət KOD</code>\n<code>/qosul Anbar KOD</code>\n<code>/qosul İnqilab KOD</code>\n<code>/qosul Texnoloq KOD</code>\n<code>/qosul Rəhbərlik KOD</code>\n" +
+  "<code>/qosul Satınalma KOD</code>\n<code>/qosul Keyfiyyət KOD</code>\n<code>/qosul Anbar KOD</code>\n<code>/qosul İnqilab KOD</code>\n<code>/qosul Texnoloq KOD</code>\n<code>/qosul Rəhbərlik KOD</code>\n<code>/qosul Satış KOD</code>\n" +
   "<code>/qosul hamısı KOD</code> — bütün bildirişlər\n(KOD — qoşulma kodu, Admindən alın)\n\n" +
   "<code>/siyahi</code> — bu söhbət nələri alır\n<code>/ayril</code> — bildirişləri dayandır\n\n" +
   "Hesabat (Excel): /hesabat — bu həftə, <code>/hesabat ay</code> — bu ay\n\n" +
