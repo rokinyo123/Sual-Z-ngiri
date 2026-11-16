@@ -851,6 +851,16 @@ const REQ = ["Satış","Üzeyir","Elçin","İstehsalat","Çeşidləmə"];
 // Satış qrupu Satınalmaya yox, birbaşa seçdiyi anbara yazır (mal anbardan verilir). Satınalma yalnız görür.
 const REQ_W = ["Satış","Üzeyir","Elçin"];
 const rqDraft = {};
+// İstək axını: Satış/Üzeyir/Elçin → (lazım olan gün + saat) → Anbar "Qəbul et" → hər mala: anbarda var (verir) / yoxdur (Satınalmaya)
+// → yoxdursa Satınalmaya sifariş açılır, "lazımdır" vaxtı ilə → mal gəlib qəbul olunanda istək bağlanır, sifarişi verənə xəbər gedir
+const needTxt = o => o.needAt ? fmtD(o.needAt.slice(0,10))+" · "+o.needAt.slice(11,16) : "";
+const needLate = o => !!o.needAt && new Date(o.needAt) < new Date();
+function reqStage(o){
+  if (o.status!=="istek") return o.reqDone && o.reqDone.full===false ? "Qismən verildi" : "✓ Verildi";
+  if (!o.reqAcc) return "📤 "+o.wh+" qəbul etməyib";
+  if (o.reqBuy) return "🛒 Satınalmada · #"+o.reqBuy;
+  return "✓ Qəbul edildi · hazırlanır";
+}
 const canOwnEdit = o => !!o && !o.deleted && o.from===role && ["Anbar","Anbar (İnqilab)","Texnoloq",...REQ].includes(role) &&
   String(o.created||"").slice(0,10)===today() && ["acik","yolda","istek"].includes(o.status) && o.items.every(i=>i.got==null && !i.qc);
 const canDelete = o => !!o && !o.deleted && (adminView() || canOwnEdit(o));
@@ -972,7 +982,9 @@ const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
 function waitOn(o){
   if (o.status==="redd" || o.deleted) return null;
   let w = null;
-  if (o.req && o.status==="istek") w = { who:o.wh, neg:o.wh+" hələ verməyib", what:o.from+" sifarişini verməlidir", since:o.created, lim:24 };
+  if (o.req && o.status==="istek"){ if (o.reqBuy) return null;
+    w = !o.reqAcc ? { who:o.wh, neg:o.wh+" qəbul etməyib", what:o.from+" sifarişini qəbul etməlidir", since:o.created, lim:3 }
+      : { who:o.wh, neg:o.wh+" qərar verməyib", what:"malı verməli və ya Satınalmaya göndərməlidir", since:o.reqAcc.at, lim:o.needAt ? Math.max(1,(new Date(o.needAt)-new Date(o.reqAcc.at))/HOUR) : 24 }; }
   else if (held(o)) w = { who:"Satınalma", neg:holdOf(o).wait, what:holdOf(o).need, since:o.hold.at, lim:o.rep?ANS_H:2 };
   else if (o.status==="acik") w = { who:"Satınalma", neg:"Satınalma qəbul etməyib", what:"gəliş günü təyin etməlidir", since:o.created, lim:24 };
   else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", neg:"Keyfiyyət yoxlamayıb", what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:3 };
@@ -1021,7 +1033,8 @@ const techReady = (o,i) => i.tech && !i.techRes && i.qc!=="bad" && i.qc!=="none"
 const techPending = o => o.items.some(i=>techReady(o,i));
 // Bir malın ümumi vəziyyəti (rəng + söz) — kalendarda, nişanlarda, cədvəldə
 function itemState(o,i){
-  if (o.req) return o.status==="istek" ? ["Hazırlanır","p-qc"] : o.reqDone && o.reqDone.full ? ["Verildi","p-ok"] : ["Bax: qeyd","p-warn"];
+  if (o.req) return i.rq==="give" && (o.reqBuy || o.status!=="istek") ? ["Anbardan verildi","p-ok"] : i.rq==="buy" && o.reqBuy ? (o.status==="istek" ? ["🛒 Satınalmada","p-wait"] : ["Gəldi · verildi","p-ok"])
+    : o.status==="istek" ? ["Gözləyir","p-qc"] : o.reqDone && o.reqDone.full ? ["Verildi","p-ok"] : ["Bax: qeyd","p-warn"];
   const pr = problem(o,i);
   if (pr) return [pr, pr.startsWith("Az") ? "p-warn" : "p-bad"];
   if (techReady(o,i)) return ["Texnoloqda","p-qc"];
@@ -1053,6 +1066,12 @@ function finishReceive(o, by, note){
   o.recvDone = true; o.status = "bagli"; o.last_move = o.recvAt = new Date().toISOString();
   const pr = o.items.filter(i=>problem(o,i) && !i.ans).length, th = o.items.filter(i=>i.tech).length;
   addLog(o, "Qəbul bitdi", [pr ? pr+" mal üçün Satınalmanın cavabı lazımdır" : "Hamısı qəbul olundu", th ? th+" mal Texnoloqda" : "", note].filter(Boolean).join(" · "), by);
+  if (o.forReq){ const R = S.orders.find(x=>x.id===o.forReq);
+    if (R && R.status==="istek"){ const now = new Date().toISOString();
+      R.reqDone = { at:now, by:o.wh, full:!pr }; R.status = "bagli"; R.recvDone = true; R.recvAt = R.last_move = now;
+      R.items.forEach(i=>{ if (i.rq==="buy"){ const P = o.items.find(x=>Number(x.pid)===Number(i.pid)); i.got = P ? (P.got||0) : 0; } });
+      addLog(R, "Satınalmadan gəldi, verildi", "#"+o.id);
+      notify([R.from], pr ? "late" : "ok", (pr ? "⚠ Sifarişiniz qismən hazırdır · #" : "✓ Sifarişiniz tam hazırdır · #")+R.id, (pr ? pr+" mal Satınalmadan gəlmədi / az gəldi" : "Satınalmadan gələn mallar da hazırdır")+" · "+R.wh, R.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), R.id); } }
   if (REQ.includes(o.from)) notify([o.from], pr ? "late" : "ok", "📦 Sifarişiniz #"+o.id+" "+o.wh+"a gəldi", pr ? pr+" mal gəlmədi / az gəldi — Satınalma cavab verəcək" : "Hamısı qəbul olundu", o.items.slice(0,6).map(i=>pname(i.pid)+" "+(i.got!=null?i.got:i.qty)), o.id);
   return pr;
 }
@@ -1131,7 +1150,7 @@ function pushNotify(){
 // ===================== Mərhələ: hamı üçün eyni rəng =====================
 function stage(o){
   if (o.status==="redd") return {k:"arch", t:"Ləğv edildi"};
-  if (o.req) return o.status==="istek" ? {k:"chk", t:"📤 "+o.wh+" hazırlayır"} : {k:"ok", t:o.reqDone && !o.reqDone.full ? "Qismən verildi" : "✓ Verildi"};
+  if (o.req) return o.status==="istek" ? {k: o.reqBuy ? "wait" : "chk", t:reqStage(o)} : {k:"ok", t:reqStage(o)};
   if (held(o)) return {k:"bad", t:o.rep ? "⛔ "+holdOf(o).n+" — Satınalmanın cavabı gözlənilir" : "⛔ Saxlanılır — Satınalma nümunəni yazmayıb"};
   if (o.rep) return {k:"done", t:holdOf(o).ic+" "+holdOf(o).n+" · Satınalma cavab verdi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
@@ -1710,7 +1729,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v53 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v54 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -1844,12 +1863,22 @@ const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="b
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
 // Kartın altındakı ümumi düymə (şöbənin addımını bitirmək)
 function footActions(o){
-  if (o.req && o.status==="istek" && role===o.wh){ const d = rqDraft[o.id] = rqDraft[o.id] || { note:"" };
-    return '<div class="box"><button class="okb big" data-rqall="'+o.id+'">✓ Hamısı verildi</button>'+
-      '<textarea data-rqn="'+o.id+'" placeholder="Hamısı yoxdursa: nə verildi, nə yoxdur (məs. qutu yoxdur, 30 əd verildi)">'+esc(d.note)+'</textarea>'+
-      '<button class="badb" data-rqpart="'+o.id+'">Qismən verildi / yoxdur — göndər</button></div>'; }
-  if (o.req && o.reqDone) return '<div class="spn">'+(o.reqDone.full?"✓ Hamısı verildi":"⚠ Qismən verildi")+' · <b>'+esc(o.reqDone.by)+'</b> · '+shortT(new Date(o.reqDone.at))+(o.reqDone.note?': '+esc(o.reqDone.note):"")+'</div>';
-  if (o.req) return '<div class="meta">📤 '+esc(o.wh)+' hazırlayıb verəcək</div>';
+  if (o.req){
+    const need = o.needAt ? '<div class="'+(needLate(o) && o.status==="istek" ? "stk" : "meta")+'">⏰ Lazımdır: <b>'+needTxt(o)+'</b></div>' : "";
+    const acc = o.reqAcc ? '<div class="spn">✓ Sifariş qəbul edildi · <b>'+esc(o.reqAcc.by)+'</b> · '+shortT(new Date(o.reqAcc.at))+'</div>' : "";
+    if (o.status==="istek" && role===o.wh && !o.reqAcc)
+      return need+'<div class="box"><button class="okb big" data-rqacc="'+o.id+'">✓ Qəbul et</button><div class="hint">Qəbul edəndən sonra hər mal üçün seçəcəksiniz: anbarda var və ya Satınalmaya.</div></div>';
+    if (o.status==="istek" && role===o.wh && !o.reqBuy){
+      const all = o.items.every(i=>i.rq);
+      return need+acc+'<div class="box"><div class="lbl">Hər mal üçün seçin</div>'+o.items.map((i,k)=>'<div class="rrow"><span class="nm"><b>'+esc(pname(i.pid))+'</b> <span class="meta mono">'+esc(i.qty)+'</span></span>'+
+          '<span class="row" style="gap:4px"><button class="'+(i.rq==="give"?"okb":"sm")+'" data-rqi="'+o.id+'|'+k+'|give">✓ Anbarda var</button><button class="'+(i.rq==="buy"?"pri":"sm")+'" data-rqi="'+o.id+'|'+k+'|buy">🛒 Yoxdur</button></span></div>').join("")+
+        '<button class="pri big" data-rqgo="'+o.id+'"'+(all?"":" disabled")+'>'+(!all ? "Əvvəl hər mal üçün seçin" : o.items.some(i=>i.rq==="buy") ? "Var olanları ver, yoxları Satınalmaya göndər" : "✓ Hamısını ver")+'</button></div>';
+    }
+    if (o.reqBuy) return need+acc+'<div class="spn">🛒 Anbarda olmayan mallar Satınalmaya göndərildi → <button class="linkb mono" data-goorder="'+o.reqBuy+'">#'+o.reqBuy+'</button>'+(o.status==="istek"?" · gələndə verilir":"")+'</div>'+
+      (o.reqDone ? '<div class="spn">✓ Tam hazırdır · '+shortT(new Date(o.reqDone.at))+'</div>' : "");
+    if (o.reqDone) return need+acc+'<div class="spn">'+(o.reqDone.full!==false?"✓ Hamısı verildi":"⚠ Qismən verildi")+' · <b>'+esc(o.reqDone.by)+'</b> · '+shortT(new Date(o.reqDone.at))+(o.reqDone.note?': '+esc(o.reqDone.note):"")+'</div>';
+    return need+acc+'<div class="meta">📤 '+esc(o.wh)+(o.reqAcc?" hazırlayır":" hələ qəbul etməyib")+'</div>';
+  }
   if (held(o)) return holdBox(o);
   if (role==="Keyfiyyət" && o.status==="anbar" && hasQC(o) && !o.qcAt){
     const left = o.items.filter(i=>!i.qc).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
@@ -2002,15 +2031,16 @@ const etaDraft = {};   // Satınalmanın seçdiyi günlər (səhifə yenilənən
 const remember = {};
 function acceptBox(o){
   const G = firmGroups(o), none = G.find(g=>!g.firm);
+  const needBox = o.needAt ? '<div class="stk">⏰ '+esc(o.reqFrom||"")+' üçün lazımdır: <b>'+needTxt(o)+'</b> — malı bu vaxta qədər təmin edin</div>' : "";
   const body = G.map(g=>{
     const key = o.id+"|"+g.firm;
     const head = !g.firm ? '<b class="rs">⚠ Firması yoxdur · '+g.idx.length+' mal — hər birinə firma və ya sürücü seçin</b>'
       : '<div class="pn"><b>'+(isDriver(g.firm)?"🚚 ":"")+esc(g.firm)+'</b><span class="meta">'+g.idx.length+' mal</span></div>'+
-        '<input type="date" data-eta="'+esc(key)+'" value="'+(etaDraft[key]||o.eta||(isDriver(g.firm)?today():plusDays(1)))+'" min="'+today()+'" aria-label="Gəliş günü">';
+        '<input type="date" data-eta="'+esc(key)+'" value="'+(etaDraft[key]||o.eta||(o.needAt && o.needAt.slice(0,10)>=today() ? o.needAt.slice(0,10) : isDriver(g.firm)?today():plusDays(1)))+'" min="'+today()+'"'+(o.needAt?' max="'+o.needAt.slice(0,10)+'"':"")+' aria-label="Gəliş günü">';
     return '<div class="fgrp">'+head+g.idx.map(k=>{ const i = o.items[k];
       return '<div class="rrow"><span class="nm">'+esc(pname(i.pid))+' <span class="meta mono">'+esc(i.qty)+'</span></span><select data-dest="'+o.id+'-'+k+'" style="width:auto;max-width:48%;padding:4px 6px;font-size:13px" aria-label="Hara">'+destOpts(dest(i))+'</select></div>'; }).join("")+'</div>';
   }).join("");
-  return '<div class="box"><div class="lbl">Kimdən, nə vaxt gələcək?</div><div class="hint">Mallar kataloqa görə avtomatik bölünüb. Malı başqa firmaya və ya sürücüyə vermək üçün yanındakı siyahıdan seçin. Hər qrupun gəliş günü ayrıca.</div>'+body+
+  return '<div class="box">'+needBox+'<div class="lbl">Kimdən, nə vaxt gələcək?</div><div class="hint">Mallar kataloqa görə avtomatik bölünüb. Malı başqa firmaya və ya sürücüyə vermək üçün yanındakı siyahıdan seçin. Hər qrupun gəliş günü ayrıca.</div>'+body+
     '<label class="row meta"><input type="checkbox" data-remember="'+o.id+'"'+(remember[o.id]?" checked":"")+' style="width:auto"> Firma dəyişikliyini kataloqda da yadda saxla</label>'+
     '<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh],o)+
     '<button class="pri big" data-act="accept" data-id="'+o.id+'"'+(none?" disabled":"")+'>'+(none?"Əvvəl hər mala firma seçin":"✓ OK · "+G.length+" qrup · Anbar gözləsin")+'</button></div>';
@@ -2596,6 +2626,7 @@ function vNew(){
     (role==="Texnoloq"?'<label class="row chk"><input type="checkbox" id="nSample"'+(draft.sample?" checked":"")+' style="width:auto"> <b>🧪 Nümunə</b> <span class="meta">— yeni mal sınağı (Keyfiyyətdən keçmir)</span></label>':"")+
     '<div class="meta">'+(role==="Texnoloq"?(draft.sample?'Texnoloq → Satınalma firma ilə danışıb gün təyin edir → Anbar qəbul edir → siz nəticə günü seçib nəticə verirsiniz':'Texnoloq → Satınalma → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız'):REQ_W.includes(role)?esc(role)+' → '+esc(draft.wh||"Anbar")+' hazırlayıb verir → sizə xəbər gəlir · Satınalma yalnız görür':REQ.includes(role)?esc(role)+' → Satınalma → '+esc(draft.wh||"Anbar")+(draft.wh==="Anbar"||!draft.wh?' (Keyfiyyət yoxlayır)':'')+' → sizə xəbər gəlir':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
     (REQ.includes(role) ? '<div class="row"><span class="hint" style="white-space:nowrap">Hara gəlsin:</span><select id="nWh">'+WAREHOUSES.map(w=>'<option'+(draft.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></div>' : "")+
+    (REQ_W.includes(role) ? '<div class="row"><span class="hint" style="white-space:nowrap">Nə vaxt lazımdır:</span><input type="datetime-local" id="nNeed" min="'+dtLocal(new Date())+'" value="'+esc(draft.need||"")+'"></div>' : "")+
     (REQ_W.includes(role) ? "" : '<div class="hint">Mallar kataloqa görə firmalara avtomatik bölünəcək. Gəliş gününü və firmaları Satınalma təyin edir.</div>')+
     '<div class="items-edit box"><div class="row" style="justify-content:space-between"><div class="lbl">Mallar'+(filled?' · '+filled:"")+'</div><div class="row">'+
       '<label class="btnlink">📥 Excel<input type="file" id="nXls" accept=".xlsx,.xlsm,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" class="fpick"></label>'+
@@ -2622,6 +2653,7 @@ function bindNew(){
   $("send").onclick = sendOrder;
   if ($("nSample")) $("nSample").onchange = e => { draft.sample = e.target.checked; render(); };
   if ($("nWh")) $("nWh").onchange = e => { draft.wh = e.target.value; render(); };
+  if ($("nNeed")) $("nNeed").onchange = e => { draft.need = e.target.value; };
 }
 function sendOrder(){
   draft.items.forEach(i=>{ if (!i.pid && (i.pname||"").trim() && String(i.qty).trim()){
@@ -2634,6 +2666,8 @@ function sendOrder(){
     if (i.firm && !pfirm(x.pid)) x.firm = i.firm;   // Excel-də firma başlığı varsa və kataloqda firma yoxdursa
     if (tech) x.tech = true; return x; });
   if (!items.length) return $("nErr").textContent = "Ən azı bir mal və miqdar yazın.";
+  if (REQ_W.includes(role)){ if (!draft.need) return $("nErr").textContent = "Malın nə vaxt lazım olduğunu seçin (gün və saat).";
+    if (new Date(draft.need) < new Date()) return $("nErr").textContent = "Lazım olan vaxt keçmişdə ola bilməz."; }
   const blks = [...new Set(items.map(i=>i.blk))].sort((a,b)=>a-b);
   const made = blks.map((b,n)=>{ const its = items.filter(i=>i.blk===b); its.forEach(i=>delete i.blk);
     return makeOrder(its, [draft.note.trim(), blks.length>1?ord(n+1)+" dəstə":""].filter(Boolean).join(" · "), draft.photos.slice(), draft.files.slice()); });
@@ -2649,12 +2683,12 @@ function sendOrder(){
 function makeOrder(items, note, photos, files){
   const now = new Date().toISOString(), tech = role==="Texnoloq";
   const rw = REQ_W.includes(role);
-  const o = { id:nextId(), from:role, wh: tech ? "Anbar" : REQ.includes(role) ? (WAREHOUSES.includes(draft.wh) ? draft.wh : "Anbar") : role, req: rw || undefined, techOrder: tech || undefined, sample: (tech && draft.sample) || undefined, created:now, items, status:"acik", last_move:now,
+  const o = { id:nextId(), from:role, wh: tech ? "Anbar" : REQ.includes(role) ? (WAREHOUSES.includes(draft.wh) ? draft.wh : "Anbar") : role, req: rw || undefined, needAt: rw ? draft.need : undefined, techOrder: tech || undefined, sample: (tech && draft.sample) || undefined, created:now, items, status:"acik", last_move:now,
     note, photos, files, comments:[], history:[] };
   addLog(o,"Sifariş yaradıldı",o.note);
   if (rw) o.status = "istek";
   S.orders.unshift(o);
-  if (rw){ notify([o.wh], "note", "📤 "+o.from+" anbardan istəyir · #"+o.id, o.items.length+" mal · hazırlayıb verin", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id); return o; }
+  if (rw){ notify([o.wh], "note", "📤 "+o.from+" sifariş göndərdi · #"+o.id, "Lazımdır: "+needTxt(o)+" · qəbul edin, anbarda yoxdursa Satınalmaya göndərin", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id); return o; }
   notify(["Satınalma"], "note", "Yeni sifariş #"+o.id+" · "+o.from, o.items.length+" mal · qəbul edib gəliş gününü təyin edin", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id);
   return o;
 }
@@ -2877,6 +2911,24 @@ $("main").addEventListener("click", e => {
   if (d.hrdel){ const [id,k]=d.hrdel.split("|"); hDraft[id].rows.splice(Number(k),1); if (!hDraft[id].rows.length) hDraft[id].rows.push({n:"",q:""}); render(); return; }
   if (d.hsave) return holdSave(Number(d.hsave));
   if (d.hans) return holdAnswer(Number(d.hans));
+  if (d.rqacc){ const o = S.orders.find(x=>x.id===Number(d.rqacc)); if (!o) return; const now = new Date().toISOString();
+    o.reqAcc = { at:now, by:role }; o.last_move = now; addLog(o, "Sifariş qəbul edildi", "");
+    notify([o.from], "ok", "✓ Sifarişiniz qəbul edildi · #"+o.id+" · "+o.wh, "Lazımdır: "+needTxt(o), [], o.id);
+    save(); render(); return toast("Qəbul edildi"); }
+  if (d.rqi){ const [id,k,v] = d.rqi.split("|"), o = S.orders.find(x=>x.id===Number(id)); if (!o) return; const i = o.items[Number(k)]; i.rq = i.rq===v ? undefined : v; const y = window.scrollY; render(); window.scrollTo(0,y); return; }
+  if (d.rqgo){ const o = S.orders.find(x=>x.id===Number(d.rqgo)); if (!o || !o.items.every(i=>i.rq)) return toast("Hər mal üçün seçin");
+    const now = new Date().toISOString(), give = o.items.filter(i=>i.rq==="give"), buy = o.items.filter(i=>i.rq==="buy");
+    give.forEach(i=>{ i.got = num(i.qty); });
+    if (!buy.length){ o.reqDone = { at:now, by:role, full:true }; o.status = "bagli"; o.recvDone = true; o.recvAt = o.last_move = now;
+      addLog(o, "Anbar hamısını verdi", ""); notify([o.from], "ok", "✓ Sifarişiniz hazırdır · #"+o.id+" · "+o.wh, "Hamısı anbardan verildi", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id);
+      save(); render(); return toast("Verildi ✓"); }
+    const P = { id:nextId(), from:o.wh, wh:o.wh, forReq:o.id, reqFrom:o.from, needAt:o.needAt, created:now, items: buy.map(i=>({ pid:Number(i.pid), qty:i.qty })), status:"acik", last_move:now,
+      note:"📤 "+o.from+" sifarişi #"+o.id+" üçün · lazımdır "+needTxt(o), photos:[], files:[], comments:[], history:[] };
+    addLog(P, "Sifariş yaradıldı", P.note); S.orders.unshift(P);
+    o.reqBuy = P.id; o.last_move = now; addLog(o, (give.length ? give.length+" mal verildi, " : "")+buy.length+" mal Satınalmaya göndərildi", "#"+P.id);
+    notify(["Satınalma"], "note", "🛒 Yeni sifariş #"+P.id+" · "+o.wh+" ("+o.from+" üçün)", "Lazımdır: "+needTxt(o)+" — malı bu vaxta qədər təmin edin", buy.map(i=>pname(i.pid)+" "+i.qty), P.id);
+    notify([o.from], "note", "🛒 Sifarişiniz #"+o.id+": "+buy.length+" mal anbarda yoxdur → Satınalmaya göndərildi", (give.length ? give.length+" mal artıq verildi. " : "")+"Lazım olan vaxt: "+needTxt(o), buy.map(i=>pname(i.pid)+" "+i.qty), o.id);
+    save(); render(); return toast("Satınalmaya göndərildi → #"+P.id); }
   if (d.rqall || d.rqpart){ const id = Number(d.rqall || d.rqpart), o = S.orders.find(x=>x.id===id); if (!o) return;
     const note = ((rqDraft[id]||{}).note||"").trim(); if (d.rqpart && !note) return toast("Nə verildiyini / nə olmadığını yazın");
     const now = new Date().toISOString(), full = !!d.rqall;
