@@ -781,6 +781,7 @@ const Cloud = (() => {
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
     if (lgHold){ await lgHold; lgHold = null; }
+    tab = tabsFor(role)[0][0];                     // hər şöbə öz birinci bölməsində açılır (Satış — Tapşırıqlar)
     loginClose(); $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
@@ -1247,7 +1248,7 @@ function tabsFor(r){
     "Elçin":           ["tasks","tcal","home","new","orders"],
     "İstehsalat":      ["home","new","orders","exp"],
     "Çeşidləmə":       ["home","new","orders","exp"],
-    "Rəhbərlik":       ["home","orders","buy","qc","days","res","prob","arch","tasks"],
+    "Rəhbərlik":       ["home","tasks","orders","buy","qc","days","res","prob","arch"],
     "Admin":           ["home","orders","buy","qc","days","res","prob","arch","catalog"],
   };
   return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
@@ -1680,6 +1681,12 @@ function vHome(){
   const work = myWork();
   let html = greet() + alertsHtml();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
+  if (role==="Rəhbərlik"){
+    const ot = tkList().filter(t=>!t.done).sort((a,b)=>tkDue(a)-tkDue(b)), ov = ot.filter(tkOver).length;
+    html += '<h2>📝 Satışın tapşırıqları <span class="cnt">'+ot.length+'</span>'+(ov?' <span class="pill p-bad">⏰ '+ov+' vaxtı keçib</span>':"")+'</h2>'+
+      (ot.length ? '<div class="card">'+ot.slice(0,6).map(t=>'<div class="row" style="justify-content:space-between;gap:8px"><span class="grow"><b>'+esc(t.to.join(" və "))+':</b> '+esc(t.title)+'</span><span class="pill '+(tkOver(t)?"p-bad":"p-wait")+'">'+tkDueTxt(t)+'</span></div>').join("")+
+        '<button class="linkb" data-go="tasks">Hamısına bax →</button></div>' : '<div class="empty">Açıq tapşırıq yoxdur</div>');
+  }
   if (WORK_TITLE[role] || work.length){
     html += '<h2>Sizin işiniz <span class="cnt">'+work.length+'</span></h2>';
     html += work.length ? (role==="Satınalma" ? bySent(work) : work.map(o=>orderCard(o)).join("")) : '<div class="empty">✓ Hazırda iş yoxdur</div>';
@@ -1703,7 +1710,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v52 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v53 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
