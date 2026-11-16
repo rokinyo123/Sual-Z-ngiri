@@ -414,7 +414,10 @@ h2::before{background:var(--navy2)}
 :root[data-theme="dark"] .tabs button.on,:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,#3445B0,#5468E0)}
 .tabs .n{top:-2px;right:4px}
 main.wrap{padding-bottom:110px;min-height:calc(100vh - 96px);min-height:calc(100dvh - 96px)}
-main.wrap>.foot{margin-top:auto;padding-top:24px}
+main.wrap>.foot{position:fixed;z-index:14;left:0;right:0;bottom:0;margin:0;padding:3px 12px calc(4px + env(safe-area-inset-bottom,0px));background:var(--bg);font-size:11px;line-height:1.5}
+.tabs{bottom:calc(var(--fh,0px) + 6px)}
+main.wrap{padding-bottom:calc(110px + var(--fh,0px))}
+.toast{bottom:calc(84px + var(--fh,0px))}
 .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 /* ---------- 1) Açılış ekranı ---------- */
 #spl{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;
@@ -1537,7 +1540,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v46 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v47 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -3001,6 +3004,11 @@ function delFirm(f){
 // Saat keçdikcə vaxt nişanlarını yenilə (yazı yazılarkən yox)
 setInterval(()=>{ const f=document.activeElement; if (tab!=="new" && tab!=="catalog" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))) render(); }, 60000);
 draft = newDraft();
+// Aşağıdakı xidməti sətir (versiya · çıxış · Telegram) menyunun altında sabit durur: hündürlüyü ölçülür, menyu onun üstünə qalxır
+(function footH(){
+  const set = () => { const f = document.querySelector("main>.foot"); document.documentElement.style.setProperty("--fh", (f ? f.offsetHeight : 0)+"px"); };
+  new MutationObserver(set).observe($("main"), { childList:true }); addEventListener("resize", set); set();
+})();
 // Sol yuxarıda saat və tarix
 (function tickClock(){
   const el = $("clk"); if (el){ const d = new Date(), p = n => String(n).padStart(2,"0");
