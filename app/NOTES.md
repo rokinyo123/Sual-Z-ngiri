@@ -9,7 +9,7 @@ Technical handoff for any future session working on `app/`. The owner's own hand
 - Telegram bot @Almond_anbar_bot = Supabase Edge Function `telegram`, source `app/telegram-function.ts`.
 
 ## Deploy flow
-1. `git pull origin main` first — another session also commits to `main` (login splash/moth, design, `chainRings`, esgarow kit).
+1. `git pull origin main` first — another session also commits to `main` (design, `chainRings`, esgarow kit).
 2. Edit, then **bump `CACHE` in `app/sw.js`** (`almond-anbar-vNN`) and the version in the footer, or phones keep the old build.
 3. Commit on the session branch → push → PR → merge to `main`. Pages deploys in ~1 min.
 4. Telegram function and SQL are **not** deployed by git. The owner does it by hand:
@@ -41,10 +41,10 @@ Technical handoff for any future session working on `app/`. The owner's own hand
 - `SINAQ = true` (test mode, session kept in localStorage `almond-sess`). Owner will ask to turn it off and set passwords.
 
 ## Look (owner's choice, Nov 2026)
-Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `nlLogin()`, loading overlay `nlLoading()` / `ldrHtml()`, navy rounded header, floating bottom tab bar. Default theme is light; 🌙 toggles dark navy. The older lamp/moth login (`lampLogin`, `lgIntro`) is still in the file but no longer called.
+Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `nlLogin()`, loading overlay `nlLoading()` / `ldrHtml()`, navy rounded header, floating bottom tab bar. Default theme is light; 🌙 toggles dark navy. The old lamp/moth login and intro were removed at the owner's request — do not bring them back.
 
 ## Key code anchors (app/index.html)
-`Cloud` module (`URL0`, `AKEY`, `SINAQ`) ~l.648 · `hasQC` · `problem()` · `splitProblems()` · `notify()` → `Cloud.tg()` · `tabsFor()` · `chainRings()` (ring chain UI from the other session — keep its visuals).
+`Cloud` module (`URL0`, `AKEY`, `SINAQ`) ~l.648 · `hasQC` · `problem()` · `splitProblems()` · `notify()` → `Cloud.tg()` · `tabsFor()` · `chainRings()` (ring chain UI).
 
 ## Telegram function
 - Secrets: `TELEGRAM_TOKEN`, `TG_KOD` (+ Supabase defaults). `APP` constant = site URL for deep links (`#o=ID`).
@@ -57,4 +57,3 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Never replace the Supabase DB or touch `public`. New SQL must be additive and idempotent.
 - No model identifiers in commits/PRs.
 - Owner declined (don't re-offer unprompted): photo/scorpion chain login, ordering via Telegram, server-side mayak + phone calls, `/rol` buttons.
-- Test pages `giris-sinaq.html`, `giris-zencir.html` are leftovers; delete only if the owner agrees.

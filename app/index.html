@@ -7,7 +7,7 @@
 <title>Almond Anbar Zənciri</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1B2470" id="thc">
-<script>/* Görünüş: standart tünd "lampa" rejimi; ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<script>/* Görünüş: standart gündüz (mavi); ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Almond Anbar">
 <link rel="apple-touch-icon" href="../icon-192.png">
@@ -344,26 +344,13 @@ header .who{border:none;background:none;cursor:default}
 .sent.new{background:var(--wait-bg);color:var(--wait)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* ===== İçəri dizayn: şöbə rəngi (--dc), tünd "lampa" görünüşü, halqalı sifariş zənciri, salam kartı ===== */
+/* ===== İçəri dizayn: şöbə rəngi (--dc), halqalı sifariş zənciri, salam kartı ===== */
 :root{--dc:247,213,148;--dcx:color-mix(in srgb,rgb(var(--dc)) 45%,#3b1c06)}
-:root[data-theme="dark"]{--dcx:rgb(var(--dc));--bg:#120d09;--surface:#1c150f;--sunk:#271d15;--line:#3a2c20}
-.abrand i{font-style:normal;color:rgb(var(--c));transition:text-shadow .4s}
-:root[data-theme="dark"] .abrand i{text-shadow:0 0 10px rgba(var(--c),.45)}
-:root:not([data-theme="dark"]) .abrand i{color:color-mix(in srgb,rgb(var(--c)) 80%,#fff)}
 .tabs button{transition:background .25s,color .25s,opacity .25s}
 .tabs button.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px;background:rgb(var(--dc));box-shadow:0 0 10px rgba(var(--dc),.7)}
 h2::before{content:"";width:4px;height:1em;border-radius:2px;background:var(--dcx);flex:none}
 .oc.act{box-shadow:0 0 0 2px var(--dcx) inset,0 4px 14px rgba(60,25,5,.08)}
 .thb{min-width:34px}
-:root[data-theme="dark"] body{background:radial-gradient(110% 55% at 50% -8%,rgba(var(--dc),.13),transparent 62%) fixed,var(--bg)}
-:root[data-theme="dark"] header{background:linear-gradient(180deg,#1d130b,#140d08);border-bottom:1px solid rgba(var(--dc),.35);box-shadow:0 8px 26px rgba(0,0,0,.45),0 1px 18px rgba(var(--dc),.14)}
-:root[data-theme="dark"] body::before{background:#1d130b}
-:root[data-theme="dark"] .tabs button.on{background:rgba(var(--dc),.14);color:rgb(var(--dc))}
-:root[data-theme="dark"] .who select{background:#24180f;border-color:rgba(var(--dc),.45)}
-:root[data-theme="dark"] .outb{background:rgba(var(--dc),.16);color:rgb(var(--dc));border:1px solid rgba(var(--dc),.35)}
-:root[data-theme="dark"] .card,:root[data-theme="dark"] .oc{background:linear-gradient(180deg,rgba(255,236,205,.03),transparent 40%),var(--surface);box-shadow:0 6px 20px rgba(0,0,0,.28)}
-:root[data-theme="dark"] button.pri{background:rgb(var(--dc));color:#1a0f06;border-color:rgb(var(--dc));box-shadow:0 4px 16px rgba(var(--dc),.25)}
-:root[data-theme="dark"] .oc.act{box-shadow:0 0 0 1.5px rgba(var(--dc),.85) inset,0 0 22px rgba(var(--dc),.14),0 6px 20px rgba(0,0,0,.28)}
 /* salam kartı */
 .greet{position:relative;overflow:hidden;border-radius:14px;padding:14px 16px;border:1px solid rgba(var(--dc),.35);
   background:linear-gradient(120deg,rgba(var(--dc),.22),rgba(var(--dc),.04) 65%),var(--surface)}
@@ -387,154 +374,6 @@ main.tabin>*{animation:tabIn .38s cubic-bezier(.2,.8,.2,1) both}
 main.tabin>:nth-child(2){animation-delay:.03s} main.tabin>:nth-child(3){animation-delay:.06s} main.tabin>:nth-child(4){animation-delay:.09s} main.tabin>:nth-child(5){animation-delay:.12s} main.tabin>:nth-child(n+6){animation-delay:.15s}
 @keyframes tabIn{from{opacity:0;transform:translateY(10px)}}
 @media (prefers-reduced-motion:reduce){main.tabin>*,.ring .st.cur .o{animation:none}}
-/* ===== Giriş: zəncirdən asılan lampa — zənciri çəkəndə lampa yanır, "Almond" hərfləri halqalarla birləşir ===== */
-body.lg-on{overflow:hidden}
-#lg{--lgc:#FFF3E0;--lgm:#b59a80;--lgg:#E9B45A;--lgg2:#F7D594;--lgl:rgba(255,230,190,.14);--lgt:255,198,120;
-  position:fixed;inset:0;z-index:40;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;color:var(--lgc);
-  display:flex;flex-direction:column;align-items:center;padding:0 16px 32px;background:radial-gradient(120% 70% at 50% 0%,#1a120c,#0f0a07 70%)}
-#lg .lamp{position:relative;width:200px;height:250px;flex:none;z-index:3}
-#lg .lamp svg{width:100%;height:100%;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none}
-#lg .swing{transform-origin:100px 0;animation:lgSway 6s ease-in-out infinite}
-@keyframes lgSway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
-#lg .bulb{fill:#4a3a2a;transition:fill .25s}
-#lg .bulb-glow{opacity:0;transition:opacity .35s}
-#lg .shade-in{fill:#2a1d13;transition:fill .35s}
-#lg.on .bulb{fill:color-mix(in srgb,rgb(var(--lgt)) 45%,#fff)} #lg.on .bulb-glow{opacity:1}
-#lg.on .pull .knob{fill:rgb(var(--lgt))} #lg.on .shade-in{fill:#7a5320}
-#lg .pull{cursor:grab;touch-action:none;outline:none}
-#lg .pull .knob{fill:var(--lgg);stroke:#7a5320;stroke-width:1.5}
-#lg .pull:focus-visible .knob{stroke:#fff;stroke-width:3}
-#lg .pull .bead{fill:#8d6a3d}
-#lg .pull-hit{fill:transparent}
-#lg .cone{position:absolute;left:50%;top:176px;width:min(150vw,1100px);height:120vh;transform:translateX(-50%);pointer-events:none;z-index:1;
-  background:radial-gradient(60% 55% at 50% 0%,rgba(var(--lgt),.38),rgba(var(--lgt),.12) 45%,transparent 75%);
-  clip-path:polygon(calc(50% - 64px) 0,calc(50% + 64px) 0,100% 100%,0 100%);opacity:0;transition:opacity .5s ease;
-  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 45%,transparent 95%);mask-image:linear-gradient(180deg,#000 0,#000 45%,transparent 95%)}
-#lg.on .cone{opacity:1}
-#lg .lhint{margin-top:2px;font-size:13px;color:var(--lgm);z-index:3;transition:opacity .3s;display:flex;gap:6px}
-#lg .lhint .arr{display:inline-block;animation:lgNudge 1.4s ease-in-out infinite}
-@keyframes lgNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
-#lg.on .lhint{opacity:0}
-#lg .lhint.nudge{animation:lgHint .6s ease}
-@keyframes lgHint{0%,100%{transform:none;color:var(--lgm)}30%{transform:scale(1.12);color:var(--lgc)}}
-#lg .word{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;margin:22px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(40px,12vw,64px);line-height:1;letter-spacing:.5px}
-#lg .word .ch{color:rgba(255,236,205,.07);transition:color .45s ease,opacity .45s ease,text-shadow .45s ease,transform .45s cubic-bezier(.2,.8,.2,1);transform:translateY(6px)}
-#lg .word .lk{width:.42em;height:.42em;margin:0 -.02em;opacity:0;transform:scale(.4) rotate(-30deg);transition:opacity .3s ease,transform .35s cubic-bezier(.2,1.4,.4,1)}
-#lg .word .lk path{fill:none;stroke:var(--lgg);stroke-width:2.2;stroke-linecap:round}
-/* hər hərfin öz rəngi (--c); lampa yananda növbəti hərfin rəngini alır, o hərf parlayır */
-#lg.lit .word .ch{color:rgb(var(--c));opacity:.5;text-shadow:0 2px 0 #3a2410;transform:none}
-#lg.lit .word .ch.act{opacity:1;text-shadow:0 0 14px rgba(var(--c),.9),0 0 36px rgba(var(--c),.55),0 2px 0 #3a2410;transform:translateY(-3px) scale(1.08)}
-#lg.lit .word .lk{opacity:1;transform:none}
-#lg.done .word{animation:lgPulse .7s ease}
-@keyframes lgPulse{40%{filter:drop-shadow(0 0 14px rgba(255,198,120,.8)) brightness(1.15)}}
-#lg .tag{z-index:3;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--lgm);opacity:0;transition:opacity .5s .2s}
-#lg.lit .tag{opacity:.9}
-#lg .lform{position:relative;z-index:3;width:100%;max-width:360px;margin-top:22px;padding:20px;border-radius:16px;background:rgba(32,22,15,.72);border:1px solid var(--lgl);
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:12px;
-  overflow:hidden;transform-origin:50% 0;opacity:0;transform:perspective(900px) rotateX(-75deg) translateY(-24px) scale(.88);clip-path:inset(0 0 100% 0 round 16px);pointer-events:none;
-  transition:opacity .25s ease,transform .35s ease,clip-path .3s ease,border-color .6s,box-shadow .6s}
-/* açılış: kart işıq şüasından aşağı "qatlanaraq" açılır, üstündən lampa rəngində işıq zolağı keçir, içindəkilər bir-bir görünür */
-#lg.open .lform{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 16px);pointer-events:auto;border-color:rgba(var(--lgt),.35);
-  box-shadow:0 20px 50px rgba(0,0,0,.45),0 0 34px rgba(var(--lgt),.16);
-  transition:opacity .3s ease,transform .9s cubic-bezier(.2,1.25,.35,1),clip-path .75s cubic-bezier(.2,.8,.2,1),border-color .6s,box-shadow .6s}
-#lg .lform::after{content:"";position:absolute;left:-10%;right:-10%;top:0;height:70px;pointer-events:none;opacity:0;
-  background:linear-gradient(180deg,transparent,rgba(var(--lgt),.35) 50%,transparent);transform:translateY(-80px)}
-#lg.open .lform::after{animation:lgSweep 1.1s .25s cubic-bezier(.4,0,.2,1)}
-@keyframes lgSweep{0%{opacity:0;transform:translateY(-80px)}15%{opacity:1}100%{opacity:0;transform:translateY(420px)}}
-#lg .lform>*{opacity:0;transform:translateY(12px);transition:opacity .2s,transform .2s}
-#lg.open .lform>*{opacity:1;transform:none;transition:opacity .45s ease,transform .55s cubic-bezier(.2,1.3,.4,1)}
-#lg.open .lform>:nth-child(1){transition-delay:.28s} #lg.open .lform>:nth-child(2){transition-delay:.36s}
-#lg.open .lform>:nth-child(3){transition-delay:.44s} #lg.open .lform>:nth-child(4){transition-delay:.52s}
-#lg.open .lform>:nth-child(5){transition-delay:.6s} #lg.open .lform>:nth-child(6){transition-delay:.68s} #lg.open .lform>:nth-child(7){transition-delay:.76s}
-#lg .lrem{flex-direction:row!important;align-items:center;gap:10px!important;font-size:13px!important;cursor:pointer;-webkit-user-select:none;user-select:none}
-#lg .lrem input{appearance:none;-webkit-appearance:none;flex:none;width:22px!important;height:22px;padding:0!important;margin:0;border-radius:6px!important;border:1.5px solid var(--lgm)!important;background:rgba(15,10,7,.6);display:grid;place-content:center;cursor:pointer;transition:background .2s,border-color .2s}
-#lg .lrem input::after{content:"";width:6px;height:11px;border:solid #2a1708;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) scale(0);margin-top:-2px;transition:transform .2s cubic-bezier(.2,1.6,.4,1)}
-#lg .lrem input:checked{background:rgb(var(--lgt));border-color:rgb(var(--lgt))!important}
-#lg .lrem input:checked::after{transform:rotate(45deg) scale(1)}
-#lg .lform h2{font-family:var(--display);font-size:20px;color:var(--lgc);margin:0}
-#lg .lform .sub{font-size:13px;color:var(--lgm);margin-top:-6px}
-#lg .lform label{font-size:12px;font-weight:600;color:var(--lgm);display:flex;flex-direction:column;gap:6px}
-#lg .lform select,#lg .lform input{width:100%;font:inherit;font-size:16px;color:var(--lgc);background:rgba(15,10,7,.6);border:1px solid var(--lgl);border-radius:10px;padding:11px 12px;outline:none}
-#lg .lform select:focus,#lg .lform input:focus{border-color:var(--lgg);box-shadow:0 0 0 3px rgba(233,180,90,.18)}
-#lg .lform select option{background:#1a120c;color:var(--lgc)}
-#lg .pin{letter-spacing:10px;text-align:center;font-weight:700}
-#lg .pin::placeholder{letter-spacing:1px;font-weight:400;color:#7d6553}
-#lg .lbtn{font:inherit;font-weight:700;font-size:16px;color:#2a1708;background:linear-gradient(180deg,var(--lgg2),var(--lgg));border:0;border-radius:10px;padding:12px;cursor:pointer;box-shadow:0 6px 18px rgba(233,180,90,.25)}
-#lg .lbtn:disabled{opacity:.85}
-#lg .lbtn.landed{animation:lbLand .45s ease}
-@keyframes lbLand{35%{transform:translateY(2px) scale(.97);filter:brightness(1.15)}}
-#lg .lnote{font-size:13px;color:#ff9a8a;text-align:center;min-height:16px}
-#lg .snap{z-index:3;margin-top:10px;font:inherit;font-size:12px;color:var(--lgm);background:rgba(32,22,15,.6);border:1px solid var(--lgl);border-radius:999px;padding:6px 12px;cursor:pointer}
-#lg .snap.live{color:var(--lgc);border-color:rgba(var(--lgt),.6);box-shadow:0 0 12px rgba(var(--lgt),.25)}
-#lg .snap.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#e5484d;margin-right:6px;vertical-align:1px;animation:lgRec 1.2s ease-in-out infinite}
-@keyframes lgRec{50%{opacity:.3}}
-#lg .lskip{z-index:3;margin-top:14px;background:none;border:0;color:var(--lgm);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
-#lg.open .lskip{display:none}
-/* ===== Açılış səhnəsi: qara ekran, "Almond" hərfləri öz rənglərində işıq şüası ilə bir-bir yanır, halqalarla birləşir, parlayır (≈3.5 san) ===== */
-/* ===== Pərvanə: qaranlıqda lampanın üstündə oturur; hər yandırmada sıradakı hərfə uçub qonur ===== */
-#lg .moth{position:absolute;left:0;top:0;width:36px;height:28px;z-index:5;pointer-events:none;will-change:transform;
-  filter:brightness(.5) saturate(.6);transition:filter .5s ease}
-#lg.on .moth{filter:brightness(1) drop-shadow(0 0 5px rgba(var(--lgt),.65))}
-#lg .moth svg{width:100%;height:100%;overflow:visible;display:block}
-#lg .moth .wl,#lg .moth .wr{transform-box:view-box;transform-origin:20px 15px}
-#lg .moth .wl{animation:mtTwL 5.5s ease-in-out infinite} #lg .moth .wr{animation:mtTwR 5.5s ease-in-out infinite}
-#lg .moth.fly .wl{animation:mtFlapL .11s ease-in-out infinite alternate} #lg .moth.fly .wr{animation:mtFlapR .11s ease-in-out infinite alternate}
-@keyframes mtFlapL{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
-@keyframes mtFlapR{from{transform:scaleX(1)}to{transform:scaleX(.18)}}
-@keyframes mtTwL{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
-@keyframes mtTwR{0%,88%,100%{transform:scaleX(.82)}92%{transform:scaleX(.45)}96%{transform:scaleX(.9)}}
-#lgi{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;transition:opacity .7s ease,transform .9s cubic-bezier(.4,0,.2,1)}
-#lgi.out{opacity:0;transform:scale(1.08);pointer-events:none}
-#lgi .iw{position:relative;z-index:2;display:flex;align-items:center;margin:0;font-family:var(--display);font-weight:700;font-size:clamp(46px,15vw,84px);line-height:1.1;padding:0 .1em}
-#lgi .iw .c{color:rgb(var(--c));opacity:0;filter:blur(10px);transform:translateY(16px) scale(.8)}
-#lgi .iw .lk{width:.38em;height:.38em;opacity:0;transform:scale(.2) rotate(-40deg)}
-#lgi .iw .lk path{fill:none;stroke:rgba(255,236,205,.6);stroke-width:2.2;stroke-linecap:round}
-#lgi .itag{z-index:2;margin-top:14px;font-family:var(--body);font-size:12px;text-transform:uppercase;letter-spacing:16px;color:rgba(255,236,205,.8);opacity:0}
-#lgi .beam{position:absolute;left:0;top:27%;height:46%;width:3px;border-radius:3px;background:linear-gradient(180deg,transparent,#fff 50%,transparent);box-shadow:0 0 18px 4px rgba(255,236,205,.5);opacity:0;z-index:3;pointer-events:none}
-#lgi .bloom{position:absolute;width:80vmin;height:80vmin;border-radius:50%;opacity:0;filter:blur(60px);z-index:1;pointer-events:none;
-  background:conic-gradient(rgb(247,213,148),rgb(255,143,177),rgb(142,219,138),rgb(183,156,255),rgb(255,168,87),rgb(124,196,255),rgb(247,213,148))}
-#lgi .p{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:0;pointer-events:none}
-#lgi .itap{position:absolute;bottom:20%;z-index:4;background:none;border:0;font-family:var(--body);font-size:12px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.6);display:flex;flex-direction:column;align-items:center;gap:14px;transition:opacity .4s;pointer-events:none}
-#lgi .itap i{width:46px;height:46px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);animation:liRing 1.8s ease-in-out infinite}
-#lgi .iskip{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));z-index:4;font-family:var(--body);font-size:11px;color:rgba(255,255,255,.35);opacity:0;transition:opacity .5s 1s}
-#lgi.play .iskip{opacity:1}
-#lgi.play .itap{opacity:0}
-#lgi.play .iw .c{animation:liIn .9s cubic-bezier(.2,.9,.2,1) forwards,liGlow 1.8s ease forwards,liShine .5s ease;animation-delay:calc(.45s + var(--i)*.17s),calc(.45s + var(--i)*.17s),calc(2.05s + var(--i)*.08s)}
-#lgi.play .iw .lk{animation:liLink .5s cubic-bezier(.2,1.6,.4,1) forwards;animation-delay:calc(.66s + var(--i)*.17s)}
-#lgi.play .iw{animation:liFlash 1s 1.85s ease}
-#lgi.play .beam{animation:liBeam 1.45s .3s cubic-bezier(.45,0,.55,1) forwards}
-#lgi.play .bloom{animation:liBloom 2.4s 1.75s ease-out forwards}
-#lgi.play .itag{animation:liTag 1.3s 2.05s ease-out forwards}
-#lgi.play .p{animation:liPt 3.4s var(--d) ease-out forwards}
-@keyframes liIn{to{opacity:1;filter:blur(0);transform:none}}
-@keyframes liGlow{0%{text-shadow:0 0 30px rgba(var(--c),1),0 0 70px rgba(var(--c),.7)}100%{text-shadow:0 0 16px rgba(var(--c),.45)}}
-@keyframes liLink{to{opacity:1;transform:none}}
-@keyframes liFlash{30%{filter:brightness(1.7) drop-shadow(0 0 20px rgba(255,255,255,.55))}}
-@keyframes liShine{40%{filter:brightness(1.9) drop-shadow(0 0 10px rgba(255,255,255,.7))}}
-@keyframes liBeam{0%{opacity:0;transform:translateX(12vw)}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(88vw)}}
-@keyframes liBloom{0%{opacity:0;transform:scale(.35) rotate(0)}30%{opacity:.55}100%{opacity:.2;transform:scale(1.15) rotate(70deg)}}
-@keyframes liTag{to{opacity:.85;letter-spacing:4px}}
-@keyframes liPt{0%{opacity:0;transform:none}25%{opacity:var(--o)}100%{opacity:0;transform:translate(var(--x),var(--y))}}
-@keyframes liRing{0%,100%{transform:scale(.85);opacity:.35}50%{transform:scale(1.05);opacity:.9}}
-
-/* bütün yazılar lampanın indiki rəngini (--lgt) alır: işıq hansı hərfin rəngindədirsə, aşağıdakı forma da o rəngdə olur */
-#lg .tag,#lg .lhint,#lg .snap,#lg .lskip,#lg .lform h2,#lg .lform .sub,#lg .lform label,#lg .lform select,#lg .lform input,#lg .lbtn{transition-property:color,background,border-color,box-shadow,opacity,transform,clip-path;transition-duration:.5s}
-#lg .word .lk path{stroke:rgb(var(--lgt));transition:stroke .5s}
-#lg.lit .tag{color:rgba(var(--lgt),.8)}
-#lg .lhint,#lg .lskip{color:rgba(var(--lgt),.7)}
-#lg .snap{color:rgba(var(--lgt),.8);border-color:rgba(var(--lgt),.25)}
-#lg .snap.live{color:rgb(var(--lgt))}
-#lg .lform h2{color:rgb(var(--lgt));text-shadow:0 0 16px rgba(var(--lgt),.35)}
-#lg .lform .sub,#lg .lform label{color:rgba(var(--lgt),.72)}
-#lg .lform select,#lg .lform input{color:rgb(var(--lgt));border-color:rgba(var(--lgt),.22)}
-#lg .lform select:focus,#lg .lform input:focus{border-color:rgb(var(--lgt));box-shadow:0 0 0 3px rgba(var(--lgt),.2)}
-#lg .lform select option{color:rgb(var(--lgt))}
-#lg .pin::placeholder{color:rgba(var(--lgt),.45)}
-#lg .lrem input{border-color:rgba(var(--lgt),.6)!important}
-#lg .lbtn{color:#1a0f06;background:linear-gradient(180deg,color-mix(in srgb,rgb(var(--lgt)) 65%,#fff),rgb(var(--lgt)));box-shadow:0 6px 18px rgba(var(--lgt),.3)}
-@media (prefers-reduced-motion:reduce){#lg *{animation:none!important;transition:none!important}}
-
 /* ===================== Mavi dizayn (2026-11): açılış · giriş · yükləmə · əsas ekran ===================== */
 :root{--bg:#F3F5FB;--surface:#FFFFFF;--sunk:#EDF0F8;--line:#E0E5F2;--fg:#18203F;--muted:#69718F;
   --brand:#1B2470;--brand-2:#2C3A9E;--brand-fg:#FFFFFF;--accent:#24318F;--accent-fg:#fff;--navy:#1B2470;--navy2:#3445B0;
@@ -543,7 +382,6 @@ body.lg-on{overflow:hidden}
   --brand:#141B4D;--brand-2:#222C6E;--brand-fg:#fff;--accent:#8FA2FF;--accent-fg:#0B1026;--navy:#141B4D;--navy2:#2A3590;color-scheme:dark}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="dark"]){--bg:#0B1026;--surface:#141A38;--sunk:#1B2247;--line:#29315C;--fg:#E8ECFF;--muted:#9AA3C7}}
 body{background:var(--bg)}
-:root[data-theme="dark"] body{background:var(--bg)}
 body::before,:root[data-theme="dark"] body::before{background:var(--navy)}
 /* başlıq: tünd mavi, nöqtəli "xəritə" naxışı, aşağısı yumru */
 header,:root[data-theme="dark"] header{position:relative;background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 100%);border:none;border-radius:0 0 26px 26px;
@@ -555,7 +393,6 @@ header::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.
 header .wrap{position:relative;z-index:1}
 .top{padding-block:14px 16px}
 .brand b.abrand{font-family:var(--script);font-size:30px;font-weight:700;letter-spacing:0;line-height:1}
-.abrand i,:root[data-theme="dark"] .abrand i,:root:not([data-theme="dark"]) .abrand i{color:#fff;text-shadow:none}
 .who select,:root[data-theme="dark"] .who select{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff}
 .who select option{color:#18203F}
 .outb,:root[data-theme="dark"] .outb{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)}
@@ -565,7 +402,6 @@ header .wrap{position:relative;z-index:1}
 input,select,textarea{border-radius:12px}
 button{border-radius:12px}
 button.pri,:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(27,36,112,.25)}
-:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,#3445B0,#5468E0)}
 .greet{border-radius:20px}
 h2::before{background:var(--navy2)}
 /* aşağıda üzən menyu (5-ci şəkil kimi) */
@@ -574,8 +410,8 @@ h2::before{background:var(--navy2)}
 .tabs button,:root[data-theme="dark"] .tabs button{flex:1 0 auto;min-width:54px;color:var(--muted);opacity:1;background:transparent;border-radius:999px;padding:6px 8px;font-size:10.5px;gap:0}
 .tabs button i{font-size:18px}
 .tabs button.on,:root[data-theme="dark"] .tabs button.on{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;flex-direction:row;gap:5px;padding:9px 14px;font-size:12px;box-shadow:0 4px 12px rgba(27,36,112,.3)}
-:root[data-theme="dark"] .tabs button.on{background:linear-gradient(135deg,#3445B0,#5468E0)}
 .tabs button.on::after{display:none}
+:root[data-theme="dark"] .tabs button.on,:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,#3445B0,#5468E0)}
 .tabs .n{top:-2px;right:4px}
 main.wrap{padding-bottom:110px}
 .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
@@ -644,7 +480,7 @@ body.nl-on{overflow:hidden}
 <header>
   <div class="wrap">
     <div class="top">
-      <div class="brand"><div class="bn"><b class="abrand" aria-label="Almond"><i style="--c:247,213,148">A</i><i style="--c:255,143,177">l</i><i style="--c:142,219,138">m</i><i style="--c:183,156,255">o</i><i style="--c:255,168,87">n</i><i style="--c:124,196,255">d</i></b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
+      <div class="brand"><div class="bn"><b class="abrand">Almond</b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
       <div class="who"><select id="role" aria-label="Kim kimi baxırsınız"></select></div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -936,7 +772,7 @@ const Cloud = (() => {
     let r0 = role; try { r0 = localStorage.getItem(KEY+"-role") || C.me.dept; } catch(e){}
     role = C.me.is_admin && DEPTS.includes(r0) ? r0 : C.me.dept;
     if (lgHold){ await lgHold; lgHold = null; }
-    lampClose(); $("role").hidden = false; renderRole(); render(); openDeep();
+    loginClose(); $("role").hidden = false; renderRole(); render(); openDeep();
     clearInterval(C.poll);
     C.poll = setInterval(tick, 15000);
   }
@@ -1700,7 +1536,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v44 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v45 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -3171,80 +3007,8 @@ draft = newDraft();
   setTimeout(tickClock, (60 - new Date().getSeconds())*1000 + 50);
 })();
 
-// ===================== Açılış səhnəsi (giriş ekranından əvvəl) =====================
-// Qara ekran → "Toxunun" (brauzerlər səsi yalnız toxunuşdan sonra açır) → ≈3.5 san səs + işıq şousu → lampa ekranı. İkinci toxunuş ötürür.
-const LG_COLORS = ["247,213,148","255,143,177","142,219,138","183,156,255","255,168,87","124,196,255"];
-const LG_LINK = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
-var lgIntroShown = false, lgMoth = null, lgHold = null;
-// Parol düzdürsə: pərvanə "Daxil ol" düyməsinə uçub qonur, düymə yüngülcə basılır, sonra proqram açılır (yükləmə bu vaxt arxada gedir)
-function lgMothToButton(){
-  const b = $("lb"); if (!lgMoth || !b) return Promise.resolve();
-  return lgMoth.go(b).then(()=>{ b.classList.add("landed"); return new Promise(r=>setTimeout(r, 450)); });
-}
-function lgIntroSound(){
-  const a = lgAC(); if (!a) return null; const t = a.currentTime+.05;
-  const master = a.createGain(); master.gain.value = .9; master.connect(a.destination);
-  // sadə otaq əks-sədası (yaradılmış impuls)
-  const rev = a.createConvolver(), len = Math.floor(a.sampleRate*2.6), ir = a.createBuffer(2, len, a.sampleRate);
-  for (let ch=0; ch<2; ch++){ const d = ir.getChannelData(ch); for (let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len, 2.4); }
-  rev.buffer = ir; const wet = a.createGain(); wet.gain.value = .4; rev.connect(wet).connect(master);
-  const out = n => { n.connect(master); n.connect(rev); };
-  const tone = (type, f, at, peak, dur, attack) => { const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(.0001, at); g.gain.linearRampToValueAtTime(peak, at+(attack||.01)); g.gain.exponentialRampToValueAtTime(.0001, at+dur);
-    o.connect(g); out(g); o.start(at); o.stop(at+dur+.05); };
-  // 1) alçaq, yavaş qalxan uğultu
-  [55, 82.5].forEach((f,i)=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
-    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(i ? .07 : .16, t+1.7); g.gain.exponentialRampToValueAtTime(.0001, t+3.9);
-    o.connect(g); out(g); o.start(t); o.stop(t+4); });
-  // 2) zərbəyə qədər yüksələn "vuş" (süzgəcdən keçən küy)
-  const nb = a.createBuffer(1, a.sampleRate*2, a.sampleRate), nd = nb.getChannelData(0); for (let i=0;i<nd.length;i++) nd[i] = Math.random()*2-1;
-  const ns = a.createBufferSource(), lp = a.createBiquadFilter(), ng = a.createGain(); ns.buffer = nb; lp.type = "lowpass";
-  lp.frequency.setValueAtTime(250, t); lp.frequency.exponentialRampToValueAtTime(4000, t+1.8);
-  ng.gain.setValueAtTime(.0001, t); ng.gain.linearRampToValueAtTime(.05, t+1.6); ng.gain.exponentialRampToValueAtTime(.0001, t+2.05);
-  ns.connect(lp).connect(ng); out(ng); ns.start(t); ns.stop(t+2.1);
-  // 3) hər hərfə bir zəng notu (pentatonik, yuxarı qalxır)
-  [523.25, 587.33, 659.25, 783.99, 880, 1046.5].forEach((f,i)=>{ const at = t+.45+i*.17; tone("triangle", f, at, .07, 1.3); tone("sine", f*2, at, .025, .7); });
-  // 4) bütün hərflər parlayanda isti akkord + parıltı
-  const hit = t+1.85;
-  [130.81, 196, 261.63, 329.63, 392, 523.25].forEach(f=>tone("triangle", f, hit, .045, 2.4, .05));
-  [2093, 2637, 3136].forEach((f,i)=>tone("sine", f, hit+i*.06, .02, .9));
-  return master;
-}
-function lgIntro(){
-  if (lgIntroShown || matchMedia("(prefers-reduced-motion: reduce)").matches) return; lgIntroShown = true;
-  const L = "Almond".split(""), el = document.createElement("div"); el.id = "lgi"; el.setAttribute("role", "button"); el.setAttribute("aria-label", "Açılış — başlamaq üçün toxunun"); el.tabIndex = 0;
-  let pts = ""; for (let i=0;i<26;i++){ const ang = Math.random()*Math.PI*2, r = 60+Math.random()*180;
-    pts += '<span class="p" style="left:'+(20+Math.random()*60)+'%;top:'+(35+Math.random()*30)+'%;--x:'+(Math.cos(ang)*r).toFixed(0)+'px;--y:'+(Math.sin(ang)*r).toFixed(0)+'px;--o:'+(.3+Math.random()*.6).toFixed(2)+';--d:'+(1.7+Math.random()*.5).toFixed(2)+'s"></span>'; }
-  el.innerHTML = '<div class="bloom"></div>'+pts+'<div class="beam"></div>'+
-    '<h1 class="iw" aria-label="Almond">'+L.map((c,i)=>'<span class="c" style="--c:'+LG_COLORS[i]+';--i:'+i+'">'+c+'</span>'+(i<L.length-1 ? LG_LINK.replace('class="lk"','class="lk" style="--i:'+i+'"') : "")).join("")+'</h1>'+
-    '<div class="itag">Anbar zənciri</div>'+
-    '<div class="itap"><i></i>Toxunun</div><div class="iskip">Ötürmək üçün toxunun</div>';
-  document.body.appendChild(el);
-  let T = 0, snd = null;
-  const finish = () => { clearTimeout(T); if (el.classList.contains("out")) return; el.classList.add("out");
-    if (snd){ try { const a = lgAC(); snd.gain.setTargetAtTime(.0001, a.currentTime, .25); } catch(e){} }
-    setTimeout(()=>el.remove(), 900); };
-  const start = () => { if (el.classList.contains("play")) return finish(); el.classList.add("play"); snd = lgIntroSound(); T = setTimeout(finish, 3700); };
-  el.addEventListener("click", start);
-  el.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); start(); } });
-  el.focus({ preventScroll:true });
-}
-// ===================== Giriş ekranı: zəncirdən asılan lampa =====================
-// Zənciri çək (və ya bas) → klik səsi, lampa yanır, "Almond" hərfləri bir-bir yanır, aralarına halqalar düşür → giriş forması açılır.
-let lgAudio = null;
-function lgAC(){ try { lgAudio = lgAudio || new (window.AudioContext || window.webkitAudioContext)(); if (lgAudio.state === "suspended") lgAudio.resume(); } catch(e){} return lgAudio; }
-function lgClick(){ const a = lgAC(); if (!a) return; const t = a.currentTime;
-  const n = a.createBufferSource(), buf = a.createBuffer(1, Math.floor(a.sampleRate*.04), a.sampleRate), d = buf.getChannelData(0);
-  for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/d.length,3);
-  const g = a.createGain(); g.gain.value = .35; n.buffer = buf; n.connect(g).connect(a.destination); n.start(t);
-  const o = a.createOscillator(), og = a.createGain(); o.type = "sine"; o.frequency.setValueAtTime(120, t+.05);
-  og.gain.setValueAtTime(.0001, t); og.gain.linearRampToValueAtTime(.05, t+.1); og.gain.exponentialRampToValueAtTime(.0001, t+.4);
-  o.connect(og).connect(a.destination); o.start(t+.05); o.stop(t+.42); }
-function lgClink(delay){ const a = lgAC(); if (!a) return; const t = a.currentTime+(delay||0);
-  [[2200,.12],[3300,.08],[4400,.04]].forEach(([f,v])=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
-    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.35); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.4); }); }
-function lampClose(){ lgSnapStop(); const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey);
-  ["nl","nlLoad"].forEach(id=>{ const x = $(id); if (x) x.remove(); }); document.body.classList.remove("nl-on"); }
+var lgHold = null;
+function loginClose(){ ["nl","nlLoad"].forEach(id=>{ const x = $(id); if (x) x.remove(); }); document.body.classList.remove("nl-on"); }
 // ===================== Mavi giriş ekranı (2-ci şəkil, yuxarıdakı şəkil olmadan) =====================
 const LOGO_ARC = id => '<svg viewBox="0 0 280 120" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" x2="1"><stop offset="0" stop-color="#3445B0" stop-opacity="0"/><stop offset=".6" stop-color="#5B7BFF"/><stop offset="1" stop-color="#9CC2FF"/></linearGradient></defs><path class="arc" d="M20 78 Q140 -10 252 34"/><circle cx="252" cy="34" r="3.5" fill="#7FA6FF"/></svg>';
 function ldrHtml(t, sub){
@@ -3256,7 +3020,7 @@ function nlLoading(on){
   if (x) return; const d = document.createElement("div"); d.id = "nlLoad"; d.innerHTML = ldrHtml("Daxil olunur", "Sifarişləriniz hazırlanır"); document.body.appendChild(d);
 }
 function nlLogin(msg, selectHtml){
-  lampClose();
+  loginClose();
   const el = document.createElement("div"); el.id = "nl";
   el.innerHTML = '<div class="in"><div class="logo">'+LOGO_ARC("nlG")+'<b>Almond</b></div>'+
     '<h2>Xoş gəlmisiniz</h2><div class="sub">Sifarişləriniz sizi gözləyir</div>'+
@@ -3268,161 +3032,6 @@ function nlLogin(msg, selectHtml){
     '<div class="foot2">Almond · Anbar zənciri</div></div>';
   document.body.appendChild(el); document.body.classList.add("nl-on");
   $("leye").onclick = () => { const i = $("lp"); i.type = i.type==="password" ? "text" : "password"; };
-}
-let lampOn = null;
-// Barmaq çırtması: mikrofonda qısa, kəskin, yüksək tezlikli səs → lampa yanır/sönür. Mikrofon yalnız istifadəçi düyməyə basanda açılır
-// və giriş ekranı bağlananda dərhal söndürülür. Səs heç yerə yazılmır/göndərilmir.
-let lgSnap = null;
-function lgSnapStop(){ if (!lgSnap) return; cancelAnimationFrame(lgSnap.raf); lgSnap.stream.getTracks().forEach(t=>t.stop()); try { lgSnap.src.disconnect(); } catch(e){} lgSnap = null; }
-async function lgSnapStart(onSnap){
-  const a = lgAC(); if (!a || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("dəstəklənmir");
-  const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
-  const src = a.createMediaStreamSource(stream), hp = a.createBiquadFilter(), an = a.createAnalyser();
-  hp.type = "highpass"; hp.frequency.value = 1800; an.fftSize = 512; src.connect(hp).connect(an);
-  const buf = new Float32Array(an.fftSize); let bg = .01, quietUntil = performance.now()+600, hot = 0;
-  lgSnap = { stream, src, raf:0 };
-  (function tick(){
-    an.getFloatTimeDomainData(buf); let pk = 0, sq = 0;
-    for (let i=0;i<buf.length;i++){ const v = Math.abs(buf[i]); if (v>pk) pk = v; sq += v*v; }
-    const rms = Math.sqrt(sq/buf.length), now = performance.now();
-    // kəskin zirvə: fon səviyyəsindən çox yüksək və zirvə/rms nisbəti böyük (çırtma qısa impulsdur, danışıq deyil)
-    if (now > quietUntil && pk > Math.max(.12, bg*9) && pk/(rms+1e-6) > 3.2){ if (++hot >= 1){ hot = 0; quietUntil = now+900; onSnap(); } }
-    else { hot = 0; bg = bg*.97 + rms*.03; }
-    lgSnap.raf = requestAnimationFrame(tick); })();
-}
-function lampKey(e){ if (lampOn && /^[0-9a-z]$/i.test(e.key) && !$("lg").classList.contains("open")) lampOn(true); }
-function lampLogin(msg, selectHtml){
-  lampClose();
-  const NS = "http://www.w3.org/2000/svg";
-  const L = "Almond".split(""), LC = LG_COLORS, link = '<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8H8a4 4 0 0 1-4-4z"/><path d="M13 8h3a4 4 0 0 1 0 8h-3a4 4 0 0 1-4-4"/></svg>';
-  const el = document.createElement("div"); el.id = "lg";
-  el.innerHTML = '<div class="cone" aria-hidden="true"></div>'+
-    '<div class="lamp"><svg viewBox="0 0 200 250" role="img" aria-label="Zəncirdən asılan lampa"><defs>'+
-      '<radialGradient id="lgBulb" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF4D6"/><stop offset=".35" style="stop-color:rgb(var(--lgt));stop-opacity:.75"/><stop offset="1" style="stop-color:rgb(var(--lgt));stop-opacity:0"/></radialGradient>'+
-      '<linearGradient id="lgShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1c130c"/><stop offset=".45" stop-color="#3a2717"/><stop offset="1" stop-color="#140d08"/></linearGradient></defs>'+
-      '<g class="swing"><g id="lgHang" fill="none" stroke="#6b5136" stroke-width="3"></g>'+
-      '<rect x="90" y="108" width="20" height="14" rx="3" fill="#2a1d13" stroke="#6b5136" stroke-width="1.5"/>'+
-      '<path d="M100 118 C70 120 42 146 34 178 L166 178 C158 146 130 120 100 118 Z" fill="url(#lgShade)" stroke="#6b5136" stroke-width="1.5"/>'+
-      '<path class="shade-in" d="M42 176 C56 168 144 168 158 176 L166 178 L34 178 Z"/>'+
-      '<circle class="bulb-glow" cx="100" cy="182" r="52" fill="url(#lgBulb)"/><circle class="bulb" cx="100" cy="182" r="12"/>'+
-      '<g class="pull" id="lgPull" tabindex="0" role="button" aria-label="Lampanı yandırmaq üçün zənciri çəkin"><rect class="pull-hit" x="112" y="160" width="60" height="100"/><g id="lgBeads"></g><circle class="knob" id="lgKnob" cx="142" cy="226" r="7"/></g>'+
-      '</g></svg></div>'+
-    '<div class="lhint"><span class="arr">↓</span> Zənciri çəkin</div>'+
-    '<button class="snap" id="lgSnap" type="button" aria-pressed="false">🫰 Barmaq çırtması ilə yandır</button>'+
-    '<h1 class="word" aria-label="Almond">'+L.map((c,i)=>'<span class="ch" aria-hidden="true" style="--c:'+LC[i]+'">'+c+'</span>'+(i<L.length-1?link:"")).join("")+'</h1>'+
-    '<div class="tag">Anbar zənciri</div>'+
-    '<form class="lform" id="lf"><h2>Daxil olun</h2><div class="sub">Şöbənizi seçin və 4 rəqəmli parolu yazın.</div>'+
-      '<label>Şöbə'+selectHtml+'</label>'+
-      '<label>Parol<input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="• • • •"></label>'+
-      '<label class="lrem"><input type="checkbox" id="lrem">Parolu yadda saxla</label>'+
-      '<button class="lbtn" id="lb">Daxil ol</button><div class="lnote" id="lnote">'+esc(msg||"")+'</div></form>'+
-    '<button class="lskip" id="lgSkip" type="button">Animasiyasız aç</button>';
-  document.body.appendChild(el); document.body.classList.add("lg-on");
-  const g = $("lgHang");
-  for (let y=-40,k=0; y<106; y+=12,k++){ const e = document.createElementNS(NS, k%2 ? "rect" : "ellipse");
-    if (k%2){ e.setAttribute("x",98.5); e.setAttribute("y",y-1); e.setAttribute("width",3); e.setAttribute("height",14); e.setAttribute("rx",1.5); e.setAttribute("fill","#6b5136"); e.setAttribute("stroke","none"); }
-    else { e.setAttribute("cx",100); e.setAttribute("cy",y+6); e.setAttribute("rx",4.5); e.setAttribute("ry",7.5); }
-    g.appendChild(e); }
-  const beads = $("lgBeads");
-  for (let y=176; y<=216; y+=6){ const c = document.createElementNS(NS,"circle"); c.setAttribute("class","bead"); c.setAttribute("cx",142); c.setAttribute("cy",y); c.setAttribute("r",1.9); beads.appendChild(c); }
-  let lit = false, cur = -1, openT = 0;
-  const chs = [...el.querySelectorAll(".word .ch")];
-  // hər yandırmada sıradakı hərf: A → l → m → o → n → d → A …; işıq onun rəngini alır, o hərf parlayır
-  let moth = null;
-  const next = () => { cur = (cur+1) % chs.length; el.style.setProperty("--lgt", LC[cur]); chs.forEach((c,i)=>c.classList.toggle("act", i===cur)); if (moth) moth.go(cur); };
-  lampOn = quiet => {
-    // sonrakı yandırmalarda: işıq yananda forma yenidən açılır, sönəndə qatlanıb gizlənir
-    if (lit){ clearTimeout(openT);
-      if (el.classList.toggle("on")){ if (!quiet) lgClick(); next(); openT = setTimeout(()=>el.classList.add("open"), quiet ? 0 : 180); }
-      else { chs.forEach(c=>c.classList.remove("act")); el.classList.remove("open"); }
-      return; }
-    lit = true; if (!quiet) lgClick(); el.classList.add("on"); next();
-    const fast = quiet || matchMedia("(prefers-reduced-motion: reduce)").matches, step = fast ? 0 : 85;
-    const lks = [...el.querySelectorAll(".word .lk")];
-    chs.forEach((c,i)=>{ c.style.transitionDelay = (120+i*step)+"ms"; });
-    lks.forEach((l,i)=>{ l.style.transitionDelay = (160+i*step+step/2)+"ms"; });
-    requestAnimationFrame(()=>el.classList.add("lit"));
-    const end = fast ? 0 : 120+chs.length*step+120;
-    if (!quiet) lgClink(end/1000);
-    setTimeout(()=>{ el.classList.add("done","open"); chs.forEach(c=>{ c.style.transitionDelay = ""; }); }, end);
-  };
-  if (msg) lampOn(true);                         // səhv mesajı varsa (məs. parol səhvdir) — birbaşa açıq
-  const pull = $("lgPull"), knob = $("lgKnob");
-  let y0 = null, dy = 0;
-  const setPull = v => { knob.setAttribute("cy", 226+v); beads.setAttribute("transform", "translate(0,"+v*.6+")"); };
-  pull.addEventListener("pointerdown", e => { y0 = e.clientY; dy = 0; try { pull.setPointerCapture(e.pointerId); } catch(x){} lgAC(); });
-  pull.addEventListener("pointermove", e => { if (y0 == null) return; dy = Math.max(0, Math.min(34, e.clientY-y0)); setPull(dy); });
-  // yalnız zəncir həqiqətən aşağı çəkiləndə yanır; sadəcə basanda zəncir yüngülcə titrəyir və ipucu göstərilir
-  const PULL_MIN = 14;
-  const spring = (from, ms) => { const t0 = performance.now();
-    (function back(t){ const k = Math.min(1,(t-t0)/ms); setPull(from*(1-k)*Math.cos(k*6)); if (k<1) requestAnimationFrame(back); })(t0); };
-  const hint = el.querySelector(".lhint");
-  pull.addEventListener("pointerup", () => { if (y0 == null) return; y0 = null;
-    if (dy >= PULL_MIN){ spring(dy, 220); lampOn(); return; }
-    spring(8, 420); hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); });
-  pull.addEventListener("pointercancel", () => { if (y0 == null) return; y0 = null; if (dy >= PULL_MIN){ spring(dy, 220); lampOn(); } else setPull(0); });
-  const snapBtn = $("lgSnap");
-  const snapOn = on => { snapBtn.classList.toggle("live", on); snapBtn.setAttribute("aria-pressed", on); snapBtn.textContent = on ? "Çırtın — dinləyirəm (söndür)" : "🫰 Barmaq çırtması ilə yandır"; };
-  snapBtn.onclick = async () => {
-    if (lgSnap){ lgSnapStop(); snapOn(false); return; }
-    snapBtn.disabled = true;
-    try { await lgSnapStart(() => { spring(18, 300); lampOn(); }); snapOn(true); }
-    catch(e){ snapBtn.textContent = "Mikrofona icazə verilmədi"; }
-    snapBtn.disabled = false; };
-  pull.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); lampOn(); } });
-  $("lgSkip").onclick = () => lampOn(true);
-  document.addEventListener("keydown", lampKey);
-  // ---- Pərvanə ----
-  moth = (() => {
-    const m = document.createElement("div"); m.className = "moth"; m.setAttribute("aria-hidden", "true");
-    const wing = (side) => { const k = side < 0 ? 1 : -1, X = v => 20 + k*v;   // sol/sağ qanad (yuxarıdan görünüş)
-      return '<g class="'+(side<0?"wl":"wr")+'">'+
-        '<path d="M'+X(1)+' 13 C'+X(6)+' 4 '+X(17)+' 2 '+X(19)+' 8 C'+X(19)+' 13 '+X(10)+' 17 '+X(1)+' 16 Z" fill="#cdb894" stroke="#7a6446" stroke-width=".8"/>'+
-        '<path d="M'+X(1)+' 17 C'+X(8)+' 17 '+X(14)+' 21 '+X(11)+' 26 C'+X(7)+' 28 '+X(3)+' 23 '+X(1)+' 19 Z" fill="#b39d78" stroke="#7a6446" stroke-width=".8"/>'+
-        '<circle cx="'+X(11)+'" cy="9" r="2.2" fill="#8a7152" opacity=".7"/></g>'; };
-    m.innerHTML = '<svg viewBox="0 0 40 30">'+wing(-1)+wing(1)+
-      '<path d="M19.2 7.5 C17 4 15 2 13 1.5 M20.8 7.5 C23 4 25 2 27 1.5" fill="none" stroke="#6b5538" stroke-width=".9" stroke-linecap="round"/>'+
-      '<ellipse cx="20" cy="17" rx="2.3" ry="8" fill="#6b5538"/><circle cx="20" cy="8.6" r="2.1" fill="#5a4630"/></svg>';
-    el.appendChild(m);
-    const W = 36, H = 28;
-    let pos = null, rot = 0, raf = 0, target = -1;     // target: -1 = lampa, 0..5 = hərf
-    // nöqtə #lg-in içində (sürüşdürmə nəzərə alınır)
-    const local = (x, y) => { const r = el.getBoundingClientRect(); return { x: x - r.left + el.scrollLeft, y: y - r.top + el.scrollTop }; };
-    const spot = t => {
-      if (t instanceof Element){ const r = t.getBoundingClientRect(); return { ...local(r.left + r.width*.8, r.top + 5), a: -12 }; }   // düymənin üst kənarı, yazının yanında
-      if (t < 0){ const r = el.querySelector(".lamp svg").getBoundingClientRect(); return { ...local(r.left + r.width*.64, r.top + r.height*.51), a: 28 }; }
-      const r = chs[t].getBoundingClientRect(), low = "mon".includes(chs[t].textContent);   // kiçik hərflərin üstü aşağıdadır
-      return { ...local(r.left + r.width/2, r.top + r.height*(low ? .36 : .13)), a: [-8,6,-4,10,-6,4][t] }; };
-    const place = (p, a) => { pos = p; rot = a; m.style.transform = "translate("+(p.x - W/2).toFixed(1)+"px,"+(p.y - H*.7).toFixed(1)+"px) rotate("+a.toFixed(1)+"deg)"; };
-    const snap = () => { const s = spot(target); place(s, s.a); };
-    snap();
-    addEventListener("resize", () => { if (!raf && document.body.contains(m)) snap(); });
-    let done = null;
-    return { go(t){ return new Promise(res => {
-      if (done) done(); done = res;                                                   // əvvəlki uçuş yarımçıq qalıbsa, onu da bitmiş say
-      target = t; cancelAnimationFrame(raf);
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches){ raf = 0; snap(); done = null; return res(); }
-      const p0 = { ...pos }, a0 = rot, t0 = performance.now(), dist = Math.hypot(spot(t).x - p0.x, spot(t).y - p0.y);
-      const dur = Math.min(1700, 750 + dist*2.2), lift = 40 + dist*.35, side = Math.random() < .5 ? -1 : 1;
-      m.classList.add("fly");
-      (function step(now){
-        const k = Math.min(1, (now - t0)/dur), e = k<.5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2, end = spot(t);   // hədəf hər kadrda yenidən ölçülür
-        // əyri yol: yuxarı qalxıb enən qövs + yana yellənmə (pərvanə düz uçmur)
-        const c1 = { x: p0.x + side*30, y: Math.min(p0.y, end.y) - lift }, c2 = { x: end.x - side*25, y: Math.min(p0.y, end.y) - lift*.6 };
-        const u = 1 - e, bx = u*u*u*p0.x + 3*u*u*e*c1.x + 3*u*e*e*c2.x + e*e*e*end.x, by = u*u*u*p0.y + 3*u*u*e*c1.y + 3*u*e*e*c2.y + e*e*e*end.y;
-        const wob = Math.sin(k*Math.PI*6) * 7 * Math.sin(k*Math.PI);
-        const p = { x: bx + wob, y: by + Math.cos(k*Math.PI*5) * 4 * Math.sin(k*Math.PI) };
-        let a = Math.atan2(p.y - pos.y, p.x - pos.x) * 180/Math.PI + 90;            // baş uçuş istiqamətinə baxır
-        if (k > .85) a = a + (end.a - a) * ((k - .85)/.15);                          // qonarkən düzəlir
-        if (k < .1) a = a0 + (a - a0) * (k/.1);
-        place(p, isFinite(a) ? a : rot);
-        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; m.classList.remove("fly"); place(end, end.a); if (done === res){ done = null; res(); } }
-      })(t0);
-    }); } };
-  })();
-  lgMoth = moth;
-  if (cur >= 0) moth.go(cur);                    // lampa artıq yanıbsa (səhv parol mesajı) — pərvanə hərfə keçir
-  if (!msg) lgIntro();                           // səhifə açılanda bir dəfə: qara ekranda loqo şousu
 }
 // Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
 function openDeep(){
