@@ -1071,8 +1071,9 @@ function autoMissing(){
   }));
   if (n) save();
 }
-function notify(to, kind, title, sub, items, oid){
-  const a = { id:"n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] };
+function notify(to, kind, title, sub, items, oid, fixId){
+  if (fixId && (S.alerts||[]).some(x=>x.id===fixId)) return;
+  const a = { id: fixId || "n"+Date.now()+Math.random().toString(36).slice(2,6), kind, to:[...new Set(to)], title, sub, items:items||[], oid, at:new Date().toISOString(), seen:[] };
   (S.alerts = S.alerts || []).unshift(a);
   if (ONLINE) setTimeout(()=>Cloud.tg(a).then(r=>{ if (!r.ok && r.status!==404) console.warn("Telegram:", r); }), 0);
 }
@@ -1227,14 +1228,14 @@ function myWork(){
 function tabsFor(r){
   // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
   const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
-    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], exp:["💰","Hesabat"] };
+    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], exp:["💰","Hesabat"] };
   const BY = {
     "Anbar":           ["home","new","orders","days"],
     "Anbar (İnqilab)": ["home","new","orders","days"],
     "Satınalma":       ["home","buy","orders","days","prob"],
     "Keyfiyyət":       ["home","qc","orders","days"],
     "Texnoloq":        ["home","new","orders","days"],
-    "Satış":           ["tasks","home","new","orders"],
+    "Satış":           ["tasks","tcal","home","new","orders"],
     "İstehsalat":      ["home","new","orders","exp"],
     "Çeşidləmə":       ["home","new","orders","exp"],
     "Rəhbərlik":       ["home","orders","buy","qc","days","res","prob","arch","tasks"],
@@ -1319,10 +1320,10 @@ function renderTabs(){
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  autoMissing(); stuckSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
+  autoMissing(); stuckSignals(); taskSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, exp:vExp }[tab]();
   if (tab==="new") bindNew();
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
   if (tab==="catalog") filterRows($("cQ"));
@@ -1451,69 +1452,100 @@ function holdSave(id){
   notify([o.wh,"Texnoloq","Rəhbərlik"], "ok", "🧪 #"+o.id+" nümunə yazıldı · "+o.supplier, o.wh+" qəbul etsin, sonra Texnoloq nəticə verəcək · "+hrs+" saxlanıldı", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   delete hDraft[id]; save(); render(); toast("Yazıldı → "+o.wh+" qəbul edə bilər");
 }
-// ===================== 📝 Satış: menecerin tapşırıqları =====================
-// Bir ümumi "Satış" girişi; hər telefonda bir dəfə "kim"in seçilir (Menecer / Üzeyir / Elçin).
-// Menecer tapşırıq verir (bir və ya iki köməkçiyə) və son gün təyin edir. Köməkçi son günə qədər "Həll olundu" yazır;
-// edə bilmirsə və ya gün keçibsə — səbəbi yazır. Hamısı Satış qrupuna Telegramla gedir.
-const SALES_HELP = ["Üzeyir","Elçin"], SALES_WHO = ["Menecer", ...SALES_HELP];
-let tkDraft = { title:"", to:[], due:"" }; const tkWhy = {}, tkNo = {};
-function salesWho(){ if (role!=="Satış") return "Menecer"; try { const w = localStorage.getItem("almond-satis-who"); return SALES_WHO.includes(w) ? w : ""; } catch(e){ return ""; } }
+// ===================== 📝 Satış: tapşırıqlar və öz təqvimi =====================
+// Satış meneceri tapşırıq yazır, kimə veriləcəyini siyahıdan seçir (Üzeyir / Elçin / hər ikisi) və son vaxtı (gün + saat) təyin edir.
+// Tapşırığı bitirən adını seçib "Həll olundu" yazır; edə bilmirsə və ya vaxt keçibsə — səbəbini yazır.
+// Vaxt keçib həll olunmayanda xəbər YALNIZ Satışa və Rəhbərliyə gedir. Tapşırıqları yalnız Satış və Rəhbərlik görür.
+// Satışın təqvimi ayrıdır — Anbarın "Gələcək mallar" təqvimi ilə qarışmır.
+const SALES_HELP = ["Üzeyir","Elçin"];
+let tkDraft = { title:"", to:"", due:"" }, tkDay = today(); const tkWhy = {}, tkNo = {}, tkBy = {};
 const tkList = () => (S.tasks||[]).filter(t=>!t.deleted);
-const tkOver = t => !t.done && t.due < today();
-function taskCount(){ const w = salesWho(); if (!w) return 0; return tkList().filter(t=>!t.done && (w==="Menecer" ? tkOver(t) : t.to.includes(w))).length; }
-function taskCard(t, w){
+const tkDue = t => new Date(t.due.length>10 ? t.due : t.due+"T23:59");
+const tkOver = t => !t.done && tkDue(t) < new Date();
+const tkDueTxt = t => fmtD(t.due.slice(0,10))+(t.due.length>10 ? " · "+t.due.slice(11,16) : "");
+const dtLocal = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+function taskCount(){ return tkList().filter(t=>!t.done && (role==="Satış" || tkOver(t))).length; }
+// Vaxtı keçən tapşırıq: bir dəfə Satışa və Rəhbərliyə xəbər (sabit id — iki cihaz açıq olsa da Telegrama bir dəfə gedir)
+function taskSignals(){
+  if (!["Satış","Rəhbərlik"].includes(role)) return;
+  let ch = false;
+  tkList().forEach(t=>{ if (tkOver(t) && !t.overAt){ t.overAt = new Date().toISOString(); ch = true;
+    notify(["Satış","Rəhbərlik"], "late", "⏰ Tapşırıq vaxtında yerinə yetirilmədi · "+t.to.join(", "), t.title, ["Son vaxt: "+tkDueTxt(t)], null, "tk-over-"+t.id); } });
+  if (ch) save();
+}
+function taskCard(t){
   const st = t.done ? (t.done.st==="ok" ? '<span class="pill p-ok">✓ Həll olundu'+(t.done.late?" (gecikmə ilə)":"")+'</span>' : '<span class="pill p-bad">✗ Həll olunmadı</span>')
-    : tkOver(t) ? '<span class="pill p-bad">⏰ Vaxtı keçib · '+fmtD(t.due)+'</span>' : '<span class="pill p-wait">⏳ '+(t.due===today()?"Bu gün":fmtD(t.due))+' tamamlanmalıdır</span>';
+    : tkOver(t) ? '<span class="pill p-bad">⏰ Vaxtı keçib</span>' : '<span class="pill p-wait">⏳ '+(t.due.slice(0,10)===today()?"Bu gün":"Gözlənilir")+'</span>';
   let act = "";
-  const mine = role==="Satış" && t.to.includes(w);
-  if (!t.done && mine){
+  if (!t.done && role==="Satış"){
+    const who = t.to.length>1 ? '<label class="qby"><span>Kim edib</span><select data-tkby="'+t.id+'"><option value="">— seçin —</option>'+t.to.map(n=>'<option'+(tkBy[t.id]===n?" selected":"")+'>'+n+'</option>').join("")+'</select></label>' : "";
     const box = '<textarea data-tkw="'+t.id+'" placeholder="Səbəbi yazın">'+esc(tkWhy[t.id]||"")+'</textarea>';
     act = tkOver(t)
-      ? '<div class="box late"><div class="lbl">⏰ Son gün keçib — səbəbi yazın</div>'+box+'<div class="row wrap"><button class="okb" data-tklate="'+t.id+'">✓ Gecikmə ilə həll olundu</button><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı</button></div></div>'
-      : tkNo[t.id] ? '<div class="box">'+box+'<div class="row"><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı — göndər</button><button class="sm" data-tknocancel="'+t.id+'">Ləğv et</button></div></div>'
-      : '<div class="row wrap"><button class="okb" data-tkok="'+t.id+'">✓ Həll olundu</button><button class="badb sm" data-tkno="'+t.id+'">Həll olunmadı</button></div>';
+      ? '<div class="box late"><div class="lbl">⏰ Son vaxt keçib — səbəbi yazın</div>'+who+box+'<div class="row wrap"><button class="okb" data-tklate="'+t.id+'">✓ Gecikmə ilə həll olundu</button><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı</button></div></div>'
+      : tkNo[t.id] ? '<div class="box">'+who+box+'<div class="row"><button class="badb" data-tknosend="'+t.id+'">✗ Həll olunmadı — göndər</button><button class="sm" data-tknocancel="'+t.id+'">Ləğv et</button></div></div>'
+      : who+'<div class="row wrap"><button class="okb" data-tkok="'+t.id+'">✓ Həll olundu</button><button class="badb sm" data-tkno="'+t.id+'">Həll olunmadı</button></div>';
+    act += '<div class="row"><button class="linkb" data-tkdel="'+t.id+'">🗑 Tapşırığı sil</button></div>';
   }
-  if (!t.done && w==="Menecer" && role==="Satış") act += '<div class="row"><button class="linkb" data-tkdel="'+t.id+'">🗑 Tapşırığı sil</button></div>';
   return '<article class="oc" style="border-left-color:var('+(t.done ? (t.done.st==="ok"?"--ok":"--bad") : tkOver(t) ? "--bad" : "--wait")+')">'+
     '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:8px"><b style="white-space:pre-wrap">'+esc(t.title)+'</b>'+st+'</div>'+
-    '<div class="meta">👤 '+esc(t.to.join(", "))+' · '+esc(t.by)+' verib · '+fmtD(t.at.slice(0,10))+' · son gün '+fmtD(t.due)+'</div>'+
+    '<div class="meta">👤 <b>'+esc(t.to.join(" və "))+'</b> · son vaxt <b>'+tkDueTxt(t)+'</b> · verildi '+fmtD(t.at.slice(0,10))+'</div>'+
     (t.done ? '<div class="spn">'+(t.done.st==="ok"?"✓":"✗")+' <b>'+esc(t.done.by)+'</b> · '+shortT(new Date(t.done.at))+(t.done.why?': '+esc(t.done.why):"")+'</div>' : "")+act+'</article>';
 }
 function vTasks(){
-  const w = salesWho();
-  if (!w) return '<div class="card"><h2>Siz kimsiniz?</h2><div class="meta">Bir dəfə seçin — bu telefonda yadda qalır.</div><div class="row wrap">'+SALES_WHO.map(n=>'<button class="pri" data-tkme="'+n+'">'+n+'</button>').join("")+'</div></div>';
-  const mgr = w==="Menecer", T = tkList().filter(t=>mgr || t.to.includes(w));
-  const open = T.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+  const T = tkList();
+  const open = T.filter(t=>!t.done).sort((a,b)=>tkDue(a)-tkDue(b));
   const done = T.filter(t=>t.done && t.done.at >= plusDays(-30)).sort((a,b)=>b.done.at.localeCompare(a.done.at));
-  const d = tkDraft;
-  const form = mgr && role==="Satış" ? '<div class="card"><h2>➕ Yeni tapşırıq</h2>'+
+  const d = tkDraft, def = (()=>{ const x = new Date(); x.setDate(x.getDate()+1); x.setHours(18,0,0,0); return dtLocal(x); })();
+  const form = role==="Satış" ? '<div class="card"><h2>➕ Yeni tapşırıq</h2>'+
     '<textarea data-tkf="title" placeholder="Tapşırığı yazın (məs. Bravo marketlə müqaviləni yeniləmək)">'+esc(d.title)+'</textarea>'+
-    '<div class="row wrap"><span class="hint">Kimə:</span>'+SALES_HELP.map(n=>'<button class="'+(d.to.includes(n)?"pri":"sm")+'" data-tkto="'+n+'">'+(d.to.includes(n)?"✓ ":"")+n+'</button>').join("")+'</div>'+
-    '<div class="row"><span class="hint" style="white-space:nowrap">Son gün:</span><input type="date" data-tkf="due" min="'+today()+'" value="'+esc(d.due||plusDays(1))+'"></div>'+
+    '<label class="qby"><span>Kimə</span><select data-tkf="to"><option value="">— seçin —</option>'+SALES_HELP.map(n=>'<option'+(d.to===n?" selected":"")+'>'+n+'</option>').join("")+'<option value="both"'+(d.to==="both"?" selected":"")+'>'+SALES_HELP.join(" və ")+'</option></select></label>'+
+    '<label class="qby"><span>Son vaxt</span><input type="datetime-local" data-tkf="due" min="'+dtLocal(new Date())+'" value="'+esc(d.due||def)+'"></label>'+
     '<button class="pri big" data-tkadd="1">Tapşırıq ver</button></div>' : "";
-  return '<div class="row" style="justify-content:space-between"><h2>📝 Tapşırıqlar</h2>'+(role==="Satış"?'<button class="sm" data-tkme="">👤 '+esc(w)+' · dəyiş</button>':"")+'</div>'+form+
-    '<h2>Açıq <span class="cnt">'+open.length+'</span></h2>'+(open.length ? open.map(t=>taskCard(t,w)).join("") : '<div class="empty">✓ Açıq tapşırıq yoxdur</div>')+
-    (done.length ? '<h2>Son 30 gündə bağlananlar <span class="cnt">'+done.length+'</span></h2>'+done.map(t=>taskCard(t,w)).join("") : "");
+  return '<h2>📝 Tapşırıqlar</h2>'+form+
+    '<h2>Açıq <span class="cnt">'+open.length+'</span></h2>'+(open.length ? open.map(taskCard).join("") : '<div class="empty">✓ Açıq tapşırıq yoxdur</div>')+
+    (done.length ? '<h2>Son 30 gündə bağlananlar <span class="cnt">'+done.length+'</span></h2>'+done.map(taskCard).join("") : "");
+}
+// Satışın öz təqvimi: hər gün son vaxtı o gün olan tapşırıqlar
+function vTcal(){
+  const m0 = new Date(tkDay.slice(0,8)+"01T00:00:00"), y = m0.getFullYear(), m = m0.getMonth();
+  const off = (m0.getDay()+6)%7, nd = new Date(y,m+1,0).getDate(), T = tkList();
+  const MON = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
+  let cells = ["B.e","Ç.a","Ç","C.a","C","Ş","B"].map(w=>'<div class="cw">'+w+'</div>').join("");
+  for (let i=0;i<off;i++) cells += '<div></div>';
+  for (let dd=1; dd<=nd; dd++){
+    const k = y+"-"+pad(m+1)+"-"+pad(dd), ts = T.filter(t=>t.due.slice(0,10)===k);
+    const open = ts.filter(t=>!t.done && !tkOver(t)).length, bad = ts.some(t=>tkOver(t) || (t.done && (t.done.st!=="ok" || t.done.late)));
+    const cls = bad ? " part" : open ? " fut" : ts.length ? " done" : "";
+    cells += '<button class="cd'+cls+(k===tkDay?" sel":"")+(k===today()?" today":"")+'" data-tkday="'+k+'"><b>'+dd+'</b>'+(ts.length ? '<small>'+ts.length+'</small>' : "")+'</button>';
+  }
+  const list = T.filter(t=>t.due.slice(0,10)===tkDay).sort((a,b)=>tkDue(a)-tkDue(b));
+  return '<h2>📅 Satış təqvimi</h2><div class="calh"><button class="nav" data-tkmon="-1" aria-label="Əvvəlki ay">‹</button><b>'+MON[m]+' '+y+'</b><button class="nav" data-tkmon="1" aria-label="Növbəti ay">›</button></div>'+
+    '<div class="cal">'+cells+'</div><div class="hint">🟥 gözləyən tapşırıq · 🟩 hamısı həll olundu · 🟨 vaxtı keçib və ya həll olunmayıb. Rəqəm — həmin günün tapşırıqları. Günə basın.</div>'+
+    '<h2>'+fmtD(tkDay)+' · '+wday(tkDay)+(tkDay===today()?" · bu gün":"")+' <span class="cnt">'+list.length+'</span></h2>'+
+    (list.length ? list.map(taskCard).join("") : '<div class="empty">Bu günə tapşırıq yoxdur</div>');
 }
 function taskAct(d){
-  const nowI = new Date().toISOString(), w = salesWho(), T = id => tkList().find(t=>t.id===id);
-  const fin = (t, st, why, late) => { t.done = { st, by:w, at:nowI, why: why||undefined, late: late||undefined };
-    notify(["Satış"], st==="ok" ? "ok" : "late", (st==="ok" ? "✓ Tapşırıq həll olundu" : "✗ Tapşırıq həll olunmadı")+" · "+w, t.title, why ? ["Səbəb: "+why] : [], null);
-    delete tkWhy[t.id]; delete tkNo[t.id]; save(); render(); };
-  if (d.tkme!==undefined){ try { d.tkme ? localStorage.setItem("almond-satis-who", d.tkme) : localStorage.removeItem("almond-satis-who"); } catch(e){} render(); return true; }
-  if (d.tkto){ const a = tkDraft.to; a.includes(d.tkto) ? a.splice(a.indexOf(d.tkto),1) : a.push(d.tkto); render(); return true; }
-  if (d.tkadd){ const title = tkDraft.title.trim(), due = tkDraft.due || plusDays(1);
-    if (!title) { toast("Tapşırığı yazın"); return true; } if (!tkDraft.to.length){ toast("Kimə verildiyini seçin"); return true; }
-    const t = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), title, to: SALES_HELP.filter(n=>tkDraft.to.includes(n)), due, by: w, at: nowI };
+  const nowI = new Date().toISOString(), T = id => tkList().find(t=>t.id===id);
+  const who = t => t.to.length===1 ? t.to[0] : tkBy[t.id];
+  const fin = (t, st, why, late) => { const by = who(t); if (!by){ toast("Kim etdiyini seçin"); return false; }
+    t.done = { st, by, at:nowI, why: why||undefined, late: late||undefined };
+    notify(["Satış"], st==="ok" ? "ok" : "late", (st==="ok" ? "✓ Tapşırıq həll olundu" : "✗ Tapşırıq həll olunmadı")+" · "+by, t.title, why ? ["Səbəb: "+why] : [], null);
+    delete tkWhy[t.id]; delete tkNo[t.id]; delete tkBy[t.id]; save(); render(); return true; };
+  if (d.tkday){ tkDay = d.tkday; render(); return true; }
+  if (d.tkmon){ const x = new Date(tkDay.slice(0,8)+"01T00:00:00"); x.setMonth(x.getMonth()+Number(d.tkmon)); tkDay = dstr(x); render(); return true; }
+  if (d.tkadd){ const title = tkDraft.title.trim(), due = tkDraft.due || (()=>{ const x = new Date(); x.setDate(x.getDate()+1); x.setHours(18,0,0,0); return dtLocal(x); })();
+    if (!title){ toast("Tapşırığı yazın"); return true; } if (!tkDraft.to){ toast("Kimə verildiyini seçin"); return true; }
+    if (new Date(due) < new Date()){ toast("Son vaxt keçmişdə ola bilməz"); return true; }
+    const t = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), title, to: tkDraft.to==="both" ? SALES_HELP.slice() : [tkDraft.to], due, by:"Satış meneceri", at: nowI };
     (S.tasks = S.tasks||[]).push(t);
-    notify(["Satış"], "note", "📝 Yeni tapşırıq → "+t.to.join(", "), title, ["Son gün: "+fmtD(due)], null);
-    tkDraft = { title:"", to:[], due:"" }; save(); render(); toast("Tapşırıq verildi → "+t.to.join(", ")); return true; }
-  if (d.tkok){ fin(T(d.tkok), "ok"); toast("Həll olundu ✓"); return true; }
+    notify(["Satış"], "note", "📝 Yeni tapşırıq → "+t.to.join(" və "), title, ["Son vaxt: "+tkDueTxt(t)], null);
+    tkDraft = { title:"", to:"", due:"" }; save(); render(); toast("Tapşırıq verildi → "+t.to.join(" və ")); return true; }
+  if (d.tkok){ if (fin(T(d.tkok), "ok")) toast("Həll olundu ✓"); return true; }
   if (d.tkno){ tkNo[d.tkno] = true; render(); const el = document.querySelector('[data-tkw="'+d.tkno+'"]'); if (el) el.focus(); return true; }
   if (d.tknocancel){ delete tkNo[d.tknocancel]; render(); return true; }
   if (d.tknosend || d.tklate){ const id = d.tknosend || d.tklate, why = (tkWhy[id]||"").trim();
     if (!why){ toast("Səbəbi yazın"); const el = document.querySelector('[data-tkw="'+id+'"]'); if (el) el.focus(); return true; }
-    fin(T(id), d.tklate ? "ok" : "no", why, !!d.tklate); toast("Göndərildi"); return true; }
+    if (fin(T(id), d.tklate ? "ok" : "no", why, !!d.tklate)) toast("Göndərildi"); return true; }
   if (d.tkdel){ if (!confirm("Tapşırıq silinsin?")) return true; const t = T(d.tkdel); t.deleted = true; save(); render(); return true; }
   return false;
 }
@@ -1661,7 +1693,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v49 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v50 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2891,6 +2923,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
   if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
+  if (el.dataset.tkby){ tkBy[el.dataset.tkby] = el.value; return; }
   if (el.dataset.xf){ xDraft[el.dataset.xf] = el.value; return; }
   if (el.dataset.tkw){ tkWhy[el.dataset.tkw] = el.value; return; }
   if (el.dataset.hr){ const [id,k,f]=el.dataset.hr.split("|"); hDraft[id].rows[Number(k)][f]=el.value; return; }
