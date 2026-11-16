@@ -75,11 +75,12 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   return { orders, pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
-const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep;
+const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req;
 const held = (o: any) => !!(o.hold && !o.holdDone);
 const HOLDN: Record<string, string> = { sample: "🧪 xəbərsiz nümunə", noinv: "📄 qaiməsiz mal", noorder: "📦 xəbərsiz mal" };
 const holdLine = (o: any) => `⛔ ${link(o.id)} ${HOLDN[o.hold?.t || "sample"]} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} · ${hTxt((Date.now() - new Date(o.hold.at).getTime()) / H)} — Satınalma ${o.rep ? "cavab verməyib" : "yazmayıb"}` + (o.hold?.desc ? `\n   ${esc(String(o.hold.desc).slice(0, 120))}` : "");
 function problem(o: any, i: any) {
+  if (o.req) return "";
   if (i.unav) return "Satınalma: mal yoxdur";
   if (i.notFound) return "Sürücü tapmadı";
   if (i.qc === "bad") return "Keyfiyyət: " + (i.qcWhy || "uyğun deyil");
@@ -96,6 +97,7 @@ const lateOpen = (o: any) => o.status === "yolda" && !!o.eta && o.eta < today();
 const lateEntry = (o: any) => (o.lates || []).find((x: any) => x.eta === o.eta);
 const techReady = (o: any, i: any) => i.tech && !i.techRes && i.qc !== "bad" && i.qc !== "none" && !i.unav && !i.notFound && o.recvDone && i.got > 0;
 function stageTxt(o: any) {
+  if (o.req) return o.status === "istek" ? `📤 ${o.wh} hazırlayır` : (o.reqDone && !o.reqDone.full ? "Qismən verildi" : "Verildi ✓");
   if (held(o)) return o.rep ? `⛔ ${HOLDN[o.hold.t]} — Satınalmanın cavabı gözlənilir` : "⛔ Saxlanılır — Satınalma xəbərsiz nümunəni yazmayıb";
   if (o.status === "acik") return "Satınalmada (gəliş günü təyin olunmayıb)";
   if (o.status === "yolda") return lateOpen(o) ? `Gecikir · ${fmtD(o.eta)} gəlməli idi` : o.eta === today() ? "Bu gün gəlməlidir" : `Gözlənilir · ${fmtD(o.eta)}`;
