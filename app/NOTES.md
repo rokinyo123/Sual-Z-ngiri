@@ -40,6 +40,9 @@ Technical handoff for any future session working on `app/`. The owner's own hand
 - Excel import: blank row = new order; reads "qalıq" column. Firma–mal Excel: coloured (yellow) cell = firm header, or `Mal | Firma` columns.
 - `SINAQ = true` (test mode, session kept in localStorage `almond-sess`). Owner will ask to turn it off and set passwords.
 
+## Look (owner's choice, Nov 2026)
+Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `nlLogin()`, loading overlay `nlLoading()` / `ldrHtml()`, navy rounded header, floating bottom tab bar. Default theme is light; 🌙 toggles dark navy. The older lamp/moth login (`lampLogin`, `lgIntro`) is still in the file but no longer called.
+
 ## Key code anchors (app/index.html)
 `Cloud` module (`URL0`, `AKEY`, `SINAQ`) ~l.648 · `hasQC` · `problem()` · `splitProblems()` · `notify()` → `Cloud.tg()` · `tabsFor()` · `chainRings()` (ring chain UI from the other session — keep its visuals).
 
