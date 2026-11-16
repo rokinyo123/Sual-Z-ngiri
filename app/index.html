@@ -6,15 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Almond Anbar Zənciri</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#160f09" id="thc">
-<script>/* Görünüş: standart tünd "lampa" rejimi; ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<meta name="theme-color" content="#1B2470" id="thc">
+<script>/* Görünüş: standart tünd "lampa" rejimi; ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Almond Anbar">
 <link rel="apple-touch-icon" href="../icon-192.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=Noto+Sans+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&family=Noto+Sans+Mono:wght@500&family=Dancing+Script:wght@700&display=swap">
 <style>
 /* Layout: brown brand band (role + 5 tabs) → one 860px column. Every order is a card with a coloured left stripe
    that says its stage: orange Satınalmada → blue Gözlənilir → green Tam gəldi / red Natamam. Same colours everywhere. */
@@ -534,10 +534,112 @@ body.lg-on{overflow:hidden}
 #lg .lrem input{border-color:rgba(var(--lgt),.6)!important}
 #lg .lbtn{color:#1a0f06;background:linear-gradient(180deg,color-mix(in srgb,rgb(var(--lgt)) 65%,#fff),rgb(var(--lgt)));box-shadow:0 6px 18px rgba(var(--lgt),.3)}
 @media (prefers-reduced-motion:reduce){#lg *{animation:none!important;transition:none!important}}
+
+/* ===================== Mavi dizayn (2026-11): açılış · giriş · yükləmə · əsas ekran ===================== */
+:root{--bg:#F3F5FB;--surface:#FFFFFF;--sunk:#EDF0F8;--line:#E0E5F2;--fg:#18203F;--muted:#69718F;
+  --brand:#1B2470;--brand-2:#2C3A9E;--brand-fg:#FFFFFF;--accent:#24318F;--accent-fg:#fff;--navy:#1B2470;--navy2:#3445B0;
+  --script:"Dancing Script","Segoe Script",cursive;--dcx:color-mix(in srgb,rgb(var(--dc)) 40%,#1B2470)}
+:root[data-theme="dark"]{--bg:#0B1026;--surface:#141A38;--sunk:#1B2247;--line:#29315C;--fg:#E8ECFF;--muted:#9AA3C7;
+  --brand:#141B4D;--brand-2:#222C6E;--brand-fg:#fff;--accent:#8FA2FF;--accent-fg:#0B1026;--navy:#141B4D;--navy2:#2A3590;color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="dark"]){--bg:#0B1026;--surface:#141A38;--sunk:#1B2247;--line:#29315C;--fg:#E8ECFF;--muted:#9AA3C7}}
+body{background:var(--bg)}
+:root[data-theme="dark"] body{background:var(--bg)}
+body::before,:root[data-theme="dark"] body::before{background:var(--navy)}
+/* başlıq: tünd mavi, nöqtəli "xəritə" naxışı, aşağısı yumru */
+header,:root[data-theme="dark"] header{position:relative;background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 100%);border:none;border-radius:0 0 26px 26px;
+  box-shadow:0 10px 30px rgba(27,36,112,.25);overflow:hidden}
+header::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background:radial-gradient(circle,rgba(255,255,255,.35) 1.1px,transparent 1.6px) 0 0/9px 9px;
+  -webkit-mask:radial-gradient(60% 70% at 72% 40%,#000 0 35%,transparent 72%),radial-gradient(35% 50% at 20% 70%,#000 0 30%,transparent 70%);
+          mask:radial-gradient(60% 70% at 72% 40%,#000 0 35%,transparent 72%),radial-gradient(35% 50% at 20% 70%,#000 0 30%,transparent 70%)}
+header .wrap{position:relative;z-index:1}
+.top{padding-block:14px 16px}
+.brand b.abrand{font-family:var(--script);font-size:30px;font-weight:700;letter-spacing:0;line-height:1}
+.abrand i,:root[data-theme="dark"] .abrand i,:root:not([data-theme="dark"]) .abrand i{color:#fff;text-shadow:none}
+.who select,:root[data-theme="dark"] .who select{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff}
+.who select option{color:#18203F}
+.outb,:root[data-theme="dark"] .outb{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)}
+/* kartlar: ağ, yumru, yumşaq kölgə */
+.card,.oc,.dcard,:root[data-theme="dark"] .card,:root[data-theme="dark"] .oc{border-radius:18px;border-color:var(--line);box-shadow:0 6px 22px rgba(27,36,112,.07);background:var(--surface)}
+.box{border-radius:14px}
+input,select,textarea{border-radius:12px}
+button{border-radius:12px}
+button.pri,:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(27,36,112,.25)}
+:root[data-theme="dark"] button.pri{background:linear-gradient(135deg,#3445B0,#5468E0)}
+.greet{border-radius:20px}
+h2::before{background:var(--navy2)}
+/* aşağıda üzən menyu (5-ci şəkil kimi) */
+.tabs{position:fixed;z-index:15;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(620px,calc(100% - 20px));
+  display:flex;gap:2px;padding:6px;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:0 10px 30px rgba(27,36,112,.22)}
+.tabs button,:root[data-theme="dark"] .tabs button{flex:1 0 auto;min-width:54px;color:var(--muted);opacity:1;background:transparent;border-radius:999px;padding:6px 8px;font-size:10.5px;gap:0}
+.tabs button i{font-size:18px}
+.tabs button.on,:root[data-theme="dark"] .tabs button.on{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;flex-direction:row;gap:5px;padding:9px 14px;font-size:12px;box-shadow:0 4px 12px rgba(27,36,112,.3)}
+:root[data-theme="dark"] .tabs button.on{background:linear-gradient(135deg,#3445B0,#5468E0)}
+.tabs button.on::after{display:none}
+.tabs .n{top:-2px;right:4px}
+main.wrap{padding-bottom:110px}
+.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+/* ---------- 1) Açılış ekranı ---------- */
+#spl{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;
+  background:radial-gradient(90% 60% at 50% 42%,#2A3DA8 0%,#1B2470 45%,#0B1040 100%);color:#fff;transition:opacity .6s,visibility .6s}
+#spl.out{opacity:0;visibility:hidden}
+#spl .slg{position:relative;width:min(300px,78vw)}
+#spl svg{position:absolute;left:-6%;top:-38%;width:112%;overflow:visible}
+#spl .arc{fill:none;stroke:url(#splG);stroke-width:3;stroke-linecap:round;stroke-dasharray:400;stroke-dashoffset:400;animation:splArc 1.1s .15s cubic-bezier(.6,.1,.2,1) forwards;filter:drop-shadow(0 0 6px rgba(140,190,255,.9))}
+#spl .star{opacity:0;transform-origin:252px 34px;animation:splStar 1.4s 1.05s ease-out forwards}
+#spl h1{margin:0;font-family:var(--script);font-weight:700;font-size:clamp(58px,19vw,86px);text-align:center;line-height:1.1;
+  text-shadow:0 4px 24px rgba(0,0,0,.35);opacity:0;transform:translateY(10px);animation:splIn .8s .35s ease-out forwards}
+#spl .sub{font-size:13px;letter-spacing:3px;text-transform:uppercase;opacity:0;animation:splIn .8s .9s ease-out forwards;color:rgba(255,255,255,.75)}
+@keyframes splArc{to{stroke-dashoffset:0}}
+@keyframes splStar{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes splIn{to{opacity:1;transform:none}}
+/* ---------- 2) Giriş ekranı ---------- */
+body.nl-on{overflow:hidden}
+#nl{position:fixed;inset:0;z-index:50;overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;align-items:center;
+  padding:calc(40px + env(safe-area-inset-top,0px)) 22px calc(28px + env(safe-area-inset-bottom,0px))}
+#nl .in{width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;animation:splIn .5s ease-out both;opacity:0;transform:translateY(12px)}
+#nl .logo{position:relative;align-self:center;margin:18px 0 8px;width:220px}
+#nl .logo svg{position:absolute;left:-6%;top:-40%;width:112%;overflow:visible}
+#nl .logo .arc{fill:none;stroke:url(#nlG);stroke-width:2.5;stroke-linecap:round}
+#nl .logo b{display:block;text-align:center;font-family:var(--script);font-size:62px;line-height:1.1;color:var(--navy)}
+:root[data-theme="dark"] #nl .logo b{color:#fff}
+#nl h2{justify-content:center;font-family:var(--body);font-size:24px;font-weight:700;margin:6px 0 0}
+#nl h2::before{display:none}
+#nl .sub{text-align:center;color:var(--muted);font-size:14px;margin-top:-8px}
+#nl .fld{position:relative;display:block}
+#nl .fld>i{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;font-size:16px;opacity:.6;pointer-events:none}
+#nl .fld select,#nl .fld input{height:52px;padding:0 44px;border-radius:14px;border:1.5px solid var(--line);background:var(--sunk);font-size:16px}
+#nl .fld select:focus,#nl .fld input:focus{outline:none;border-color:var(--navy2);background:var(--surface);box-shadow:0 0 0 4px rgba(52,69,176,.12)}
+#nl .fld input.pin{letter-spacing:8px}
+#nl .fld input.pin:placeholder-shown{letter-spacing:0}
+#nl .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:17px;padding:8px;opacity:.6}
+#nl .row2{display:flex;align-items:center;justify-content:space-between;font-size:14px}
+#nl .row2 label{display:flex;align-items:center;gap:8px;cursor:pointer}
+#nl .row2 input{width:18px;height:18px;accent-color:var(--navy)}
+#nl .lbtn{height:54px;border:none;border-radius:16px;font-size:17px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy2));box-shadow:0 10px 24px rgba(27,36,112,.3);margin-top:4px}
+#nl .lbtn:active{transform:scale(.985)}
+#nl .lnote{text-align:center;color:var(--bad);font-size:14px;min-height:20px}
+#nl .foot2{margin-top:auto;padding-top:24px;text-align:center;font-size:12px;color:var(--muted)}
+/* ---------- 3) Yükləmə: bulanıq fon + fırlanan badam ---------- */
+.ldr{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.ldr .orb{position:relative;width:96px;height:96px;animation:ldrSpin 1.4s linear infinite}
+.ldr .orb i{position:absolute;left:50%;top:50%;width:var(--s);height:var(--s);margin:calc(var(--s) / -2);border-radius:50%;background:var(--navy);
+  transform:rotate(var(--a)) translateY(-38px);opacity:var(--o)}
+:root[data-theme="dark"] .ldr .orb i{background:#8FA2FF}
+.ldr .orb svg{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px;transform:rotate(0deg) translateY(-38px) rotate(90deg)}
+.ldr b{font-size:17px} .ldr span{font-size:13px;color:var(--muted)}
+@keyframes ldrSpin{to{transform:rotate(360deg)}}
+#nlLoad{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--surface) 55%,transparent);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:splIn .25s ease-out both;opacity:0}
+@media (prefers-reduced-motion:reduce){#spl *,.ldr .orb{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 
 </head>
 <body>
+<div id="spl" role="img" aria-label="Almond"><div class="slg"><svg viewBox="0 0 280 120" aria-hidden="true"><defs><linearGradient id="splG" x1="0" x2="1"><stop offset="0" stop-color="#6E9BFF" stop-opacity="0"/><stop offset=".55" stop-color="#9CC2FF"/><stop offset="1" stop-color="#fff"/></linearGradient></defs>
+<path class="arc" d="M20 78 Q140 -10 252 34"/><g class="star"><circle cx="252" cy="34" r="5" fill="#fff"/><path d="M252 18 L254 32 L268 34 L254 36 L252 50 L250 36 L236 34 L250 32 Z" fill="#fff" opacity=".9"/></g></svg>
+<h1>Almond</h1></div><div class="sub">Anbar zənciri</div></div>
+<script>(function(){var e=document.getElementById("spl"),t0=Date.now(),go=function(){if(!e||e.classList.contains("out"))return;e.classList.add("out");setTimeout(function(){e.remove()},700)};e.onclick=go;setTimeout(go,2300)})();</script>
 
 <header>
   <div class="wrap">
@@ -805,7 +907,7 @@ const Cloud = (() => {
   const remSet = (u, p) => { const m = remAll(); if (p) m[u] = p; else delete m[u]; try { if (Object.keys(m).length) localStorage.setItem(REM, JSON.stringify(m)); else localStorage.removeItem(REM); } catch(e){} };
   function loginView(msg){
     $("tabs").innerHTML = ""; $("role").innerHTML = ""; $("role").hidden = true; $("main").innerHTML = "";
-    lampLogin(msg, '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>');
+    nlLogin(msg, '<select id="lu" aria-label="Şöbə"><option value=""'+(lastLogin()?"":" selected")+' disabled>— Şöbəni seçin —</option>'+LOGINS.map(([u,n])=>'<option value="'+u+'"'+(u===lastLogin()?" selected":"")+'>'+esc(n)+'</option>').join("")+'</select>');
     const note = t => { $("lnote").textContent = t; };
     const fillRem = () => { const p = remAll()[$("lu").value]; $("lrem").checked = !!p; $("lp").value = p || ""; };
     fillRem();
@@ -814,17 +916,17 @@ const Cloud = (() => {
     $("lf").onsubmit = async e => { e.preventDefault();
       const u = $("lu").value.trim().toLowerCase(), p = $("lp").value; if (!u) return note("Şöbəni seçin"); if (!p) return note("Parolu yazın");
       try { localStorage.setItem("almond-last-login", u); } catch(e){}
-      $("lb").disabled = true;
+      $("lb").disabled = true; nlLoading(true);
       // 4 rəqəmli PIN → Supabase parolu "almond"+PIN (Supabase ən az 6 simvol istəyir)
       const pw = /^\d{4}$/.test(p) ? "almond"+p : p;
       note("");
       const rem = $("lrem").checked;
-      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); remSet(u, rem ? p : ""); keepSess(); lgHold = lgMothToButton(); await start(); }
-      catch(err){ if (!C.sess && /^Parol səhvdir/.test(err.message)) remSet(u, ""); if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
+      try { C.sess = await auth("token?grant_type=password", { email: u.includes("@") ? u : u+"@"+DOMAIN, password:pw }); remSet(u, rem ? p : ""); keepSess(); lgHold = new Promise(r=>setTimeout(r, 900)); await start(); }
+      catch(err){ nlLoading(false); if (!C.sess && /^Parol səhvdir/.test(err.message)) remSet(u, ""); if (err.message!=="stop") note(err.message); if ($("lb")) $("lb").disabled = false; } };
   }
   async function start(){
     if (!C.sess) return loginView();
-    $("main").innerHTML = '<div class="empty">Yüklənir…</div>';
+    $("main").innerHTML = '<div style="padding:60px 0">'+ldrHtml("Yüklənir", "Sifarişlər bazadan gəlir")+'</div>';
     try {
       C.me = await rpc("me");
       if (!C.me) return out("Bu hesab proqrama əlavə olunmayıb — Adminə müraciət edin");
@@ -1304,8 +1406,8 @@ async function hardRefresh(){
 const DEPT_C = { "Anbar":"247,213,148","Anbar (İnqilab)":"255,168,87","Satınalma":"255,143,177","Keyfiyyət":"142,219,138","Texnoloq":"183,156,255",
   "İstehsalat":"255,128,106","Çeşidləmə":"110,218,205","Satış":"255,206,84","Rəhbərlik":"124,196,255","Admin":"205,200,215" };
 function setTheme(t){ document.documentElement.dataset.theme = t; try { localStorage.setItem("almond-theme", t); } catch(e){}
-  const m = document.getElementById("thc"); if (m) m.content = t==="dark" ? "#160f09" : "#5C2E0E";
-  const b = $("thm"); if (b){ b.textContent = t==="dark" ? "☀️" : "🌙"; b.title = t==="dark" ? "Gündüz görünüşü" : "Gecə (lampa) görünüşü"; } }
+  const m = document.getElementById("thc"); if (m) m.content = t==="dark" ? "#0B1026" : "#1B2470";
+  const b = $("thm"); if (b){ b.textContent = t==="dark" ? "☀️" : "🌙"; b.title = t==="dark" ? "Gündüz görünüşü" : "Gecə görünüşü"; } }
 function greet(){
   const d = new Date(), h = d.getHours();
   const hi = h<5 ? "Gecəniz xeyrə 🌙" : h<12 ? "Sabahınız xeyir ☀️" : h<18 ? "Günortanız xeyir 🌤" : "Axşamınız xeyir 🌙";
@@ -1353,7 +1455,7 @@ function renderRole(){
   $("role").innerHTML = list.map(d=>'<option'+(d===role?" selected":"")+'>'+esc(d)+'</option>').join("");
   $("role").disabled = list.length < 2;
   if (ONLINE && !$("out")){ $("role").insertAdjacentHTML("afterend", '<span id="net" class="net" title="Baza">✓</span><button id="rf" class="outb rfb" title="Yenilə">🔄</button><button id="out" class="outb" title="Hesabdan çıxış">🚪<span class="tx"> Çıxış</span></button>'); $("out").onclick = () => Cloud.logout(); $("rf").onclick = hardRefresh; }
-  if (!$("thm")){ $("role").insertAdjacentHTML("afterend", '<button id="thm" class="outb thb"></button>'); $("thm").onclick = () => setTheme(document.documentElement.dataset.theme==="dark" ? "light" : "dark"); setTheme(document.documentElement.dataset.theme||"dark"); }
+  if (!$("thm")){ $("role").insertAdjacentHTML("afterend", '<button id="thm" class="outb thb"></button>'); $("thm").onclick = () => setTheme(document.documentElement.dataset.theme==="dark" ? "light" : "dark"); setTheme(document.documentElement.dataset.theme||"light"); }
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
 function renderTabs(){
@@ -1598,7 +1700,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v43 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v44 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -3141,7 +3243,32 @@ function lgClick(){ const a = lgAC(); if (!a) return; const t = a.currentTime;
 function lgClink(delay){ const a = lgAC(); if (!a) return; const t = a.currentTime+(delay||0);
   [[2200,.12],[3300,.08],[4400,.04]].forEach(([f,v])=>{ const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f;
     g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.005); g.gain.exponentialRampToValueAtTime(.0001,t+.35); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.4); }); }
-function lampClose(){ lgSnapStop(); const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey); }
+function lampClose(){ lgSnapStop(); const el = $("lg"); if (el) el.remove(); document.body.classList.remove("lg-on"); document.removeEventListener("keydown", lampKey);
+  ["nl","nlLoad"].forEach(id=>{ const x = $(id); if (x) x.remove(); }); document.body.classList.remove("nl-on"); }
+// ===================== Mavi giriş ekranı (2-ci şəkil, yuxarıdakı şəkil olmadan) =====================
+const LOGO_ARC = id => '<svg viewBox="0 0 280 120" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" x2="1"><stop offset="0" stop-color="#3445B0" stop-opacity="0"/><stop offset=".6" stop-color="#5B7BFF"/><stop offset="1" stop-color="#9CC2FF"/></linearGradient></defs><path class="arc" d="M20 78 Q140 -10 252 34"/><circle cx="252" cy="34" r="3.5" fill="#7FA6FF"/></svg>';
+function ldrHtml(t, sub){
+  const dots = [0,1,2,3,4,5,6,7].map(k=>'<i style="--a:'+(-26-k*22)+'deg;--s:'+(9-k)+'px;--o:'+(1-k*.11).toFixed(2)+'"></i>').join("");
+  return '<div class="ldr" role="status"><div class="orb">'+dots+'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="6.5" ry="10" fill="#C08A55"/><path d="M12 3 C9 8 9 16 12 21" stroke="#8A5A2E" stroke-width="1.2" fill="none"/></svg></div><b>'+esc(t)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':"")+'</div>';
+}
+function nlLoading(on){
+  const x = $("nlLoad"); if (!on){ if (x) x.remove(); return; }
+  if (x) return; const d = document.createElement("div"); d.id = "nlLoad"; d.innerHTML = ldrHtml("Daxil olunur", "Sifarişləriniz hazırlanır"); document.body.appendChild(d);
+}
+function nlLogin(msg, selectHtml){
+  lampClose();
+  const el = document.createElement("div"); el.id = "nl";
+  el.innerHTML = '<div class="in"><div class="logo">'+LOGO_ARC("nlG")+'<b>Almond</b></div>'+
+    '<h2>Xoş gəlmisiniz</h2><div class="sub">Sifarişləriniz sizi gözləyir</div>'+
+    '<form id="lf" style="display:flex;flex-direction:column;gap:14px">'+
+      '<label class="fld"><i>🏢</i>'+selectHtml+'</label>'+
+      '<label class="fld"><i>🔒</i><input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="Parol (4 rəqəm)"><button type="button" class="eye" id="leye" aria-label="Parolu göstər">👁</button></label>'+
+      '<div class="row2"><label><input type="checkbox" id="lrem">Parolu yadda saxla</label></div>'+
+      '<button class="lbtn" id="lb">Daxil ol</button><div class="lnote" id="lnote">'+esc(msg||"")+'</div></form>'+
+    '<div class="foot2">Almond · Anbar zənciri</div></div>';
+  document.body.appendChild(el); document.body.classList.add("nl-on");
+  $("leye").onclick = () => { const i = $("lp"); i.type = i.type==="password" ? "text" : "password"; };
+}
 let lampOn = null;
 // Barmaq çırtması: mikrofonda qısa, kəskin, yüksək tezlikli səs → lampa yanır/sönür. Mikrofon yalnız istifadəçi düyməyə basanda açılır
 // və giriş ekranı bağlananda dərhal söndürülür. Səs heç yerə yazılmır/göndərilmir.
