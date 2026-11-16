@@ -37,6 +37,9 @@ Technical handoff for any future session working on `app/`. The owner's own hand
 - Delete: Admin always (`adminView()`); the sender (Anbar/İnqilab/Texnoloq) only on the same day, before goods arrive (`canOwnEdit`). Edit by the owner resets `yolda`→`acik` and notifies Satınalma.
 - Each department sees only its own tabs (`tabsFor`).
 - Keyfiyyət keeps all checked orders (30 days + "Hamısını göstər"); expiry warning 7 days ahead. Inspectors: Məcidli Məsumə, Məmmədzadə Aysun.
+- Satış tasks (📝 Tapşırıqlar): one shared login `satis` (dept `Satış`, several devices at once is fine); each device picks Menecer / Üzeyir / Elçin (localStorage `almond-satis-who`). Each task is a `meta` record `task-<id>` {title,to[],due,by,at,done{st ok|no,by,at,why,late},deleted}. After `due` an open task needs a reason. Notifications go to dept `Satış` (Telegram `/qosul Satış KOD`).
+- Requester depts `REQ` = Satış, İstehsalat, Çeşidləmə: own logins (`satis`, `istehsalat`, `cesidleme`), order like Texnoloq but pick receiving warehouse (`draft.wh`); they see only their own orders; Anbar/İnqilab/Satınalma see them as normal orders; receipt notifies the requester. Satış tasks are visible only to Satış and Rəhbərlik.
+- Daily expense report (💰 Hesabat, İstehsalat + Çeşidləmə only, each sees only its own): `meta` records `exp-<id>` {dept,date,what,amt,photo,at,deleted}; grouped by day with day/month totals.
 - Excel import: blank row = new order; reads "qalıq" column. Firma–mal Excel: coloured (yellow) cell = firm header, or `Mal | Firma` columns.
 - `SINAQ = true` (test mode, session kept in localStorage `almond-sess`). Owner will ask to turn it off and set passwords.
 
