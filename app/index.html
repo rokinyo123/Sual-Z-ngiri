@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#1B2470" id="thc">
 <script>/* Görünüş: standart gündüz (mavi); ☀️/🌙 düyməsi ilə dəyişir */try{document.documentElement.dataset.theme=localStorage.getItem("almond-theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Almond Anbar">
 <link rel="apple-touch-icon" href="../icon-192.png">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -472,6 +473,25 @@ body.nl-on{overflow:hidden}
 #nlLoad{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--surface) 55%,transparent);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:splIn .25s ease-out both;opacity:0}
 @media (prefers-reduced-motion:reduce){#spl *,.ldr .orb{animation-duration:.01s!important;animation-delay:0s!important}}
+
+/* ---------- 📲 Telefona yüklə: göstəriş pəncərəsi ---------- */
+#inst{position:fixed;inset:0;z-index:90;background:rgba(8,12,40,.55);display:flex;align-items:flex-end;justify-content:center;animation:splIn .2s ease-out both;opacity:0}
+#inst .sh{width:100%;max-width:520px;background:var(--surface);color:var(--fg);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+#inst h3{font-size:19px;display:flex;align-items:center;gap:10px}
+#inst h3 img{width:44px;height:44px;border-radius:12px}
+#inst ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:16px;line-height:1.45}
+#inst .k{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;border-radius:8px;background:var(--sunk);border:1px solid var(--line);font-weight:700;vertical-align:middle}
+#inst.dn .sh{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+#inst .arr{position:fixed;z-index:91;font-size:44px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));animation:instB 1s ease-in-out infinite}
+#inst .arr.down{left:50%;bottom:calc(6px + env(safe-area-inset-bottom,0px));transform:translateX(-50%)}
+#inst .arr.up{right:14px;top:calc(4px + env(safe-area-inset-top,0px))}
+@keyframes instB{0%,100%{translate:0 0}50%{translate:0 10px}}
+#inst .arr.up{animation-name:instU} @keyframes instU{0%,100%{translate:0 0}50%{translate:0 -10px}}
+.instc{display:flex;align-items:center;gap:12px;border-radius:18px;padding:12px 14px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff}
+.instc img{width:40px;height:40px;border-radius:10px;flex:none}
+.instc b{display:block;font-size:15px} .instc span{font-size:12px;opacity:.85}
+.instc button{background:#fff;color:var(--navy);border:none;font-weight:700;border-radius:999px;padding:8px 14px;white-space:nowrap}
+.instc .x{background:transparent;color:#fff;padding:4px 6px;font-size:18px}
 </style>
 
 </head>
@@ -1818,7 +1838,7 @@ function pipe(){
 }
 function vHome(){
   const work = myWork();
-  let html = greet() + alertsHtml() + meetHomeBlock();
+  let html = installCard() + greet() + alertsHtml() + meetHomeBlock();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (role==="Rəhbərlik"){
     const ot = tkList().filter(t=>!t.done).sort((a,b)=>tkDue(a)-tkDue(b)), ov = ot.filter(tkOver).length;
@@ -1849,7 +1869,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v56 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v57 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -3095,7 +3115,8 @@ $("main").addEventListener("click", e => {
   if (t.id==="tgtest"){ toast("Telegram-a göndərilir…");
     Cloud.tg({ id:"test"+Date.now(), kind:"note", to:[role], title:"Sınaq mesajı · "+role, sub:"Proqramdan Telegram-a əlaqə işləyir", items:[], oid:null })
       .then(r=>toast(r.ok ? (/"sent":0/.test(r.text) ? "Funksiya işləyir, amma heç bir söhbət "+role+" və ya hamısı-na qoşulmayıb" : "✓ Telegram-a göndərildi: "+r.text) : "Telegram xətası "+r.status+": "+r.text)); return; }
-  if (t.id==="install"){ installEvt && installEvt.prompt(); return; }
+  if (t.id==="install" || t.id==="install2"){ installGo(); return; }
+  if (t.id==="instX"){ try { localStorage.setItem("almond-inst-hide", today()); } catch(e){} render(); return; }
   if (t.id==="notif"){ try { Notification.requestPermission().then(()=>render()); } catch(e){} return; }
   if (t.id==="reset"){ if (d.sure){ S=seed(); save(); draft=newDraft(); render(); toast("Bütün sifarişlər silindi"); } else { d.sure=1; t.textContent="Əminsiniz? Yenidən basın"; } return; }
   if (d.act==="del") return sure(t, ()=>deleteOrder(Number(d.id)));
@@ -3257,6 +3278,54 @@ function orderAct(act, id){
 // Telefonda və kompüterdə tətbiq kimi quraşdırmaq
 let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (tab==="home") render(); });
+window.addEventListener("appinstalled", () => { installEvt = null; const x = $("inst"); if (x) x.remove(); toast("✓ Proqram telefona yükləndi — ana ekranda Almond ikonu var"); render(); });
+// ===================== 📲 Telefona yüklə =====================
+// Telefon icazə verirsə (Android Chrome) — bir toxunuşla quraşdırır; vermirsə — həmin telefona uyğun addım-addım göstəriş və ox.
+const UA = navigator.userAgent || "";
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/.test(UA);
+const isMobile = isIOS || isAndroid;
+const inApp = /Telegram|FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/.test(UA) || (isIOS && !/Safari\//.test(UA));
+const isStandalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch(e){ return false; } };
+function installGo(){
+  if (installEvt){ const ev = installEvt; ev.prompt(); ev.userChoice.then(c=>{ if (c && c.outcome==="accepted") installEvt = null; }).catch(()=>{}); return; }
+  installGuide();
+}
+function installGuide(){
+  const old = $("inst"); if (old) old.remove();
+  let title, steps, arrow = "";
+  if (inApp){
+    title = "Əvvəl brauzerdə açın";
+    steps = isIOS ? ['Yuxarıda və ya aşağıda <span class="k">⋯</span> və ya <span class="k">🧭</span> düyməsinə basın.', '<b>«Safari-də aç»</b> seçin.', 'Safari-də açılan səhifədə yenə <b>«📲 Telefona yüklə»</b> basın.']
+      : ['Yuxarı sağda <span class="k">⋮</span> düyməsinə basın.', '<b>«Brauzerdə aç»</b> və ya <b>«Chrome-da aç»</b> seçin.', 'Açılan səhifədə yenə <b>«📲 Telefona yüklə»</b> basın.'];
+    arrow = '<div class="arr up">👆</div>';
+  } else if (isIOS){
+    title = "iPhone-a yükləmək";
+    steps = ['Ekranın aşağısında <b>Paylaş</b> düyməsinə basın <span class="k">⬆️</span> (kvadrat və yuxarı ox).', 'Siyahını aşağı sürüşdürüb <b>«Ana ekrana əlavə et»</b> (Add to Home Screen) seçin.', 'Yuxarı sağda <b>«Əlavə et»</b> basın. ✓ Ana ekranda Almond ikonu çıxacaq.'];
+    arrow = '<div class="arr down">👇</div>';
+  } else if (/SamsungBrowser/.test(UA)){
+    title = "Samsung telefona yükləmək";
+    steps = ['Aşağıda <span class="k">☰</span> düyməsinə basın.', '<b>«Səhifəni əlavə et»</b> → <b>«Ana ekran»</b> seçin.', '<b>«Əlavə et»</b> basın. ✓ Ana ekranda Almond ikonu çıxacaq.'];
+    arrow = '<div class="arr down">👇</div>';
+  } else if (isAndroid){
+    title = "Telefona yükləmək";
+    steps = ['Yuxarı sağda <span class="k">⋮</span> düyməsinə basın.', '<b>«Tətbiqi quraşdır»</b> və ya <b>«Ana ekrana əlavə et»</b> seçin.', '<b>«Quraşdır»</b> basın. ✓ Ana ekranda Almond ikonu çıxacaq.'];
+    arrow = '<div class="arr up">👆</div>';
+  } else {
+    title = "Kompüterə yükləmək";
+    steps = ['Ünvan sətrinin sağında <span class="k">⊕</span> (Quraşdır) işarəsinə basın.', 'Görünmürsə: sağ yuxarıda <span class="k">⋮</span> → <b>«Tətbiqlər» → «Bu saytı tətbiq kimi quraşdır»</b>.', '<b>«Quraşdır»</b> basın.'];
+  }
+  const el = document.createElement("div"); el.id = "inst"; if (/arr down/.test(arrow)) el.className = "dn";
+  el.innerHTML = arrow+'<div class="sh" role="dialog" aria-label="Telefona yüklə"><h3><img src="../icon-192.png" alt="">'+title+'</h3><ol>'+steps.map(x=>'<li>'+x+'</li>').join("")+'</ol>'+
+    '<button class="pri big" id="instOk">Başa düşdüm</button></div>';
+  el.onclick = e => { if (e.target===el || e.target.id==="instOk") el.remove(); };
+  document.body.appendChild(el);
+}
+const instHidden = () => { try { return localStorage.getItem("almond-inst-hide")===today(); } catch(e){ return false; } };
+function installCard(){
+  if (isStandalone() || !isMobile || instHidden()) return "";
+  return '<div class="instc"><img src="../icon-192.png" alt=""><div class="grow"><b>Proqramı telefona yükləyin</b><span>Ana ekranda Almond ikonu olsun, bir toxunuşla açılsın</span></div><button id="install2">📲 Yüklə</button><button class="x" id="instX" aria-label="Bağla">×</button></div>';
+}
 if ("serviceWorker" in navigator && location.protocol==="https:" && !/claude/.test(location.hostname)) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 // ----- Admin: firma–mal Excel-i -----
@@ -3412,9 +3481,10 @@ function nlLogin(msg, selectHtml){
       '<label class="fld"><i>🔒</i><input id="lp" class="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="Parol (4 rəqəm)"><button type="button" class="eye" id="leye" aria-label="Parolu göstər">👁</button></label>'+
       '<div class="row2"><label><input type="checkbox" id="lrem">Parolu yadda saxla</label></div>'+
       '<button class="lbtn" id="lb">Daxil ol</button><div class="lnote" id="lnote">'+esc(msg||"")+'</div></form>'+
-    '<div class="foot2">Almond · Anbar zənciri</div></div>';
+    '<div class="foot2">'+(isStandalone()?"":'<button type="button" class="linkb" id="linst" style="font-size:15px">📲 Telefona yüklə</button><br>')+'Almond · Anbar zənciri</div></div>';
   document.body.appendChild(el); document.body.classList.add("nl-on");
   $("leye").onclick = () => { const i = $("lp"); i.type = i.type==="password" ? "text" : "password"; };
+  if ($("linst")) $("linst").onclick = installGo;
 }
 // Telegram-dakı "Proqramda aç" linki: .../app/#o=105 → daxil olandan sonra həmin sifariş açılır
 function openDeep(){
