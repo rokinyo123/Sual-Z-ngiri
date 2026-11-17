@@ -487,9 +487,10 @@ body.nl-on{overflow:hidden}
       <div class="brand"><div class="bn"><b class="abrand">Almond</b><span id="sub">Anbar zənciri</span></div><div id="clk" class="clk" aria-live="off"></div></div>
       <div class="who"><select id="role" aria-label="Kim kimi baxırsınız"></select></div>
     </div>
-    <nav class="tabs" id="tabs"></nav>
   </div>
 </header>
+<!-- Aşağıdakı menyu başlığın İÇİNDƏ olmamalıdır: iPhone (Safari) yumru künclü, overflow:hidden başlığın içindəki "fixed" menyunu gizlədir -->
+<nav class="tabs" id="tabs"></nav>
 <main class="wrap" id="main"></main>
 <div class="toast" id="toast" hidden></div>
 <div class="zoom" id="zoom" hidden><div class="zoom-in"><img id="zoomImg" alt=""><div class="zoom-bar"><b id="zoomName"></b><span id="zoomAdmin"></span><button id="zoomClose">Bağla</button></div></div></div>
@@ -1848,7 +1849,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v55 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v56 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
