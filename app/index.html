@@ -650,6 +650,8 @@ const Cloud = (() => {
     S.log.forEach(l=>{ if (!l.id) l.id = "l"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); out.push(["log", l.id, l]); });
     (S.tasks||[]).forEach(t=>out.push(["meta", "task-"+t.id, t]));
     (S.exps||[]).forEach(x=>out.push(["meta", "exp-"+x.id, x]));
+    (S.meets||[]).forEach(x=>out.push(["meta", "meet-"+x.id, x]));
+    (S.mtasks||[]).forEach(x=>out.push(["meta", "mt-"+x.id, x]));
     out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
     return out;
   }
@@ -680,6 +682,8 @@ const Cloud = (() => {
     else if (row.kind==="log") put(S.log, d, x=>x.id===row.id);
     else if (row.id.startsWith("task-")) put(S.tasks = S.tasks||[], d, x=>"task-"+x.id===row.id);
     else if (row.id.startsWith("exp-")) put(S.exps = S.exps||[], d, x=>"exp-"+x.id===row.id);
+    else if (row.id.startsWith("meet-")) put(S.meets = S.meets||[], d, x=>"meet-"+x.id===row.id);
+    else if (row.id.startsWith("mt-")) put(S.mtasks = S.mtasks||[], d, x=>"mt-"+x.id===row.id);
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
@@ -1255,7 +1259,7 @@ function myWork(){
 function tabsFor(r){
   // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
   const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
-    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], exp:["💰","Hesabat"] };
+    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], meet:["📋","İclaslar"], exp:["💰","Hesabat"] };
   const BY = {
     "Anbar":           ["home","new","orders","days"],
     "Anbar (İnqilab)": ["home","new","orders","days"],
@@ -1267,8 +1271,8 @@ function tabsFor(r){
     "Elçin":           ["tasks","tcal","home","new","orders"],
     "İstehsalat":      ["home","new","orders","exp"],
     "Çeşidləmə":       ["home","new","orders","exp"],
-    "Rəhbərlik":       ["home","tasks","orders","buy","qc","days","res","prob","arch"],
-    "Admin":           ["home","orders","buy","qc","days","res","prob","arch","catalog"],
+    "Rəhbərlik":       ["home","meet","tasks","orders","buy","qc","days","res","prob","arch"],
+    "Admin":           ["home","meet","orders","buy","qc","days","res","prob","arch","catalog"],
   };
   return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
 }
@@ -1342,17 +1346,17 @@ function renderRole(){
 function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = T[0][0];
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
-  const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0);
+  const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0) + myMeetTasks().filter(t=>!t.done).length;
   const nq = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).length, np = probCount();
   $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : 0;
     return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("");
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  autoMissing(); stuckSignals(); taskSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
+  autoMissing(); stuckSignals(); taskSignals(); meetSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, exp:vExp }[tab]();
   if (tab==="new") bindNew();
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
   if (tab==="catalog") filterRows($("cQ"));
@@ -1579,6 +1583,121 @@ function taskAct(d){
   if (d.tkdel){ if (!confirm("Tapşırıq silinsin?")) return true; const t = T(d.tkdel); t.deleted = true; save(); render(); return true; }
   return false;
 }
+// ===================== 📋 İclaslar və öhdəliklər (Rəhbərlik) =====================
+// Rəhbərlik iclası yazır: vaxt, mövzu, iştirakçılar, qəbul olunan qərar və öhdəliklər (kimin üzərinə · nə · istəyə görə son vaxt).
+// Öhdəlik həmin şöbənin / şəxsin "📋 Öhdəliklərim" siyahısına düşür (iclasdan iclasa artır) və bir dəfə Telegramla gedir.
+// Son vaxt yalnız xatırlatmadır: vaxt çatanda YALNIZ Rəhbərliyə xəbər gedir. İcraçı "Yerinə yetirildi" basır; Rəhbərlik də bağlaya bilər.
+// Köhnə iclasa sonradan yeni öhdəlik əlavə etmək olur.
+const MEET_WHO = () => DEPTS.filter(d=>d!=="Admin");
+let mDraft = null, mAdd = null, mView = "meet";
+const newRow = () => ({ to:"", what:"", due:"" });
+const newMeet = () => ({ at: dtLocal(new Date()), title:"", people:[], extra:"", decision:"", rows:[newRow()] });
+const mtList = () => (S.mtasks||[]).filter(t=>!t.deleted);
+const meetOf = t => (S.meets||[]).find(m=>m.id===t.meet);
+const mtOver = t => !t.done && !!t.due && new Date(t.due) < new Date();
+const dtTxt = v => v ? fmtD(v.slice(0,10))+(v.length>10 ? " · "+v.slice(11,16) : "") : "";
+const myMeetTasks = () => mtList().filter(t=>t.to===role);
+const mtSort = (a,b) => (!!a.done - !!b.done) || (a.due||"9").localeCompare(b.due||"9") || a.at.localeCompare(b.at);
+function meetSignals(){
+  if (role!=="Rəhbərlik") return;
+  let ch = false;
+  mtList().forEach(t=>{ if (mtOver(t) && !t.overAt){ t.overAt = new Date().toISOString(); ch = true;
+    const m = meetOf(t) || {};
+    notify(["Rəhbərlik"], "note", "📋 Xatırlatma: öhdəliyin vaxtıdır · "+t.to, t.what, ["İclas: "+(m.title||"")+" ("+dtTxt(m.at)+")", "Son vaxt: "+dtTxt(t.due)], null, "mt-over-"+t.id); } });
+  if (ch) save();
+}
+const meetCtx = m => '<div>🗓 '+dtTxt(m.at)+' · 👥 '+esc((m.people||[]).concat(m.extra?[m.extra]:[]).join(", "))+'</div>'+(m.decision?'<div style="white-space:pre-wrap">✅ <b>Qərar:</b> '+esc(m.decision)+'</div>':"");
+function mtCard(t, mine, showMeet){
+  const m = meetOf(t) || {};
+  const st = t.done ? '<span class="pill p-ok">✓ Yerinə yetirildi</span>' : mtOver(t) ? '<span class="pill p-warn">⏰ Vaxtı çatıb</span>' : t.due ? '<span class="pill p-wait">⏳ '+dtTxt(t.due)+'</span>' : '<span class="pill p-mute">Müddətsiz</span>';
+  const btn = t.done ? "" : mine ? '<div class="row"><button class="okb sm" data-mtok="'+t.id+'">✓ Yerinə yetirildi</button></div>'
+    : role==="Rəhbərlik" ? '<div class="row"><button class="sm okb" data-mtrok="'+t.id+'">✓ Edildi</button></div>' : "";
+  return '<article class="oc" style="border-left-color:var('+(t.done ? "--ok" : mtOver(t) ? "--warn" : "--wait")+')">'+
+    '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:8px"><b style="white-space:pre-wrap">'+esc(t.what)+'</b>'+st+'</div>'+
+    '<div class="meta">👤 <b>'+esc(t.to)+'</b>'+(t.due?' · son vaxt <b>'+dtTxt(t.due)+'</b>':"")+'</div>'+
+    (showMeet ? '<details class="meta"><summary>📋 İclas: '+esc(m.title||"")+' · '+dtTxt(m.at)+'</summary>'+meetCtx(m)+'</details>' : "")+
+    (t.done ? '<div class="spn">✓ <b>'+esc(t.done.by)+'</b> · '+shortT(new Date(t.done.at))+'</div>' : "")+btn+'</article>';
+}
+function meetHomeBlock(){
+  if (role==="Rəhbərlik" || role==="Admin") return "";
+  const T = myMeetTasks().sort(mtSort), open = T.filter(t=>!t.done), done = T.filter(t=>t.done);
+  if (!T.length) return "";
+  return '<h2>📋 Öhdəliklərim <span class="cnt">'+open.length+'</span></h2><div class="meta">İclaslarda sizin üzərinizə düşən öhdəliklər</div>'+
+    (open.length ? open.map(t=>mtCard(t,true,true)).join("") : '<div class="empty">✓ Açıq öhdəlik yoxdur</div>')+
+    (done.length ? '<details><summary class="meta">Yerinə yetirilənlər · '+done.length+'</summary>'+done.slice(-30).reverse().map(t=>mtCard(t,false,true)).join("")+'</details>' : "");
+}
+const whoOpts = sel => '<option value="">— kimin üzərinə —</option>'+MEET_WHO().map(n=>'<option'+(sel===n?" selected":"")+'>'+esc(n)+'</option>').join("");
+const rowsHtml = (rows, attr, del) => rows.map((r,k)=>'<div class="box" style="gap:6px"><div class="row" style="gap:6px"><select data-'+attr+'="'+k+'|to" style="flex:1">'+whoOpts(r.to)+'</select><button class="sm" data-'+del+'="'+k+'" aria-label="Sil">×</button></div>'+
+  '<input data-'+attr+'="'+k+'|what" placeholder="Öhdəlik — nə edəcək?" value="'+esc(r.what)+'">'+
+  '<label class="qby"><span>Son vaxt (istəyə görə)</span><input type="datetime-local" data-'+attr+'="'+k+'|due" value="'+esc(r.due)+'"></label></div>').join("");
+function vMeet(){
+  const d = mDraft, canNew = role==="Rəhbərlik" || adminView();
+  const form = !canNew ? "" : !d ? '<button class="pri big" data-mnew="1">➕ Yeni iclas yaz</button>' :
+    '<div class="card"><h2>📋 Yeni iclas</h2>'+
+    '<label class="qby"><span>Vaxt</span><input type="datetime-local" data-mf="at" value="'+esc(d.at)+'"></label>'+
+    '<input data-mf="title" placeholder="Mövzu (məs. Noyabr satış planı)" value="'+esc(d.title)+'">'+
+    '<div class="lbl">👥 İştirakçılar</div><div class="row wrap">'+MEET_WHO().map(n=>'<button class="'+(d.people.includes(n)?"pri":"sm")+'" data-mp="'+esc(n)+'">'+(d.people.includes(n)?"✓ ":"")+esc(n)+'</button>').join("")+'</div>'+
+    '<input data-mf="extra" placeholder="Digər iştirakçılar (məs. Əli bəy, Tural bəy)" value="'+esc(d.extra)+'">'+
+    '<textarea data-mf="decision" placeholder="✅ Nəticədə qəbul olunan qərar">'+esc(d.decision)+'</textarea>'+
+    '<div class="lbl">📝 Öhdəliklər — kimin üzərinə, nə, son vaxt</div>'+rowsHtml(d.rows,"mr","mrdel")+
+    '<button class="sm" data-mradd="1">+ Öhdəlik</button>'+
+    '<div class="row"><button class="pri big grow" data-msave="1">Yadda saxla və göndər</button><button data-mcancel="1">Ləğv et</button></div></div>';
+  const seg = '<div class="seg">'+[["meet","📋 İclaslar"],["people","👤 Şəxs üzrə öhdəliklər"]].map(([k,l])=>'<button class="'+(mView===k?"on":"")+'" data-mview="'+k+'">'+l+'</button>').join("")+'</div>';
+  let body;
+  if (mView==="people"){
+    const who = [...new Set(mtList().map(t=>t.to))].sort((a,b)=>a.localeCompare(b,"az"));
+    body = who.length ? who.map(w=>{ const T = mtList().filter(t=>t.to===w).sort(mtSort), open = T.filter(t=>!t.done);
+      return '<div class="card"><div class="row" style="justify-content:space-between"><b>👤 '+esc(w)+'</b><span class="pill '+(open.some(mtOver)?"p-warn":open.length?"p-wait":"p-ok")+'">'+open.length+' açıq · '+(T.length-open.length)+' edilib</span></div>'+
+        open.map(t=>mtCard(t,false,true)).join("")+
+        (T.length>open.length ? '<details><summary class="meta">Yerinə yetirilənlər · '+(T.length-open.length)+'</summary>'+T.filter(t=>t.done).map(t=>mtCard(t,false,true)).join("")+'</details>' : "")+'</div>'; }).join("")
+      : '<div class="empty">Hələ öhdəlik yoxdur</div>';
+  } else {
+    const M = (S.meets||[]).filter(m=>!m.deleted).sort((a,b)=>b.at.localeCompare(a.at));
+    body = M.length ? M.map(m=>{ const T = mtList().filter(t=>t.meet===m.id).sort(mtSort), open = T.filter(t=>!t.done).length;
+      const add = mAdd && mAdd.meet===m.id ? '<div class="box"><div class="lbl">➕ Bu iclasa yeni öhdəlik</div>'+rowsHtml(mAdd.rows,"ma","madel")+
+          '<button class="sm" data-maradd="1">+ Öhdəlik</button><div class="row"><button class="pri grow" data-masave="1">Əlavə et və göndər</button><button data-macancel="1">Ləğv et</button></div></div>'
+        : canNew ? '<button class="sm" data-maddto="'+m.id+'">➕ Öhdəlik əlavə et</button>' : "";
+      return '<div class="card"><div class="row" style="justify-content:space-between;gap:8px"><b>📋 '+esc(m.title)+'</b><span class="pill '+(open?"p-wait":"p-ok")+'">'+(open?open+" açıq":"✓ hamısı edilib")+'</span></div>'+
+        '<div class="meta">'+meetCtx(m)+'</div>'+T.map(t=>mtCard(t,false,false)).join("")+add+'</div>'; }).join("")
+      : '<div class="empty">Hələ iclas yazılmayıb</div>';
+  }
+  return '<h2>📋 İclaslar və öhdəliklər</h2>'+form+seg+body;
+}
+function addTasks(M, rows){
+  const now = new Date().toISOString(), base = mtList().filter(t=>t.meet===M.id).length + (S.mtasks||[]).filter(t=>t.deleted && t.meet===M.id).length;
+  rows.forEach((r,k)=>{ const t = { id:M.id+"-"+(base+k), meet:M.id, to:r.to, what:r.what.trim(), due:r.due||"", at:now };
+    (S.mtasks = S.mtasks||[]).push(t);
+    notify([t.to], "note", "📋 İclas öhdəliyi: "+M.title, t.what,
+      [t.due ? "Son vaxt: "+dtTxt(t.due) : "", "İclas: "+dtTxt(M.at), "İştirak edənlər: "+M.people.concat(M.extra?[M.extra]:[]).join(", "), M.decision ? "Qərar: "+M.decision : ""].filter(Boolean), null); });
+}
+const cleanRows = rows => { const R = rows.filter(r=>r.to || r.what.trim() || r.due); return R.some(r=>!r.to || !r.what.trim()) ? null : R; };
+function meetAct(d){
+  const now = new Date().toISOString(), T = id => mtList().find(t=>t.id===id);
+  if (d.mview){ mView = d.mview; render(); return true; }
+  if (d.mnew){ mDraft = newMeet(); render(); return true; }
+  if (d.mcancel){ mDraft = null; render(); return true; }
+  if (d.mp){ const a = mDraft.people; a.includes(d.mp) ? a.splice(a.indexOf(d.mp),1) : a.push(d.mp); const y = window.scrollY; render(); window.scrollTo(0,y); return true; }
+  if (d.mradd){ mDraft.rows.push(newRow()); render(); return true; }
+  if (d.mrdel){ mDraft.rows.splice(Number(d.mrdel),1); if (!mDraft.rows.length) mDraft.rows.push(newRow()); render(); return true; }
+  if (d.msave){ const m = mDraft, title = m.title.trim();
+    if (!title){ toast("İclasın mövzusunu yazın"); return true; }
+    const rows = cleanRows(m.rows); if (!rows){ toast("Hər öhdəlikdə kimin üzərinə və nə olduğu yazılmalıdır"); return true; }
+    const M = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,5), at:m.at || dtLocal(new Date()), title, people:m.people.slice(), extra:m.extra.trim(), decision:m.decision.trim(), by:role, created:now };
+    (S.meets = S.meets||[]).push(M); addTasks(M, rows);
+    mDraft = null; save(); render(); toast("İclas yazıldı · "+rows.length+" öhdəlik göndərildi"); return true; }
+  if (d.maddto){ mAdd = { meet:d.maddto, rows:[newRow()] }; render(); return true; }
+  if (d.macancel){ mAdd = null; render(); return true; }
+  if (d.maradd){ mAdd.rows.push(newRow()); render(); return true; }
+  if (d.madel){ mAdd.rows.splice(Number(d.madel),1); if (!mAdd.rows.length) mAdd.rows.push(newRow()); render(); return true; }
+  if (d.masave){ const M = (S.meets||[]).find(m=>m.id===mAdd.meet), rows = cleanRows(mAdd.rows);
+    if (!rows || !rows.length){ toast("Kimin üzərinə və nə olduğunu yazın"); return true; }
+    addTasks(M, rows); mAdd = null; save(); render(); toast(rows.length+" öhdəlik əlavə olundu"); return true; }
+  if (d.mtok){ const t = T(d.mtok); if (!t || t.to!==role) return true; t.done = { st:"ok", by:role, at:now };
+    const m = meetOf(t) || {}; notify(["Rəhbərlik"], "ok", "✓ Öhdəlik yerinə yetirildi · "+role, t.what, ["İclas: "+(m.title||"")], null);
+    save(); render(); toast("Yerinə yetirildi ✓"); return true; }
+  if (d.mtrok){ const t = T(d.mtrok); if (!t || role!=="Rəhbərlik") return true; t.done = { st:"ok", by:"Rəhbərlik", at:now }; save(); render(); toast("Edildi ✓"); return true; }
+  return false;
+}
 // ===================== 💰 Gündəlik xərc hesabatı (İstehsalat, Çeşidləmə) =====================
 // Hər şöbə yalnız öz yazılarını görür. Gün-gün qruplanır, hər günün və ayın cəmi çıxır; istəsə qəbzin şəklini qoyur.
 let xDraft = { date:"", what:"", amt:"", photo:"" }, xMonth = "";
@@ -1698,7 +1817,7 @@ function pipe(){
 }
 function vHome(){
   const work = myWork();
-  let html = greet() + alertsHtml();
+  let html = greet() + alertsHtml() + meetHomeBlock();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (role==="Rəhbərlik"){
     const ot = tkList().filter(t=>!t.done).sort((a,b)=>tkDue(a)-tkDue(b)), ov = ot.filter(tkOver).length;
@@ -1729,7 +1848,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v54 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v55 · sınaq</span> · '+(installEvt?'<button class="linkb" id="install">📲 Tətbiq kimi quraşdır</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2938,6 +3057,7 @@ $("main").addEventListener("click", e => {
     notify([o.from], full ? "ok" : "late", (full ? "✓ Sifarişiniz hazırdır · #" : "⚠ Sifarişiniz qismən verildi · #")+o.id+" · "+o.wh, full ? "Hamısı verildi" : note, o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id);
     delete rqDraft[id]; save(); render(); return toast(full ? "Verildi ✓" : "Göndərildi"); }
   if (taskAct(d)) return;
+  if (meetAct(d)) return;
   if (expAct(d)) return;
   if (d.sopen){ sDraft = { mode:d.sopen, firm:"", eta:plusDays(1), wh: WAREHOUSES.includes(role) ? role : "Anbar", rows:[{n:"",q:""}], note:"", desc:"" }; render(); return; }
   if (d.scancel){ sDraft = null; render(); return; }
@@ -3011,6 +3131,9 @@ $("main").addEventListener("input", e => {
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
   if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
+  if (el.dataset.mf && mDraft){ mDraft[el.dataset.mf] = el.value; return; }
+  if (el.dataset.mr && mDraft){ const [k,f] = el.dataset.mr.split("|"); mDraft.rows[Number(k)][f] = el.value; return; }
+  if (el.dataset.ma && mAdd){ const [k,f] = el.dataset.ma.split("|"); mAdd.rows[Number(k)][f] = el.value; return; }
   if (el.dataset.rqn){ (rqDraft[el.dataset.rqn] = rqDraft[el.dataset.rqn] || {}).note = el.value; return; }
   if (el.dataset.xf){ xDraft[el.dataset.xf] = el.value; return; }
   if (el.dataset.tkw){ tkWhy[el.dataset.tkw] = el.value; return; }
