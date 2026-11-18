@@ -82,7 +82,7 @@ const holdLine = (o: any) => `⛔ ${link(o.id)} ${HOLDN[o.hold?.t || "sample"]} 
 function problem(o: any, i: any) {
   if (o.req) return "";
   if (i.unav) return "Satınalma: mal yoxdur";
-  if (i.notFound) return "Sürücü tapmadı";
+  if (i.notFound) return "Təchizatçı tapmadı";
   if (i.qc === "bad") return "Keyfiyyət: " + (i.qcWhy || "uyğun deyil");
   if (i.techRes === "bad") return o.sample ? "" : "Texnoloq qəbul etmədi";
   if (!o.recvDone) return "";
@@ -344,7 +344,7 @@ async function reportBuild(kind: string, ref: string) {
   const done = rows.filter((r) => r.o.recvDone || r.i.unav || r.i.notFound);
   const full = done.filter((r) => !r.pr && (r.i.got || 0) >= num(r.i.qty)).length;
   const part = done.filter((r) => /^Az/.test(r.pr)).length;
-  const miss = rows.filter((r) => /^(Gəlmədi|Satınalma: mal yoxdur|Sürücü tapmadı)/.test(r.pr));
+  const miss = rows.filter((r) => /^(Gəlmədi|Satınalma: mal yoxdur|Təchizatçı tapmadı)/.test(r.pr));
   const qc = rows.filter((r) => r.i.qc === "bad");
   const tech = rows.filter((r) => r.i.techRes);
   const lates = d.orders.flatMap((o) => (o.lates || []).filter((e: any) => inR(e.eta)).map((e: any) => ({ o, e })));
@@ -377,7 +377,7 @@ async function reportBuild(kind: string, ref: string) {
   const sup: Record<string, any> = {};
   rows.forEach(({ o, i, pr }) => { const k = o.supplier || "Firmasız", x = sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() };
     x.n++; x.ords.add(o.id); if (o.recvDone && !pr && (i.got || 0) >= num(i.qty)) x.full++; if (/^Az/.test(pr)) x.part++;
-    if (/^(Gəlmədi|Satınalma: mal yoxdur|Sürücü tapmadı)/.test(pr)) x.miss++; if (i.qc === "bad") x.qc++; });
+    if (/^(Gəlmədi|Satınalma: mal yoxdur|Təchizatçı tapmadı)/.test(pr)) x.miss++; if (i.qc === "bad") x.qc++; });
   lates.forEach(({ o }) => { const k = o.supplier || "Firmasız"; (sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() }).late++; });
   samples.filter((o) => o.unannounced).forEach((o) => { const k = o.supplier || "Firmasız"; (sup[k] = sup[k] || { n: 0, full: 0, part: 0, miss: 0, qc: 0, late: 0, surp: 0, ords: new Set() }).surp++; });
   XLSX.utils.book_append_sheet(wb, sheet([["Firma", "Sifariş", "Mal", "Tam", "Az", "Gəlmədi", "Keyfiyyət ✗", "Gecikmə", "Xəbərsiz nümunə", "Tam %"],
