@@ -37,3 +37,8 @@ grant all on almond.tg_chats, almond.tg_sent to service_role;
 -- select cron.schedule('almond-hesabat', '5 16 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?report=auto',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
+
+-- Ehtiyat nüsxə: hər gün 23:30 Bakı (19:30 UTC) — bazanın tam nüsxəsi JSON fayl kimi "/qosul Ehtiyat KOD" yazılan söhbətə
+-- select cron.schedule('almond-ehtiyat', '30 19 * * *',
+--   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?backup=1',
+--        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
