@@ -8,7 +8,7 @@ const SUB_Y = PORT ? 1468 : 984;                      // subtitle band centre
 const SAFE_B = PORT ? 1355 : 875;                     // content must stay above this
 const IM = {};
 function load(k, src) { pending++; const im = new Image(); im.onload = () => { IM[k] = im; pending--; }; im.onerror = () => { console.log('img fail', src); pending--; }; im.src = src; }
-['k_tibb_1','k_tibb_2','k_tibb_3','k_tibb_4','k_tibb_5','k_qelb_1','k_qelb_2','k_qelb_3','k_qelb_4','k_qelb_5','k_gun_1','k_gun_2','k_gun_3','k_gun_4','k_gun_5'].forEach(k => load(k, `img/${k}.png`));
+['k_savab_1','k_savab_2','k_savab_3','k_savab_4','k_savab_5','k_emel_1','k_emel_2','k_emel_3','k_emel_4','k_emel_5','k_gunah_1','k_gunah_2','k_gunah_3','k_gunah_4','k_gunah_5'].forEach(k => load(k, `img/${k}.png`));
 function loadBgs(list) { list.forEach(k => load(k, `img/${k}.jpg`)); }
 
 // ---------- offscreen groups ----------
