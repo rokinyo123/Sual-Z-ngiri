@@ -10,6 +10,8 @@
 // 4) Sual əmrləri: /bugun /geciken /problemler /sobeler /sifaris 105
 // 6) Günorta xatırlatması: ...functions/v1/telegram?midday=1 (pg_cron 16:00 Bakı) — bu gün gəlməli, hələ gəlməyən firmalar → Satınalma
 // 7) Axşam yekunu: ...functions/v1/telegram?evening=1 (pg_cron 18:00 Bakı) — bu gün nə gəldi, nə gəlmədi, nə qəbul olunmadı
+// 9) Ehtiyat nüsxə: ...functions/v1/telegram?backup=1 (pg_cron hər gün 23:30 Bakı) — bazanın tam nüsxəsi (JSON fayl)
+//    YALNIZ "/qosul Ehtiyat KOD" yazılan söhbətə gedir (Admin-in şəxsi söhbəti). Bir şey olsa, bu fayldan hər şey geri yüklənir.
 // 8) Excel hesabatı: ...functions/v1/telegram?report=auto (pg_cron hər gün 20:05 Bakı): bazar günü həftəlik, ayın son günü aylıq
 //    → Rəhbərlik söhbətlərinə. Əl ilə: ?report=week&force=1, ?report=month&force=1; Telegram-da /hesabat, /hesabat ay
 // 5) Səhər xülasəsi: ...functions/v1/telegram?morning=1 (pg_cron hər gün 09:30 Bakı vaxtı çağırır; gündə bir dəfə göndərir)
@@ -31,7 +33,7 @@ const CORS = {
 const DEPTS: Record<string, string> = {
   satinalma: "Satınalma", keyfiyyet: "Keyfiyyət", anbar: "Anbar", inqilab: "Anbar (İnqilab)",
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
-  rehberlik: "Rəhbərlik", satis: "Satış", uzeyir: "Üzeyir", elcin: "Elçin", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", hamisi: "*", hamsi: "*", all: "*", "*": "*",
+  rehberlik: "Rəhbərlik", satis: "Satış", uzeyir: "Üzeyir", elcin: "Elçin", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", ehtiyat: "Ehtiyat", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
 const ICON: Record<string, string> = { stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
@@ -321,10 +323,10 @@ async function evening(force: boolean) {
 }
 
 // ---------- Excel hesabatı ----------
-const sendDoc = (chat_id: number, buf: ArrayBuffer, name: string, caption: string) => {
+const sendDoc = (chat_id: number, buf: ArrayBuffer | Uint8Array, name: string, caption: string, mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") => {
   const fd = new FormData();
   fd.append("chat_id", String(chat_id)); fd.append("caption", caption.slice(0, 1000)); fd.append("parse_mode", "HTML");
-  fd.append("document", new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), name);
+  fd.append("document", new Blob([buf], { type: mime }), name);
   return fetch(`https://api.telegram.org/bot${TOKEN}/sendDocument`, { method: "POST", body: fd }).then((r) => r.json()).catch((e) => ({ ok: false, description: String(e) }));
 };
 const addD = (d: string, n: number) => new Date(new Date(d + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
@@ -435,6 +437,29 @@ async function reportRun(mode: string, force: boolean) {
   return json({ ok: true, out });
 }
 
+// ---------- Ehtiyat nüsxə: bütün yazılar + Telegram qoşulmaları → JSON fayl → yalnız "Ehtiyat" söhbətinə ----------
+async function backup(force: boolean) {
+  const t = today();
+  const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
+  const chats = [...new Set(rows.filter((r) => r.dept === "Ehtiyat").map((r) => r.chat_id))];
+  if (!chats.length) return json({ ok: true, skip: "Ehtiyat söhbəti qoşulmayıb (/qosul Ehtiyat KOD)" });
+  const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: force ? "backup-test-" + Date.now() : "backup-" + t }) });
+  if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
+  const recs: any[] = [];
+  for (let off = 0; ; off += 1000) {
+    const r = await db(`records?select=kind,id,version,data,updated_at&order=kind.asc,id.asc&limit=1000&offset=${off}`);
+    if (!r.ok) return json({ ok: false, error: "records: " + r.status }, 500);
+    const part: any[] = await r.json(); recs.push(...part); if (part.length < 1000) break;
+  }
+  const count: Record<string, number> = {}; recs.forEach((r) => { count[r.kind] = (count[r.kind] || 0) + 1; });
+  const body = new TextEncoder().encode(JSON.stringify({ app: "almond-anbar", made: new Date().toISOString(), records: recs, tg_chats: rows }));
+  const kb = Math.round(body.length / 1024);
+  const cap = `💾 <b>Ehtiyat nüsxə · ${fmtD(t)}.${t.slice(0, 4)}</b>\n` + Object.entries(count).map(([k, n]) => `${k}: ${n}`).join(" · ") + ` · ${kb} KB\n<i>Bu faylı silməyin — bir şey olsa, hər şey bundan geri yüklənir.</i>`;
+  let sent = 0;
+  for (const c of chats) { const x = await sendDoc(c, body, `almond-ehtiyat-${t}.json`, cap, "application/json"); if (x.ok) sent++; }
+  return json({ ok: true, sent, records: recs.length, kb });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (!TOKEN) return json({ ok: false, error: "TELEGRAM_TOKEN yoxdur — Edge Functions → Secrets bölməsində əlavə edin" }, 500);
@@ -442,6 +467,7 @@ Deno.serve(async (req) => {
   if (url.searchParams.has("morning")) return morning(url.searchParams.has("force"));
   if (url.searchParams.has("midday")) return midday(url.searchParams.has("force"));
   if (url.searchParams.has("evening")) return evening(url.searchParams.has("force"));
+  if (url.searchParams.has("backup")) return backup(url.searchParams.has("force"));
   if (url.searchParams.has("report")) return reportRun(url.searchParams.get("report") ?? "auto", url.searchParams.has("force"));
   if (req.method === "GET" && url.searchParams.has("setup")) {
     await tg("setMyCommands", { commands: [

@@ -59,6 +59,10 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Commands: `/qosul KOD Şöbə`, `/bugun`, `/geciken`, `/problemler`, `/sobeler`, `/sifaris`, `/hesabat`.
 - pg_cron (UTC): `almond-seher 30 5` (09:30 Baku), `almond-gunorta 0 12` (16:00), `almond-axsam 0 14` (18:00, problems only, "from → wh"), `almond-hesabat 5 16` (weekly/monthly Excel to Rəhbərlik).
 
+## Backups (free plan has none)
+- Bot sends a full JSON backup daily 23:30 Baku (`?backup=1`, cron `almond-ehtiyat`) ONLY to chats connected with `/qosul Ehtiyat KOD` (owner's private chat). File: `{app, made, records:[{kind,id,version,data,updated_at}], tg_chats:[...]}`.
+- Restore (owner pastes the file's `records` array into SQL Editor as a literal, or upload to Storage and read it): `insert into almond.records (kind,id,version,data,updated_at) select kind,id,version,data,updated_at from jsonb_to_recordset('<records json>'::jsonb) as x(kind text,id text,version int,data jsonb,updated_at timestamptz) on conflict (kind,id) do update set version=excluded.version, data=excluded.data, updated_at=excluded.updated_at;` Restore `tg_chats` the same way. Do it with the owner step by step.
+
 ## Hard rules
 - Never put passwords, tokens or the service_role key in the repo, docs or chat; never ask the owner to paste them.
 - Never replace the Supabase DB or touch `public`. New SQL must be additive and idempotent.
