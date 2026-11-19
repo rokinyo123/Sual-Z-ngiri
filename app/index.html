@@ -492,6 +492,10 @@ body.nl-on{overflow:hidden}
 .instc b{display:block;font-size:15px} .instc span{font-size:12px;opacity:.85}
 .instc button{background:#fff;color:var(--navy);border:none;font-weight:700;border-radius:999px;padding:8px 14px;white-space:nowrap}
 .instc .x{background:transparent;color:#fff;padding:4px 6px;font-size:18px}
+
+.ptg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ptb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 8px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 18px rgba(27,36,112,.08);color:var(--fg)}
+.ptb i{font-style:normal;font-size:30px} .ptb b{font-size:14px;text-align:center}
 </style>
 
 </head>
@@ -953,7 +957,7 @@ function addLog(o, act, note, by){
 // İnqilab:     Keyfiyyət və Texnoloq yoxdur — Gözlənilir → İnqilab qeyd edir → bağlanır.
 // status: acik (Satınalmada) · yolda (Gözlənilir) · anbar (Anbar qeyd edir) · bagli · redd
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
-const hasQC = o => o.wh==="Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req;   // Keyfiyyət Anbarın öz sifarişlərinə baxır; nümunə və Texnoloq sifarişi Anbar qəbulundan sonra Texnoloqa gedir
+const hasQC = o => o.wh==="Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype!=="office" && o.stype!=="cargo";   // Keyfiyyət Anbarın öz sifarişlərinə baxır; nümunə və Texnoloq sifarişi Anbar qəbulundan sonra Texnoloqa gedir
 // Keyfiyyət: yoxlayan şəxs, istehsal / son istifadə tarixi, riskli mallarda temperatur
 const QC_PEOPLE = ["Məcidli Məsumə","Məmmədzadə Aysun"];
 const RISKY = /s[üu]d|sosis|kolbas|sucu|qaym|xama|k[əe]smik|pendir|qat[ıi]q|ayran|k[əe]r[əe]\s*ya|ya[ğg]\s*k[əe]r|\b[əe]t\b|[əe]t\s|toyuq|bal[ıi]q|yumurta|dondurma|ma[sş]karpon|mocarel|mozzarel|krem\s*[şs]anti|slivk|sliv|qaymaq|kefir|smetan/i;
@@ -1287,7 +1291,7 @@ function tabsFor(r){
   const BY = {
     "Anbar":           ["home","new","orders","days"],
     "Anbar (İnqilab)": ["home","new","orders","days"],
-    "Satınalma":       ["home","buy","orders","days","prob"],
+    "Satınalma":       ["home","buy","new","orders","days","prob"],
     "Keyfiyyət":       ["home","qc","orders","days"],
     "Texnoloq":        ["home","new","orders","days"],
     "Satış":           ["tasks","tcal","home","new","orders"],
@@ -1381,7 +1385,7 @@ function render(){
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, exp:vExp }[tab]();
-  if (tab==="new") bindNew();
+  if (tab==="new" && role!=="Satınalma") bindNew();
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
   if (tab==="catalog") filterRows($("cQ"));
   tabFx();
@@ -1400,7 +1404,7 @@ const HOLD = { sample:{ ic:"🧪", n:"Xəbərsiz nümunə", btn:"🧪 Xəbərsiz
     hint:"Heç kim sifariş verməyib, amma <b>mal gəlib</b>. Satınalma dərhal Telegramda xəbər tutur və cavab verənə qədər hər gün xatırladılır.", ph:"Nə gəlib, nə qədər, kim gətirib?" } };
 const hkind = o => (o.hold && o.hold.t) || "sample";
 const holdOf = o => HOLD[hkind(o)];     // xəbərsiz nümunə: Satınalma adını yazana qədər saxlanılır
-const sampleTag = o => (o.sample?'<span class="pill p-qc">🧪 Nümunə</span>':"")+(o.unannounced?'<span class="pill p-bad">⚠ Xəbərsiz</span>':"");
+const sampleTag = o => (o.stype && PT[o.stype] ? '<span class="pill p-info">'+PT[o.stype].ic+' '+PT[o.stype].n+'</span>' : "")+(o.sample?'<span class="pill p-qc">🧪 Nümunə</span>':"")+(o.unannounced?'<span class="pill p-bad">⚠ Xəbərsiz</span>':"");
 let sDraft = null;
 function sampleBox(mode){
   if (!sDraft || sDraft.mode!==mode) return '<button class="'+(mode==="buy"?"pri":"sm badb")+'" data-sopen="'+mode+'">'+(mode==="buy"?"🧪 Nümunə yaz (firma ilə razılaşdırılıb)":mode==="surprise"?HOLD.sample.btn:HOLD[mode].btn)+'</button>';
@@ -1424,6 +1428,7 @@ function sampleBox(mode){
 }
 function sampleSend(){
   const d = sDraft; if (!d) return;
+  if (PT[d.mode] && d.mode!=="buy") return purchaseSend(d);
   const now = new Date().toISOString();
   if (HOLD[d.mode]){
     const H = HOLD[d.mode], desc = (d.desc||"").trim(), firm = d.firm.trim();
@@ -1761,6 +1766,47 @@ function expAct(d){
   if (d.xphdel){ xDraft.photo = ""; render(); return true; }
   return false;
 }
+// ===================== ➕ Satınalmanın öz sifarişi =====================
+// Satınalma anbara gələcək hər malı əvvəlcədən yazır: nümunə, ofis, kargo və ya "filan malın yerinə bu gələcək".
+// Firma, gəliş günü, anbar və malların adı mütləqdir. Yazılmayan mal gələrsə, Anbar "📦 Xəbərsiz mal gəldi" basır →
+// Satınalmaya və Rəhbərliyə xəbər gedir, statistikada "Satınalma xəbər verməyib" kimi sayılır.
+const PT = {
+  buy:{ ic:"🧪", n:"Nümunə sifarişi", firm:"Firma", row:"Nümunənin adı", hint:"Firma ilə razılaşdırılmış nümunə. Anbar, Texnoloq və Keyfiyyət xəbər tutur; gələndən sonra Texnoloq baxış gününü təyin edib dəyərləndirir." },
+  office:{ ic:"🏢", n:"Ofis sifarişi", firm:"Firma / mağaza", row:"Malın adı (məs. A4 kağız)", hint:"Ofis və təsərrüfat üçün alınan mallar. Anbar qəbul edir (Keyfiyyət yoxlamır)." },
+  cargo:{ ic:"📦", n:"Kargo sifarişi", firm:"Kargo şirkəti / göndərən", row:"Nə gəlir?", hint:"Kargo ilə gələn göndəriş. İzləmə nömrəsini qeyddə yazın. Anbar qəbul edir." },
+  swap:{ ic:"🔄", n:"Əvəzinə gələn mal", firm:"Firma", row:"Gələcək malın adı", hint:"Bir malın yerinə başqası gəlir. Anbar və Keyfiyyət əvvəlcədən bilsin ki, gələn mal fərqlidir." } };
+function pbox(mode){
+  const T = PT[mode], d = sDraft;
+  if (!d || d.mode!==mode) return '<button class="ptb" data-sopen="'+mode+'"><i>'+T.ic+'</i><b>'+T.n+'</b></button>';
+  return '<div class="box late"><h3>'+T.ic+' '+T.n+'</h3><div class="hint">'+T.hint+' <b>* — mütləqdir.</b></div>'+
+    '<input list="flist" placeholder="'+T.firm+' *" data-sd="firm" value="'+esc(d.firm)+'"><datalist id="flist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
+    (mode==="swap" ? '<input placeholder="Hansı malın yerinə? * (məs. Bravo-dan Un əvəzinə)" data-sd="swap" value="'+esc(d.swap||"")+'">' : "")+
+    '<div class="dt"><label class="qby"><span>📅 Gəliş günü *</span><input type="date" data-sd="eta" value="'+esc(d.eta)+'" min="'+today()+'"></label>'+
+      '<label class="qby"><span>Hara *</span><select data-sd="wh">'+WAREHOUSES.map(w=>'<option'+(d.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></label></div>'+
+    '<div class="items-edit">'+datalist()+d.rows.map((r,k)=>'<div class="it"><input list="plist" placeholder="'+T.row+' *" data-sr="'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 2 kq" data-sr="'+k+'-q" value="'+esc(r.q)+'"><button class="sm" data-srdel="'+k+'" aria-label="Sil">×</button></div>').join("")+'</div>'+
+    '<div class="row"><button class="sm" data-sradd="1">+ Sətir</button></div>'+
+    '<input placeholder="Qeyd (istəyə görə'+(mode==="cargo"?", məs. izləmə nömrəsi":"")+')" data-sd="note" value="'+esc(d.note)+'">'+
+    '<div class="row"><button class="pri grow" data-ssend="1">Göndər → '+esc(d.wh)+(mode==="buy"?", Texnoloq, Keyfiyyət":mode==="swap"?", Keyfiyyət":"")+'</button><button data-scancel="1">Ləğv et</button></div></div>';
+}
+function vBuyNew(){
+  const open = sDraft && PT[sDraft.mode];
+  return '<h2>➕ Satınalmanın sifarişi</h2><div class="meta">Anbara gələcək hər malı əvvəlcədən yazın. Yazılmasa, Anbar «xəbərsiz mal» kimi qeyd edəcək — Rəhbərliyə xəbər gedir və statistikaya düşür.</div>'+
+    (open ? pbox(sDraft.mode) : '<div class="ptg">'+Object.keys(PT).map(pbox).join("")+'</div>');
+}
+function purchaseSend(d){
+  const T = PT[d.mode], firm = (d.firm||"").trim(), rows = d.rows.filter(r=>r.n.trim()||r.q.trim()), now = new Date().toISOString();
+  if (!firm) return toast(T.firm+" yazılmalıdır");
+  if (d.mode==="swap" && !(d.swap||"").trim()) return toast("Hansı malın yerinə gəldiyini yazın");
+  if (!d.eta) return toast("Gəliş gününü seçin");
+  if (!rows.length || rows.some(r=>!r.n.trim())) return toast("Malların adını yazın");
+  const items = rows.map(r=>{ const pid = ensureProd(r.n, firm); return { pid:Number(pid), qty: r.q.trim() ? withUnit(r.q, Number(pid)) : "1 əd" }; });
+  const o = { id:nextId(), from:"Satınalma", wh:d.wh, stype:d.mode, created:now, items, status:"yolda", eta:d.eta, supplier:firm, last_move:now, acceptedAt:now,
+    note:[d.mode==="swap" ? "🔄 Əvəzinə: "+d.swap.trim() : "", (d.note||"").trim()].filter(Boolean).join(" · "), photos:[], files:[], comments:[], history:[] };
+  S.orders.unshift(o);
+  addLog(o, "Satınalma yazdı: "+T.n, firm+" · "+fmtD(d.eta)+(o.note?" · "+o.note:""));
+  notify([o.wh].concat(hasQC(o)?["Keyfiyyət"]:[]), "note", T.ic+" "+T.n+" · #"+o.id+" · "+firm, fmtD(d.eta)+" → "+o.wh+(d.mode==="swap"?" · əvəzinə: "+d.swap.trim():"")+" · gələndə qəbul edin", items.map(i=>pname(i.pid)+" "+i.qty), o.id);
+  sDraft = null; save(); render(); toast(T.n+" yazıldı → "+o.wh+" xəbər tutdu");
+}
 // Satınalma: nə etməlidir (gözləyən) və nə edib (son 7 gün)
 function vBuy(){
   const me = role==="Satınalma";
@@ -1771,7 +1817,7 @@ function vBuy(){
   const done = S.orders.flatMap(o=>(o.history||[]).filter(h=>h.by==="Satınalma" && h.at>=from).map(h=>({o,h}))).sort((a,b)=>b.h.at.localeCompare(a.h.at)).slice(0,80);
   const hl = S.orders.filter(held);
   const todo = acc.length + late.length + ans.length + hl.length;
-  return (me ? sampleBox("buy") : "") + '<h2>Satınalma · etməli olduqları <span class="cnt">'+todo+'</span></h2>'+
+  return (me ? '<button class="sm" data-go="new">➕ Satınalmanın sifarişi — nümunə, ofis, kargo, əvəzinə gələn mal</button>' : "") + '<h2>Satınalma · etməli olduqları <span class="cnt">'+todo+'</span></h2>'+
     (hl.length ? '<h3>⛔ Xəbərsiz gələnlər — cavab yazın · '+hl.length+'</h3>'+hl.map(o=>orderCard(o)).join("") : "")+
     (todo ? "" : '<div class="empty">✓ Satınalmanın gözləyən işi yoxdur</div>')+
     (acc.length ? '<h3>📥 Qəbul edilməli sifarişlər · '+acc.length+'</h3>'+acc.map(o=>me?orderCard(o):orderBrief(o)).join("") : "")+
@@ -1876,7 +1922,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v61 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v62 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2391,6 +2437,8 @@ function stats(a,b){
     lates: S.orders.filter(o=>o.status!=="redd").flatMap(o=>(o.lates||[]).filter(e=>inR(e.eta)).map(e=>({o,e}))).sort((x,y)=>x.e.eta.localeCompare(y.e.eta)) };
   st.lateNoAns = st.lates.filter(r=>!r.e.note).length;
   st.surprise = S.orders.filter(o=>o.unannounced && inR(o.created.slice(0,10)));
+  st.unann = S.orders.filter(o=>o.rep && !o.deleted && inR(o.created.slice(0,10)));          // xəbərsiz mal / qaiməsiz mal
+  st.own = S.orders.filter(o=>o.stype && !o.deleted && inR(o.created.slice(0,10)));           // Satınalmanın öz sifarişləri
   st.samples = S.orders.filter(o=>o.sample && inR(o.created.slice(0,10)));
   st.lates.forEach(({e})=>{ const x = st.sup[e.firm] = st.sup[e.firm] || {n:0,full:0,bad:0,qc:0,bought:0,nf:0}; x.late = (x.late||0)+1; });
   rows.forEach(({o,i})=>{ const k = o.supplier||"Firmasız", x = st.sup[k] = st.sup[k] || {n:0,full:0,bad:0,qc:0,bought:0,nf:0};
@@ -2406,11 +2454,14 @@ function statsHtml(a,b){
   return '<div class="pipe">'+tile(s.items,"Mal","wait")+tile(s.full,"Tam gəldi","ok")+tile(s.part,"Az gəldi","chk")+tile(s.miss,"Gəlmədi","bad")+tile(s.qc.length,"Keyfiyyət ✗","bad")+tile(s.lates.length,"Gecikmə","wait")+'</div>'+
     '<div class="card"><table><tbody>'+
     [["Sifariş (Anbar, İnqilab, Texnoloq)",s.orders],["Texnoloqun sifarişi",s.techOrders],["Hələ gözlənilən mal",s.wait],["Vaxtında qəbul olunan sifariş",s.ontime==null?"—":s.ontime+"%"],
+     ["Satınalmanın öz sifarişi (nümunə/ofis/kargo/əvəz)", s.own.length+" · "+["office","cargo","swap"].map(k=>PT[k].ic+" "+s.own.filter(o=>o.stype===k).length).join(" ")],
+     ["⚠ Xəbərsiz gələn (Satınalma xəbər verməyib)", s.unann.length+s.surprise.length],
      ["Satınalmanın cavabı",s.ans+" (əvəzedici: "+s.subs+")"],["Cavabsız qalan",s.open.length],["Texnoloq: qəbul / rədd",s.techOk+" / "+s.tech.length],["Kataloqa yeni mal",s.newp.length]]
       .map(([l,v])=>'<tr><td>'+l+'</td><td class="num">'+v+'</td></tr>').join("")+'</tbody></table></div>'+
     '<h3>Firmalar və Təchizatçı</h3><div class="tbl card"><table><thead><tr><th></th><th class="num">Mal</th><th class="num">Tam</th><th class="num">Problem</th><th class="num">Keyf. ✗</th><th class="num">Gecikmə</th></tr></thead><tbody>'+
     sups.map(k=>{ const x = s.sup[k]; return '<tr><td>'+(isDriver(k)?"🚚 ":"")+esc(k)+'</td><td class="num">'+x.n+'</td><td class="num">'+x.full+'</td><td class="num">'+x.bad+'</td><td class="num">'+x.qc+'</td><td class="num">'+(x.late||0)+'</td></tr>'; }).join("")+'</tbody></table></div>'+
     list("🧪 Nümunələr (⚠ — Satınalma xəbər verməyib)", s.samples, o=>'<tr><td>'+fmtD(o.created.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(o.supplier||"")+'</b>'+(o.unannounced?' <span class="pill p-bad">⚠ xəbərsiz</span>':"")+'<div class="meta">→ '+esc(o.wh)+' · #'+o.id+(o.hold?" · "+(o.holdDone?"Satınalma "+hTxt((new Date(o.holdDone.at)-new Date(o.hold.at))/HOUR)+" sonra yazdı":"hələ yazılmayıb"):"")+'</div></td><td>'+o.items.map(i=>esc(pname(i.pid))+' '+(i.techRes==="ok"?"✓":i.techRes==="bad"?"✗":"…")).join(", ")+'</td></tr>')+
+    list("⚠ Xəbərsiz gələn mallar — Satınalma əvvəlcədən yazmayıb", s.unann, o=>'<tr><td>'+fmtD(o.created.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(holdOf(o).n)+'</b> → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'<div class="meta">'+esc((o.hold&&o.hold.desc)||"")+'</div></td><td>'+(o.holdDone?'<span class="pill p-ok">Satınalma cavab verdi</span>':'<span class="pill p-bad">cavab yoxdur</span>')+'</td></tr>')+
     list("🕒 Gecikmələr (vaxtında gəlməyən firmalar)", s.lates, ({o,e})=>'<tr><td>'+fmtD(e.eta).slice(0,5)+'</td><td><b>'+esc(e.firm)+'</b><div class="meta">→ '+esc(o.wh)+' · #'+o.id+'</div></td><td>'+(e.note?esc(e.note):'<span class="pill p-bad">Satınalma məlumat verməyib</span>')+'<div>'+
       (e.arrived ? '<span class="pill p-warn">gəldi '+fmtD(e.arrived).slice(0,5)+' · '+Math.max(1,Math.round((new Date(e.arrived)-new Date(e.eta))/DAY))+' gün gec</span>' : e.none ? '<span class="pill p-bad">gəlmədi</span>' : e.newEta ? '<span class="meta">yeni tarix '+fmtD(e.newEta).slice(0,5)+'</span>' : '<span class="meta">gözlənilir</span>')+'</div></td></tr>')+
     list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?(r.i.ans.none?'✗ tapılmır':'→ '+fmtD(r.i.ans.date).slice(0,5)):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
@@ -2782,6 +2833,7 @@ async function addDraftPhotos(list){
 // ----- Yeni sifariş (yalnız Anbar və İnqilab): neçə saatlıq, mallar, göndər -----
 const HOURS = [2,4,8,12,24,48,72];
 function vNew(){
+  if (role==="Satınalma") return vBuyNew();
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
   const nb = new Set(draft.items.map(i=>i.blk||0)).size;
   const items = datalist() + draft.items.map((it,k)=>(nb>1 && (k===0 || (draft.items[k-1].blk||0)!==(it.blk||0)) ? '<div class="blkh">'+ord((it.blk||0)+1)+' dəstə · ayrıca sifariş</div>' : "")+'<div class="it wl'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><input class="lft-in" placeholder="qalıq" title="Anbarda nə qədər qalıb" data-ii="'+k+'" data-f="left" value="'+esc(it.left||"")+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
