@@ -1420,7 +1420,7 @@ function sampleBox(mode){
     '<div class="items-edit">'+datalist()+d.rows.map((r,k)=>'<div class="it"><input list="plist" placeholder="Nümunənin adı" data-sr="'+k+'-n" value="'+esc(r.n)+'"><input placeholder="məs. 1 kq" data-sr="'+k+'-q" value="'+esc(r.q)+'"><button class="sm" data-srdel="'+k+'" aria-label="Sil">×</button></div>').join("")+'</div>'+
     '<div class="row"><button class="sm" data-sradd="1">+ Sətir</button></div>')+
     '<input placeholder="Qeyd (istəyə görə)" data-sd="note" value="'+esc(d.note)+'">'+
-    '<div class="row"><button class="pri" data-ssend="1">'+(mode==="buy"?"Göndər → Anbar və Texnoloq":"Qeyd et → Satınalma və Rəhbərlik")+'</button><button data-scancel="1">Ləğv et</button></div></div>';
+    '<div class="row"><button class="pri" data-ssend="1">'+(mode==="buy"?"Göndər → Anbar, Texnoloq, Keyfiyyət":"Qeyd et → Satınalma və Rəhbərlik")+'</button><button data-scancel="1">Ləğv et</button></div></div>';
 }
 function sampleSend(){
   const d = sDraft; if (!d) return;
@@ -1456,8 +1456,8 @@ function sampleSend(){
   const names = items.map(i=>pname(i.pid)+" "+i.qty);
   if (d.mode==="buy"){
     addLog(o, "Satınalma nümunə yazdı", d.firm+" · "+fmtD(d.eta));
-    notify([d.wh,"Texnoloq"], "note", "🧪 Nümunə gələcək · #"+o.id+" · "+d.firm, fmtD(d.eta)+" → "+d.wh+" · gələndə Anbar qəbul edir, Texnoloq nəticə verir", names, o.id);
-    toast("Nümunə yazıldı → "+d.wh+" və Texnoloq gördü");
+    notify([d.wh,"Texnoloq","Keyfiyyət"], "note", "🧪 Nümunə gələcək · #"+o.id+" · "+d.firm, fmtD(d.eta)+" → "+d.wh+" · gələndə Anbar qəbul edir, Texnoloq baxış gününü təyin edib nəticə verir", names, o.id);
+    toast("Nümunə yazıldı → "+d.wh+", Texnoloq və Keyfiyyət xəbər tutdu");
   } else {
     addLog(o, "Xəbərsiz nümunə gəldi", d.firm+" · Satınalma xəbər verməyib");
     notify(["Satınalma","Rəhbərlik","Texnoloq"], "late", "⚠ Xəbərsiz nümunə gəldi · #"+o.id+" · "+d.firm, "Satınalma nümunəni əvvəlcədən yazmayıb → "+d.wh+" qəbul edir, Texnoloq yoxlayacaq", names, o.id);
@@ -1506,7 +1506,7 @@ function holdSave(id){
   o.supplier = d.firm.trim(); o.holdDone = { at:now, by:role }; o.last_move = now;
   const hrs = hTxt((Date.now()-new Date(o.hold.at))/HOUR);
   addLog(o, "Satınalma nümunəni yazdı ("+hrs+" sonra)", o.supplier+" · "+o.items.map(i=>pname(i.pid)).join(", "));
-  notify([o.wh,"Texnoloq","Rəhbərlik"], "ok", "🧪 #"+o.id+" nümunə yazıldı · "+o.supplier, o.wh+" qəbul etsin, sonra Texnoloq nəticə verəcək · "+hrs+" saxlanıldı", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
+  notify([o.wh,"Texnoloq","Keyfiyyət","Rəhbərlik"], "ok", "🧪 #"+o.id+" nümunə yazıldı · "+o.supplier, o.wh+" qəbul etsin, sonra Texnoloq nəticə verəcək · "+hrs+" saxlanıldı", o.items.map(i=>pname(i.pid)+" "+i.qty), o.id);
   delete hDraft[id]; save(); render(); toast("Yazıldı → "+o.wh+" qəbul edə bilər");
 }
 // ===================== 📝 Satış: tapşırıqlar və öz təqvimi =====================
@@ -1788,7 +1788,9 @@ function vQc(){
   const doneAll = S.orders.filter(o=>o.qcAt && o.items.some(i=>i.qc) && o.status!=="redd").sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
   const done = qcAll ? doneAll : doneAll.filter(o=>daysTo(o.qcAt.slice(0,10))>=-30);
   const ex = expList();
-  return '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
+  const smp = S.orders.filter(o=>o.sample && !o.deleted && ["yolda","anbar"].includes(o.status) && !held(o)).sort((a,b)=>(a.eta||"").localeCompare(b.eta||""));
+  return (smp.length ? '<h2>🧪 Gələcək nümunələr <span class="cnt">'+smp.length+'</span></h2><div class="meta">Məlumat üçün — Satınalma yazıb, Anbar qəbul edəcək, Texnoloq dəyərləndirəcək.</div>'+smp.map(o=>orderBrief(o)).join("") : "")+
+    '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
     
     (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
     ((op=>(op.length ? '<h2>📝 Tamamlanmalı · qeydlər <span class="cnt">'+op.length+'</span></h2><div class="meta">Anbara OK verilib. Dərəcə, tarix və yoxlayanı vaxtınız olanda yazın — istəyə görədir.</div>'+op.map(o=>orderCard(o)).join("") : ""))
@@ -1874,7 +1876,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v60 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v61 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
