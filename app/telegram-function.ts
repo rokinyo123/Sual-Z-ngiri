@@ -77,7 +77,7 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   return { orders, pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
-const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req;
+const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype !== "office" && o.stype !== "cargo";
 const held = (o: any) => !!(o.hold && !o.holdDone);
 const HOLDN: Record<string, string> = { sample: "🧪 xəbərsiz nümunə", noinv: "📄 qaiməsiz mal", noorder: "📦 xəbərsiz mal" };
 const holdLine = (o: any) => `⛔ ${link(o.id)} ${HOLDN[o.hold?.t || "sample"]} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} · ${hTxt((Date.now() - new Date(o.hold.at).getTime()) / H)} — Satınalma ${o.rep ? "cavab verməyib" : "yazmayıb"}` + (o.hold?.desc ? `\n   ${esc(String(o.hold.desc).slice(0, 120))}` : "");
