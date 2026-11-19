@@ -664,6 +664,7 @@ const Cloud = (() => {
     }
     for (const p of S.products) if (isD(p.photo) && !C.noStore) p.photo = await up(p.photo, "mehsul.jpg");
     for (const x of (S.exps||[])) if (isD(x.photo) && !C.noStore) x.photo = await up(x.photo, "qebz.jpg");
+    for (const x of (S.qas||[])) if (isD(x.photo) && !C.noStore) x.photo = await up(x.photo, "akt.jpg");
   }
   // Yerli vəziyyəti yazılara çevir
   function records(){
@@ -677,6 +678,7 @@ const Cloud = (() => {
     (S.exps||[]).forEach(x=>out.push(["meta", "exp-"+x.id, x]));
     (S.meets||[]).forEach(x=>out.push(["meta", "meet-"+x.id, x]));
     (S.mtasks||[]).forEach(x=>out.push(["meta", "mt-"+x.id, x]));
+    (S.qas||[]).forEach(x=>out.push(["meta", "qa-"+x.id, x]));
     out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
     return out;
   }
@@ -709,6 +711,7 @@ const Cloud = (() => {
     else if (row.id.startsWith("exp-")) put(S.exps = S.exps||[], d, x=>"exp-"+x.id===row.id);
     else if (row.id.startsWith("meet-")) put(S.meets = S.meets||[], d, x=>"meet-"+x.id===row.id);
     else if (row.id.startsWith("mt-")) put(S.mtasks = S.mtasks||[], d, x=>"mt-"+x.id===row.id);
+    else if (row.id.startsWith("qa-")) put(S.qas = S.qas||[], d, x=>"qa-"+x.id===row.id);
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
@@ -1287,20 +1290,20 @@ function myWork(){
 function tabsFor(r){
   // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
   const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
-    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], meet:["📋","İclaslar"], exp:["💰","Hesabat"] };
+    days:["🚚","Gələcək mallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], meet:["📋","İclaslar"], qa:["🛡","Aktlar"], exp:["💰","Hesabat"] };
   const BY = {
-    "Anbar":           ["home","new","orders","days"],
-    "Anbar (İnqilab)": ["home","new","orders","days"],
-    "Satınalma":       ["home","buy","new","orders","days","prob"],
-    "Keyfiyyət":       ["home","qc","orders","days"],
+    "Anbar":           ["home","new","orders","days","qa"],
+    "Anbar (İnqilab)": ["home","new","orders","days","qa"],
+    "Satınalma":       ["home","buy","new","qa","orders","days","prob"],
+    "Keyfiyyət":       ["home","qc","qa","orders","days"],
     "Texnoloq":        ["home","new","orders","days"],
     "Satış":           ["tasks","tcal","home","new","orders"],
     "Üzeyir":          ["tasks","tcal","home","new","orders"],
     "Elçin":           ["tasks","tcal","home","new","orders"],
     "İstehsalat":      ["home","new","orders","exp"],
     "Çeşidləmə":       ["home","new","orders","exp"],
-    "Rəhbərlik":       ["home","meet","tasks","orders","buy","qc","days","res","prob","arch"],
-    "Admin":           ["home","meet","orders","buy","qc","days","res","prob","arch","catalog"],
+    "Rəhbərlik":       ["home","meet","tasks","qa","orders","buy","qc","days","res","prob","arch"],
+    "Admin":           ["home","meet","qa","orders","buy","qc","days","res","prob","arch","catalog"],
   };
   return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
 }
@@ -1376,16 +1379,17 @@ function renderTabs(){
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
   const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0) + myMeetTasks().filter(t=>!t.done).length;
   const nq = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).length, np = probCount();
-  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : 0;
+  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : k==="qa" ? qaMine().length : 0;
     return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("");
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  autoMissing(); stuckSignals(); taskSignals(); meetSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
+  autoMissing(); stuckSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
   if (tab==="new" && role!=="Satınalma") bindNew();
+  if ($("qPhoto")) $("qPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); qDraft.photo = sm; render(); };
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
   if (tab==="catalog") filterRows($("cQ"));
   tabFx();
@@ -1727,6 +1731,150 @@ function meetAct(d){
   if (d.mtrok){ const t = T(d.mtrok); if (!t || role!=="Rəhbərlik") return true; t.done = { st:"ok", by:"Rəhbərlik", at:now }; save(); render(); toast("Edildi ✓"); return true; }
   return false;
 }
+// ===================== 🛡 Aktlar: problem aktı və qaytarma =====================
+// Problem aktı (Keyfiyyət açır): məhsul, növ, təsvir → Satınalma "Razıyam + tədbir" / "Razı deyiləm + şərh" (şərhsiz olmaz)
+// → son qərarı Keyfiyyət verir: Bağla və ya Yenidən aç. Cavab verilənə qədər açıq qalır, gündəlik xatırladılır.
+// Eyni məhsul + eyni problem 60 gün içində təkrarlanırsa — "🔁 Təkrar", Rəhbərliyə xəbər. Qiymət yazılmır.
+// Qaytarma (son istifadə tarixi yaxın): Anbarın malı üçün Keyfiyyət, İnqilabın malı üçün İnqilab təklif edir →
+// Satınalma qaytarılacaq günü təyin edir → (Anbar malında) son qərarı Keyfiyyət verir → anbar həmin gün "Qaytarıldı" basır;
+// gün keçib qaytarılmayıbsa — Satınalmaya hər gün xəbərdarlıq.
+const QA_TYPES = ["Artıq gəlib / çox ehtiyat","Xarab olur","Son istifadə tarixi yaxındır","Saxlama şəraiti","Etiket / qablaşdırma","Digər"];
+const QA_SEV = { low:["Aşağı","p-mute"], mid:["Orta","p-warn"], high:["Yüksək","p-bad"] };
+let qDraft = null; const qTxt = {}, qDate = {};
+const qaList = () => (S.qas||[]).filter(x=>!x.deleted);
+const qaOwnWh = x => x.kind==="ret" && x.wh===role;
+const qaVisible = x => ["Satınalma","Keyfiyyət","Rəhbərlik","Admin"].includes(role) || qaOwnWh(x);
+// mənim növbəmdir?
+function qaMine(){
+  return qaList().filter(x=>{
+    if (x.status==="open") return role==="Satınalma";
+    if (x.status==="answered") return role==="Keyfiyyət";
+    if (x.status==="dated") return role==="Keyfiyyət";
+    if (x.status==="approved") return role===x.wh;
+    return false; });
+}
+const qaWait = x => x.status==="open" ? "Satınalma" : x.status==="answered" || x.status==="dated" ? "Keyfiyyət" : x.status==="approved" ? x.wh : "";
+const qaRetLate = x => x.kind==="ret" && x.status==="approved" && x.ret && x.ret.date < today();
+function qaSignals(){
+  if (!["Satınalma","Keyfiyyət","Rəhbərlik","Anbar","Anbar (İnqilab)"].includes(role)) return;
+  const t = today();
+  qaList().forEach(x=>{
+    if (x.status==="open" && (Date.now()-new Date(x.since||x.at))/HOUR > 24)
+      notify(["Satınalma","Rəhbərlik"], "late", "⏰ "+(x.kind==="ncr"?"Problem aktına":"Qaytarma təklifinə")+" cavab verilməyib · "+x.product, x.desc||"", [x.kind==="ncr"?x.ptype:"Son istifadə: "+(x.exp||"")], null, "qa-open-"+x.id+"-"+t);
+    if (qaRetLate(x))
+      notify(["Satınalma",x.wh], "late", "↩ Qaytarma günü keçib · "+x.product, x.wh+" · qaytarılmalı idi: "+fmtD(x.ret.date), [], null, "qa-late-"+x.id+"-"+t);
+  });
+}
+function qaCard(x){
+  const ST = { open:["⏳ Satınalmanın cavabı gözlənilir","p-wait"], answered:["Keyfiyyətin qərarı gözlənilir","p-qc"], dated:["Keyfiyyətin qərarı gözlənilir","p-qc"],
+    approved:[qaRetLate(x)?"⏰ Qaytarma günü keçib":"↩ "+(x.ret?fmtD(x.ret.date):"")+" qaytarılacaq", qaRetLate(x)?"p-bad":"p-wait"], closed:["✓ Bağlandı","p-ok"], returned:["✓ Qaytarıldı","p-ok"], kept:["Qaytarılmadı (qərar)","p-mute"] };
+  const st = ST[x.status] || ["",""];
+  const T = id => '<textarea data-qt="'+x.id+'" placeholder="'+id+'">'+esc(qTxt[x.id]||"")+'</textarea>';
+  let act = "";
+  if (x.status==="open" && role==="Satınalma"){
+    act = x.kind==="ncr"
+      ? '<div class="box">'+T("Tədbir və ya şərh — mütləqdir (məs. növbəti sifarişdə 30% azaldıram)")+'<div class="row wrap"><button class="okb" data-qans="'+x.id+'|1">✓ Razıyam</button><button class="badb" data-qans="'+x.id+'|0">✗ Razı deyiləm</button></div></div>'
+      : '<div class="box"><label class="qby"><span>↩ Qaytarılacaq gün</span><input type="date" data-qd="'+x.id+'" min="'+today()+'" value="'+esc(qDate[x.id]||"")+'"></label>'+T("Qeyd (istəyə görə: firma ilə razılaşma və s.)")+'<button class="pri" data-qdate="'+x.id+'">Günü təyin et</button></div>';
+  } else if (x.status==="answered" && role==="Keyfiyyət"){
+    act = '<div class="box">'+T("Şərh (yenidən açanda mütləqdir)")+'<div class="row wrap"><button class="okb" data-qfin="'+x.id+'|1">✓ Bağla — tədbir qəbuldur</button><button class="badb" data-qfin="'+x.id+'|0">↩ Yenidən aç</button></div></div>';
+  } else if (x.status==="dated" && role==="Keyfiyyət"){
+    act = '<div class="box">'+T("Şərh (qaytarılmasın deyəndə mütləqdir)")+'<div class="row wrap"><button class="okb" data-qret="'+x.id+'|1">✓ Qaytarılsın → '+esc(x.wh)+'</button><button class="badb" data-qret="'+x.id+'|0">✗ Qaytarılmasın</button></div></div>';
+  } else if (x.status==="approved" && role===x.wh){
+    act = '<div class="box"><button class="okb big" data-qdone="'+x.id+'">↩ Qaytarıldı</button><div class="hint">'+fmtD(x.ret.date)+' günü mal qaytarılanda basın.</div></div>';
+  }
+  const tl = [];
+  if (x.ans) tl.push((x.ans.agree?"✓ <b>Satınalma razıdır</b>":"✗ <b>Satınalma razı deyil</b>")+" · "+shortT(new Date(x.ans.at))+": "+esc(x.ans.text));
+  if (x.ret) tl.push("📅 <b>Satınalma</b> qaytarma günü: <b>"+fmtD(x.ret.date)+"</b>"+(x.ret.note?" · "+esc(x.ret.note):""));
+  (x.notes||[]).forEach(n=>tl.push("🔍 <b>"+esc(n.by)+"</b> · "+shortT(new Date(n.at))+": "+esc(n.text)));
+  if (x.returned) tl.push("↩ <b>"+esc(x.returned.by)+"</b> qaytardı · "+shortT(new Date(x.returned.at)));
+  return '<article class="oc" style="border-left-color:var('+(["closed","returned","kept"].includes(x.status)?"--ok":x.status==="open"?"--bad":"--wait")+')">'+
+    '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:8px"><b>'+(x.kind==="ncr"?"🛡 ":"↩ ")+esc(x.product)+'</b><span class="pill '+st[1]+'">'+st[0]+'</span></div>'+
+    '<div class="row wrap" style="gap:4px">'+(x.kind==="ncr"?'<span class="pill p-info">'+esc(x.ptype)+'</span><span class="pill '+QA_SEV[x.sev||"mid"][1]+'">'+QA_SEV[x.sev||"mid"][0]+'</span>':'<span class="pill p-info">Qaytarma · son istifadə '+esc(x.exp||"")+'</span>')+
+      (x.repeat?'<span class="pill p-bad">🔁 Təkrar</span>':"")+(x.reopen?'<span class="pill p-warn">↩ '+x.reopen+' dəfə yenidən açılıb</span>':"")+'</div>'+
+    '<div class="meta">'+esc(x.wh)+(x.qty?' · '+esc(x.qty):"")+' · '+esc(x.by)+' · '+shortT(new Date(x.at))+'</div>'+
+    (x.desc?'<div style="white-space:pre-wrap">'+esc(x.desc)+'</div>':"")+
+    (x.photo?'<a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Şəkil" style="max-height:120px;border-radius:10px"></a>':"")+
+    (tl.length?'<div class="spn">'+tl.join("<br>")+'</div>':"")+act+'</article>';
+}
+function qaForm(){
+  const d = qDraft;
+  return '<div class="card"><h2>'+(d.kind==="ncr"?"🛡 Problem aktı":"↩ Qaytarma təklifi")+'</h2>'+datalist()+
+    '<input list="plist" data-qf2="product" placeholder="Məhsul *" value="'+esc(d.product)+'">'+
+    (d.kind==="ncr" ? '<label class="qby"><span>Problemin növü *</span><select data-qf2="ptype"><option value="">— seçin —</option>'+QA_TYPES.map(t=>'<option'+(d.ptype===t?" selected":"")+'>'+t+'</option>').join("")+'</select></label>'
+      : '<label class="qby"><span>Son istifadə tarixi</span><input data-qf2="exp" placeholder="gün.ay.il" inputmode="numeric" value="'+esc(d.exp||"")+'"></label>')+
+    (role==="Keyfiyyət" ? '<label class="qby"><span>Harada</span><select data-qf2="wh">'+WAREHOUSES.map(w=>'<option'+(d.wh===w?" selected":"")+'>'+w+'</option>').join("")+'</select></label>' : "")+
+    '<input data-qf2="qty" placeholder="Miqdar (məs. 120 kq)" value="'+esc(d.qty||"")+'">'+
+    '<textarea data-qf2="desc" placeholder="'+(d.kind==="ncr"?"Problemi yazın * (məs. kartoşka çox gəlib, cücərməyə başlayıb)":"Qeyd (istəyə görə)")+'">'+esc(d.desc||"")+'</textarea>'+
+    (d.kind==="ncr" ? '<div class="row wrap"><span class="hint">Vaciblik:</span>'+Object.entries(QA_SEV).map(([k,[l]])=>'<button class="'+((d.sev||"mid")===k?"pri":"sm")+'" data-qsev="'+k+'">'+l+'</button>').join("")+'</div>' : "")+
+    '<div class="row wrap"><label class="btnlink">📷 Şəkil<input type="file" id="qPhoto" accept="image/*" class="fpick"></label>'+(d.photo?'<img src="'+d.photo+'" alt="" style="height:44px;border-radius:8px">':"")+'</div>'+
+    '<div class="row"><button class="pri big grow" data-qsend="1">Göndər → Satınalma</button><button data-qcancel="1">Ləğv et</button></div></div>';
+}
+function vQa(){
+  const L = qaList().filter(qaVisible), mine = qaMine();
+  const open = L.filter(x=>!["closed","returned","kept"].includes(x.status) && !mine.includes(x)).sort((a,b)=>a.at.localeCompare(b.at));
+  const done = L.filter(x=>["closed","returned","kept"].includes(x.status) && (x.closedAt||x.at)>=plusDays(-30)).sort((a,b)=>(b.closedAt||b.at).localeCompare(a.closedAt||a.at));
+  const btns = role==="Keyfiyyət" ? '<div class="row wrap"><button class="pri" data-qnew="ncr">🛡 Problem bildir</button><button class="sm" data-qnew="ret">↩ Qaytarma təklif et</button></div>'
+    : role==="Anbar (İnqilab)" ? '<button class="pri" data-qnew="ret">↩ Qaytarma təklif et (son istifadə tarixi yaxın)</button>' : "";
+  return '<h2>🛡 Problem aktları və qaytarmalar</h2>'+(qDraft ? qaForm() : btns)+
+    (mine.length ? '<h2>Sizin növbənizdir <span class="cnt">'+mine.length+'</span></h2>'+mine.map(qaCard).join("") : "")+
+    '<h2>Açıq <span class="cnt">'+open.length+'</span></h2>'+(open.length ? open.map(qaCard).join("") : '<div class="empty">✓ Açıq akt yoxdur</div>')+
+    (done.length ? '<details><summary class="meta">Son 30 gündə bağlananlar · '+done.length+'</summary>'+done.map(qaCard).join("")+'</details>' : "");
+}
+function qaHomeBlock(){
+  if (!WAREHOUSES.includes(role)) return "";
+  const R = qaList().filter(x=>x.kind==="ret" && x.status==="approved" && x.wh===role);
+  return R.length ? '<h2>↩ Qaytarılacaq mallar <span class="cnt">'+R.length+'</span></h2>'+R.map(qaCard).join("") : "";
+}
+function qaAct(d){
+  const now = new Date().toISOString(), X = id => qaList().find(x=>x.id===id), txt = id => (qTxt[id]||"").trim();
+  const note = (x, t) => { (x.notes = x.notes||[]).push({ by:role, at:now, text:t }); };
+  const done = (msg) => { save(); render(); if (msg) toast(msg); return true; };
+  if (d.qnew){ qDraft = { kind:d.qnew, product:"", ptype:"", desc:"", qty:"", sev:"mid", photo:"", exp:"", wh: WAREHOUSES.includes(role) ? role : "Anbar" }; render(); return true; }
+  if (d.qcancel){ qDraft = null; render(); return true; }
+  if (d.qsev){ qDraft.sev = d.qsev; render(); return true; }
+  if (d.qaexp){ const [oid,k] = d.qaexp.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o && o.items[k]; if (!i) return true;
+    qDraft = { kind:"ret", product:pname(i.pid), ptype:"", desc:"#"+o.id+" · "+(o.supplier||""), qty:String(i.got!=null?i.got:i.qty), sev:"mid", photo:"", exp:i.exp||"", wh:o.wh };
+    tab = "qa"; render(); window.scrollTo(0,0); return true; }
+  if (d.qsend){ const q = qDraft, prod = (q.product||"").trim();
+    if (!prod){ toast("Məhsulu yazın"); return true; }
+    if (q.kind==="ncr" && !q.ptype){ toast("Problemin növünü seçin"); return true; }
+    if (q.kind==="ncr" && !(q.desc||"").trim()){ toast("Problemi yazın"); return true; }
+    const x = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,5), kind:q.kind, product:prod, ptype:q.ptype||"", desc:(q.desc||"").trim(), qty:(q.qty||"").trim(),
+      sev:q.sev, exp:(q.exp||"").trim(), wh:q.wh, photo:q.photo||undefined, by:role, at:now, since:now, status:"open" };
+    if (x.kind==="ncr"){ const f = foldName(prod);
+      x.repeat = qaList().some(y=>y.kind==="ncr" && y.ptype===x.ptype && foldName(y.product)===f && y.at>=plusDays(-60)); }
+    (S.qas = S.qas||[]).push(x);
+    const to = ["Satınalma"].concat(x.sev==="high" || x.repeat ? ["Rəhbərlik"] : []);
+    notify(to, x.kind==="ncr" ? "late" : "note", (x.kind==="ncr" ? "🛡 Problem aktı"+(x.repeat?" · 🔁 TƏKRAR":"") : "↩ Qaytarma təklifi")+" · "+prod,
+      (x.kind==="ncr" ? x.ptype+" · " : "Son istifadə "+(x.exp||"?")+" · ")+x.wh+" — Satınalma cavab verməlidir", [x.desc, x.qty].filter(Boolean), null);
+    qDraft = null; return done(x.kind==="ncr" ? "Problem aktı Satınalmaya göndərildi" : "Qaytarma təklifi Satınalmaya göndərildi"); }
+  if (d.qans){ const [id,v] = d.qans.split("|"), x = X(id), t = txt(id); if (!x) return true;
+    if (!t){ toast(v==="1" ? "Tədbiri yazın" : "Niyə razı olmadığınızı yazın"); return true; }
+    x.ans = { agree: v==="1", text:t, at:now }; x.status = "answered"; delete qTxt[id];
+    notify(["Keyfiyyət"], v==="1" ? "ok" : "late", "🛡 Satınalma cavab verdi · "+x.product, (v==="1"?"Razıdır: ":"Razı deyil: ")+t+" — son qərarı verin", [], null);
+    return done("Cavab göndərildi → Keyfiyyət"); }
+  if (d.qfin){ const [id,v] = d.qfin.split("|"), x = X(id), t = txt(id); if (!x) return true;
+    if (v==="0" && !t){ toast("Niyə yenidən açdığınızı yazın"); return true; }
+    if (t) note(x, t); delete qTxt[id];
+    if (v==="1"){ x.status = "closed"; x.closedAt = now; notify(["Satınalma"], "ok", "✓ Problem aktı bağlandı · "+x.product, t || "Keyfiyyət tədbiri qəbul etdi", [], null); return done("Bağlandı ✓"); }
+    x.status = "open"; x.since = now; x.reopen = (x.reopen||0)+1; delete x.ans;
+    notify(["Satınalma"], "late", "↩ Problem aktı yenidən açıldı · "+x.product, t, [], null); return done("Yenidən açıldı → Satınalma"); }
+  if (d.qdate){ const x = X(d.qdate), dt = qDate[d.qdate]; if (!x) return true;
+    if (!dt){ toast("Qaytarılacaq günü seçin"); return true; }
+    x.ret = { date:dt, note: txt(x.id) || undefined, at:now }; delete qTxt[x.id];
+    if (x.wh==="Anbar (İnqilab)"){ x.status = "approved"; notify([x.wh], "note", "↩ "+x.product+" · "+fmtD(dt)+" qaytarılacaq", "Satınalma günü təyin etdi — həmin gün qaytarılanda “Qaytarıldı” basın", [], null); }
+    else { x.status = "dated"; notify(["Keyfiyyət"], "note", "↩ Qaytarma günü təyin olundu · "+x.product, fmtD(dt)+" — son qərarı verin (qaytarılsın / qaytarılmasın)", [], null); }
+    return done("Gün təyin olundu"); }
+  if (d.qret){ const [id,v] = d.qret.split("|"), x = X(id), t = txt(id); if (!x) return true;
+    if (v==="0" && !t){ toast("Niyə qaytarılmamalı olduğunu yazın"); return true; }
+    if (t) note(x, t); delete qTxt[id];
+    if (v==="1"){ x.status = "approved"; notify([x.wh,"Satınalma"], "note", "↩ "+x.product+" · "+fmtD(x.ret.date)+" qaytarılacaq", "Keyfiyyət təsdiqlədi — "+x.wh+" həmin gün qaytaranda “Qaytarıldı” bassın", [], null); return done("Təsdiqləndi → "+x.wh); }
+    x.status = "kept"; x.closedAt = now; notify(["Satınalma"], "note", "Qaytarılmayacaq · "+x.product, t, [], null); return done("Qərar yazıldı"); }
+  if (d.qdone){ const x = X(d.qdone); if (!x || role!==x.wh) return true;
+    x.returned = { by:role, at:now }; x.status = "returned"; x.closedAt = now;
+    notify(["Satınalma","Keyfiyyət"], "ok", "↩ Qaytarıldı · "+x.product, x.wh+(qaRetLate(x)?"":""), [], null); return done("Qaytarıldı ✓"); }
+  return false;
+}
 // ===================== 💰 Gündəlik xərc hesabatı (İstehsalat, Çeşidləmə) =====================
 // Hər şöbə yalnız öz yazılarını görür. Gün-gün qruplanır, hər günün və ayın cəmi çıxır; istəsə qəbzin şəklini qoyur.
 let xDraft = { date:"", what:"", amt:"", photo:"" }, xMonth = "";
@@ -1859,7 +2007,7 @@ function expList(){
 function expRow({o,i,k,d}){
   return '<div class="irow '+(d<0?"miss":"warnr")+'"><div class="in pn"><span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(d<0?"p-bad":"p-warn")+' st">'+(d<0?"vaxtı keçib":d===0?"bu gün bitir":d+" gün qalıb")+'</span></div>'+
     '<div class="rmeta">Son istifadə: <b>'+esc(i.exp)+'</b>'+(i.mfg?' · istehsal '+esc(i.mfg):"")+' · <button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"")+' → '+esc(o.wh)+'</div>'+
-    ((role==="Keyfiyyət"||adminView()) ? '<div class="row"><button class="sm" data-expdone="'+o.id+'-'+k+'">✓ İstifadə olunub / anbarda yoxdur</button></div>' : "")+'</div>';
+    ((role==="Keyfiyyət"||adminView()) ? '<div class="row wrap"><button class="sm" data-expdone="'+o.id+'-'+k+'">✓ İstifadə olunub / anbarda yoxdur</button>'+(role==="Keyfiyyət"?'<button class="sm" data-qaexp="'+o.id+'-'+k+'">↩ Qaytarma təklif et</button>':"")+'</div>' : "")+'</div>';
 }
 function expirySignals(){
   if (ONLINE && !(["Keyfiyyət","Rəhbərlik","Anbar","Anbar (İnqilab)"].includes(role) || (Cloud.me()||{}).is_admin)) return;
@@ -1891,7 +2039,7 @@ function pipe(){
 }
 function vHome(){
   const work = myWork();
-  let html = installCard() + greet() + alertsHtml() + meetHomeBlock();
+  let html = installCard() + greet() + alertsHtml() + meetHomeBlock() + qaHomeBlock();
   if (role==="Rəhbərlik" || role==="Admin") html += pipe() + '<h2>Şöbələr</h2>' + deptBoard();
   if (role==="Rəhbərlik"){
     const ot = tkList().filter(t=>!t.done).sort((a,b)=>tkDue(a)-tkDue(b)), ov = ot.filter(tkOver).length;
@@ -1922,7 +2070,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v62 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v63 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2439,6 +2587,9 @@ function stats(a,b){
   st.surprise = S.orders.filter(o=>o.unannounced && inR(o.created.slice(0,10)));
   st.unann = S.orders.filter(o=>o.rep && !o.deleted && inR(o.created.slice(0,10)));          // xəbərsiz mal / qaiməsiz mal
   st.own = S.orders.filter(o=>o.stype && !o.deleted && inR(o.created.slice(0,10)));           // Satınalmanın öz sifarişləri
+  st.ncr = (S.qas||[]).filter(x=>!x.deleted && x.kind==="ncr" && inR(x.at.slice(0,10)));
+  st.ret = (S.qas||[]).filter(x=>!x.deleted && x.kind==="ret" && inR(x.at.slice(0,10)));
+  { const a = st.ncr.filter(x=>x.ans); st.ncrResp = a.length ? Math.round(a.reduce((s,x)=>s+(new Date(x.ans.at)-new Date(x.since||x.at))/HOUR,0)/a.length) : null; }
   st.samples = S.orders.filter(o=>o.sample && inR(o.created.slice(0,10)));
   st.lates.forEach(({e})=>{ const x = st.sup[e.firm] = st.sup[e.firm] || {n:0,full:0,bad:0,qc:0,bought:0,nf:0}; x.late = (x.late||0)+1; });
   rows.forEach(({o,i})=>{ const k = o.supplier||"Firmasız", x = st.sup[k] = st.sup[k] || {n:0,full:0,bad:0,qc:0,bought:0,nf:0};
@@ -2447,7 +2598,7 @@ function stats(a,b){
 }
 function statsHtml(a,b){
   const s = stats(a,b);
-  if (!s.items && !s.orders) return '<div class="empty">Bu dövrdə sifariş yoxdur</div>';
+  if (!s.items && !s.orders && !s.ncr.length && !s.ret.length && !s.unann.length && !s.own.length) return '<div class="empty">Bu dövrdə sifariş yoxdur</div>';
   const tile = (n,l,k) => '<button class="'+k+'" tabindex="-1"><b>'+n+'</b><span>'+l+'</span></button>';
   const list = (t, rs, f) => rs.length ? '<h3>'+t+' · '+rs.length+'</h3><div class="tbl card"><table><tbody>'+rs.map(f).join("")+'</tbody></table></div>' : "";
   const sups = Object.keys(s.sup).sort((x,y)=>isDriver(x)-isDriver(y)||s.sup[y].n-s.sup[x].n);
@@ -2456,12 +2607,16 @@ function statsHtml(a,b){
     [["Sifariş (Anbar, İnqilab, Texnoloq)",s.orders],["Texnoloqun sifarişi",s.techOrders],["Hələ gözlənilən mal",s.wait],["Vaxtında qəbul olunan sifariş",s.ontime==null?"—":s.ontime+"%"],
      ["Satınalmanın öz sifarişi (nümunə/ofis/kargo/əvəz)", s.own.length+" · "+["office","cargo","swap"].map(k=>PT[k].ic+" "+s.own.filter(o=>o.stype===k).length).join(" ")],
      ["⚠ Xəbərsiz gələn (Satınalma xəbər verməyib)", s.unann.length+s.surprise.length],
+     ["🛡 Problem aktı", s.ncr.length+(s.ncr.length?" · təkrar "+s.ncr.filter(x=>x.repeat).length+" ("+Math.round(100*s.ncr.filter(x=>x.repeat).length/s.ncr.length)+"%) · Satınalma razı "+s.ncr.filter(x=>x.ans&&x.ans.agree).length+" / razı deyil "+s.ncr.filter(x=>x.ans&&!x.ans.agree).length:"")],
+     ["⏱ Satınalmanın problem aktına orta cavab vaxtı", s.ncrResp==null?"—":s.ncrResp+" saat"],
+     ["↩ Qaytarma təklifi", s.ret.length+(s.ret.length?" · qaytarıldı "+s.ret.filter(x=>x.status==="returned").length+" · gün keçib "+s.ret.filter(qaRetLate).length:"")],
      ["Satınalmanın cavabı",s.ans+" (əvəzedici: "+s.subs+")"],["Cavabsız qalan",s.open.length],["Texnoloq: qəbul / rədd",s.techOk+" / "+s.tech.length],["Kataloqa yeni mal",s.newp.length]]
       .map(([l,v])=>'<tr><td>'+l+'</td><td class="num">'+v+'</td></tr>').join("")+'</tbody></table></div>'+
     '<h3>Firmalar və Təchizatçı</h3><div class="tbl card"><table><thead><tr><th></th><th class="num">Mal</th><th class="num">Tam</th><th class="num">Problem</th><th class="num">Keyf. ✗</th><th class="num">Gecikmə</th></tr></thead><tbody>'+
     sups.map(k=>{ const x = s.sup[k]; return '<tr><td>'+(isDriver(k)?"🚚 ":"")+esc(k)+'</td><td class="num">'+x.n+'</td><td class="num">'+x.full+'</td><td class="num">'+x.bad+'</td><td class="num">'+x.qc+'</td><td class="num">'+(x.late||0)+'</td></tr>'; }).join("")+'</tbody></table></div>'+
     list("🧪 Nümunələr (⚠ — Satınalma xəbər verməyib)", s.samples, o=>'<tr><td>'+fmtD(o.created.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(o.supplier||"")+'</b>'+(o.unannounced?' <span class="pill p-bad">⚠ xəbərsiz</span>':"")+'<div class="meta">→ '+esc(o.wh)+' · #'+o.id+(o.hold?" · "+(o.holdDone?"Satınalma "+hTxt((new Date(o.holdDone.at)-new Date(o.hold.at))/HOUR)+" sonra yazdı":"hələ yazılmayıb"):"")+'</div></td><td>'+o.items.map(i=>esc(pname(i.pid))+' '+(i.techRes==="ok"?"✓":i.techRes==="bad"?"✗":"…")).join(", ")+'</td></tr>')+
     list("⚠ Xəbərsiz gələn mallar — Satınalma əvvəlcədən yazmayıb", s.unann, o=>'<tr><td>'+fmtD(o.created.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(holdOf(o).n)+'</b> → '+esc(o.wh)+(o.supplier?' · '+esc(o.supplier):"")+'<div class="meta">'+esc((o.hold&&o.hold.desc)||"")+'</div></td><td>'+(o.holdDone?'<span class="pill p-ok">Satınalma cavab verdi</span>':'<span class="pill p-bad">cavab yoxdur</span>')+'</td></tr>')+
+    list("🛡 Problem aktları (növ üzrə)", QA_TYPES.map(t=>[t, s.ncr.filter(x=>x.ptype===t)]).filter(([t,a])=>a.length), ([t,a])=>'<tr><td>'+esc(t)+'</td><td class="num">'+a.length+'</td><td class="meta">'+esc([...new Set(a.map(x=>x.product))].slice(0,6).join(", "))+'</td></tr>')+
     list("🕒 Gecikmələr (vaxtında gəlməyən firmalar)", s.lates, ({o,e})=>'<tr><td>'+fmtD(e.eta).slice(0,5)+'</td><td><b>'+esc(e.firm)+'</b><div class="meta">→ '+esc(o.wh)+' · #'+o.id+'</div></td><td>'+(e.note?esc(e.note):'<span class="pill p-bad">Satınalma məlumat verməyib</span>')+'<div>'+
       (e.arrived ? '<span class="pill p-warn">gəldi '+fmtD(e.arrived).slice(0,5)+' · '+Math.max(1,Math.round((new Date(e.arrived)-new Date(e.eta))/DAY))+' gün gec</span>' : e.none ? '<span class="pill p-bad">gəlmədi</span>' : e.newEta ? '<span class="meta">yeni tarix '+fmtD(e.newEta).slice(0,5)+'</span>' : '<span class="meta">gözlənilir</span>')+'</div></td></tr>')+
     list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?(r.i.ans.none?'✗ tapılmır':'→ '+fmtD(r.i.ans.date).slice(0,5)):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
@@ -3157,6 +3312,7 @@ $("main").addEventListener("click", e => {
     delete rqDraft[id]; save(); render(); return toast(full ? "Verildi ✓" : "Göndərildi"); }
   if (taskAct(d)) return;
   if (meetAct(d)) return;
+  if (qaAct(d)) return;
   if (expAct(d)) return;
   if (d.sopen){ sDraft = { mode:d.sopen, firm:"", eta:plusDays(1), wh: WAREHOUSES.includes(role) ? role : "Anbar", rows:[{n:"",q:""}], note:"", desc:"" }; render(); return; }
   if (d.scancel){ sDraft = null; render(); return; }
@@ -3233,6 +3389,9 @@ $("main").addEventListener("input", e => {
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
   if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
+  if (el.dataset.qf2 && qDraft){ qDraft[el.dataset.qf2] = el.value; return; }
+  if (el.dataset.qt){ qTxt[el.dataset.qt] = el.value; return; }
+  if (el.dataset.qd){ qDate[el.dataset.qd] = el.value; return; }
   if (el.dataset.mf && mDraft){ mDraft[el.dataset.mf] = el.value; return; }
   if (el.dataset.mr && mDraft){ const [k,f] = el.dataset.mr.split("|"); mDraft.rows[Number(k)][f] = el.value; return; }
   if (el.dataset.ma && mAdd){ const [k,f] = el.dataset.ma.split("|"); mAdd.rows[Number(k)][f] = el.value; return; }
