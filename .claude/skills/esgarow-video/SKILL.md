@@ -13,6 +13,7 @@ Talk to the user in Azerbaijani, "sən" form. Discuss first, then produce: **tex
 ## 1. Content rules
 - Audience: Azerbaijani Muslims; tone: təbliğ + nəsihət + "vay" fact. Facts exact, never exaggerated; hadith numbers checked.
 - Sources are shown **only on screen**, never read aloud. No parentheses with sources in the voice text.
+- **Salavat (user rule):** every written mention of the Prophet is "Peyğəmbərimiz ﷺ" (screen text, descriptions, comments); in the voice text write it out: "Peyğəmbərimiz, sallallahu aleyhi və səlləm,".
 - Write "ədəb" not "adəb"; avoid grammar terms ("fel") in narration.
 - Sensitive topics (e.g. pir, ağaca lent, qəbirdən istəmək) without insulting viewers: "bilmədən", plus the balancing truth (qəbir ziyarəti sünnədir).
 
