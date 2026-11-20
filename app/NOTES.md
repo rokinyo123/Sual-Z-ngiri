@@ -70,3 +70,10 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Never replace the Supabase DB or touch `public`. New SQL must be additive and idempotent.
 - No model identifiers in commits/PRs.
 - Owner declined (don't re-offer unprompted): photo/scorpion chain login, ordering via Telegram, server-side mayak + phone calls, `/rol` buttons.
+
+## Sadə görünüş (v64)
+- Yazılar böyüdü (body 15.5px), köməkçi mətnlər 13.5px.
+- Sifariş kartı: `from===wh` olanda yalnız bir ad (`routeTxt`). Zəncirdə yalnız cari addımın adı görünür. Düzəlt/Bağla/Sil kartın altındadır (`ownBtns`).
+- Sifarişlər filtrində sayı 0 olan şöbə düymələri gizlidir.
+- Menyuda 5-dən çox bölmə varsa: 4 bölmə + "☰ Daha" (aşağıdan açılan `#tsheet`).
+- Satınalma "Kim görsün" seçimi bağlı `<details class="more who">` içindədir (`whoOpen`).

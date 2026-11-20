@@ -496,6 +496,38 @@ body.nl-on{overflow:hidden}
 .ptg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ptb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 8px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 18px rgba(27,36,112,.08);color:var(--fg)}
 .ptb i{font-style:normal;font-size:30px} .ptb b{font-size:14px;text-align:center}
+
+/* === Sadə və rahat görünüş (v64) === */
+body{font-size:15.5px;line-height:1.5}
+.hint,.meta{font-size:13.5px}
+.pill{font-size:13px;padding:3px 10px}
+button.sm{font-size:14px;padding:6px 11px}
+.oc{padding:12px 14px;gap:8px;border-radius:14px}
+.oc-h{gap:10px}
+.oid{font-size:13px;opacity:.7}
+.route{font-size:16px}
+.oc-t{font-size:14px;gap:4px}
+.ic{font-size:14px;padding:5px 10px}
+.ic b{font-size:13.5px}
+.irow .q{font-size:14px}
+.cl{font-size:11.5px;letter-spacing:.3px}
+.spn{font-size:14px}
+h2{font-size:18px;margin-top:14px}
+.ring .st span{display:none}
+.ring .st.cur span{display:block;font-size:12px}
+.ocb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px;margin-top:2px}
+.ocb .linkb{margin-right:auto}
+.greet{padding:10px 14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.greet b{font-size:17px;display:inline}
+.greet::after{display:none}
+details.who{display:block;flex:1 1 100%;width:100%}
+details.who>summary{display:block;padding:6px 0;font-weight:600}
+.tabs button{font-size:12.5px;opacity:.82}
+.tabs button i{font-size:19px}
+.tsheet{position:fixed;inset:0;z-index:60;background:rgba(10,14,40,.35);display:flex;align-items:flex-end}
+.tsb{width:100%;background:var(--surface);border-radius:20px 20px 0 0;padding:14px 14px calc(var(--fh,64px) + 18px);display:grid;grid-template-columns:repeat(3,1fr);gap:10px;box-shadow:0 -10px 30px rgba(0,0,0,.2)}
+.tsb button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;font-size:14px;font-weight:600;border-radius:14px;background:var(--sunk);border:none;color:var(--fg)}
+.tsb button i{font-style:normal;font-size:24px}
 </style>
 
 </head>
@@ -1328,7 +1360,7 @@ function greet(){
   const d = new Date(), h = d.getHours();
   const hi = h<5 ? "Gecəniz xeyrə 🌙" : h<12 ? "Sabahınız xeyir ☀️" : h<18 ? "Günortanız xeyir 🌤" : "Axşamınız xeyir 🌙";
   const W = ["Bazar","Bazar ertəsi","Çərşənbə axşamı","Çərşənbə","Cümə axşamı","Cümə","Şənbə"], M = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avqust","sentyabr","oktyabr","noyabr","dekabr"];
-  return '<div class="greet"><b>'+hi+'</b><span>'+esc(role)+' · '+W[d.getDay()]+', '+d.getDate()+' '+M[d.getMonth()]+'</span></div>';
+  return '<div class="greet"><b>'+hi+'</b><span>'+W[d.getDay()]+', '+d.getDate()+' '+M[d.getMonth()]+'</span></div>';
 }
 // Sifarişin zənciri halqalar kimi: sifariş verən → Satınalma → Gəldi → Keyfiyyət (yalnız Anbarın öz sifarişi)
 // → Anbar/İnqilab qəbul → Texnoloq (Texnoloq sifarişi / nümunə) → (problem varsa: Satınalma cavabı) → Bitdi
@@ -1374,13 +1406,22 @@ function renderRole(){
   if (!$("thm")){ $("role").insertAdjacentHTML("afterend", '<button id="thm" class="outb thb"></button>'); $("thm").onclick = () => setTheme(document.documentElement.dataset.theme==="dark" ? "light" : "dark"); setTheme(document.documentElement.dataset.theme||"light"); }
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
 }
+let moreOpen = false;
 function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = T[0][0];
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
   const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0) + myMeetTasks().filter(t=>!t.done).length;
   const nq = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).length, np = probCount();
-  $("tabs").innerHTML = T.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : k==="qa" ? qaMine().length : 0;
-    return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("");
+  const many = T.length > 5, vis = many ? T.slice(0,4) : T, rest = many ? T.slice(4) : [];
+  if (many && rest.some(t=>t[0]===tab)){ const x = T.find(t=>t[0]===tab); vis[3] = x; rest.splice(rest.indexOf(x),1, T[3]); }
+  const cOf = {};
+  $("tabs").innerHTML = vis.map(([k,ic,l])=>{ const c = k==="home" ? n : k==="res" ? wa : k==="qc" && role==="Keyfiyyət" ? nq : k==="buy" && role==="Satınalma" ? myWork().length : k==="prob" ? np : k==="tasks" ? taskCount() : k==="qa" ? qaMine().length : 0;
+    return '<button data-tab="'+k+'" class="'+(tab===k?"on":"")+'"><i>'+ic+'</i>'+l+(c?'<span class="n">'+c+'</span>':"")+'</button>'; }).join("")+
+    (many ? '<button id="tmore" class="'+(moreOpen?"on":"")+'"><i>☰</i>Daha</button>' : "");
+  let sh = $("tsheet"); if (sh) sh.remove();
+  if (many && moreOpen){ document.body.insertAdjacentHTML("beforeend", '<div id="tsheet" class="tsheet"><div class="tsb">'+rest.map(([k,ic,l])=>'<button data-tab="'+k+'"><i>'+ic+'</i><span>'+l+'</span></button>').join("")+'</div></div>');
+    $("tsheet").onclick = e => { const b = e.target.closest("button[data-tab]"); moreOpen = false; if (b){ tab = b.dataset.tab; render(); window.scrollTo(0,0); } else renderTabs(); }; }
+  if ($("tmore")) $("tmore").onclick = e => { e.stopPropagation(); moreOpen = !moreOpen; renderTabs(); };
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
@@ -2070,7 +2111,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v63 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v64 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2092,13 +2133,13 @@ function upcoming(){
 // ----- Sifariş kartı: hər mal bir sətir, hər şöbənin öz xanası -----
 const openMore = new Set();
 // Qeyd və ya şərhin altında şöbələrin adları: kimi seçsən, onun səhifəsində görünür
-const toSel = {};
+const toSel = {}, whoOpen = {};
 const itSel = {};
 function whoChips(key, def, o){
   if (!toSel[key]) toSel[key] = new Set(def||[]);
   if (!itSel[key]) itSel[key] = new Set();
   const its = o && o.items.length>1 ? '<div class="lbl">Hansı mal? (seçməsəniz bütün sifariş)</div><div class="chips">'+o.items.map((i,k)=>'<button class="ic who'+(itSel[key].has(k)?" on":"")+'" data-wit="'+esc(key)+'|'+k+'">'+(itSel[key].has(k)?"✓ ":"")+esc(pname(i.pid))+'</button>').join("")+'</div>' : "";
-  return its+'<div class="lbl">Kim görsün? (mal gələndə yenidən xatırladılacaq)</div><div class="chips">'+DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>'<button class="ic who'+(toSel[key].has(d)?" on":"")+'" data-who="'+esc(key)+'|'+esc(d)+'">'+(toSel[key].has(d)?"✓ ":"")+esc(d)+'</button>').join("")+'</div>';
+  return '<details class="more who" data-k="'+esc(key)+'" ontoggle="whoOpen[this.dataset.k]=this.open"'+(whoOpen[key]?' open':'')+'><summary>👥 Başqa şöbə də görsün'+(toSel[key].size?' ('+toSel[key].size+')':'')+'</summary>'+its+'<div class="chips">'+DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>'<button class="ic who'+(toSel[key].has(d)?" on":"")+'" data-who="'+esc(key)+'|'+esc(d)+'">'+(toSel[key].has(d)?"✓ ":"")+esc(d)+'</button>').join("")+'</div></details>';
 }
 // Qeydin seçilən mallara tətbiqi: qayıdır [malların adları, xəta mətni]
 function applyNote(o, key, to){
@@ -2113,6 +2154,13 @@ const QC_WHY = ["Vaxtı keçib","Etiket yoxdur","Azərbaycanca yazı yoxdur","Ta
 function itemCat(st){ return st[1]==="p-ok"?"ok":st[1]==="p-warn"?"warn":st[1]==="p-bad"?"bad":"wait"; }
 // "Problem" bölməsində kartda yalnız problemli mallar göstərilir
 let onlyProb = false;
+function routeTxt(o){ return '<span class="route">'+(o.from===o.wh ? esc(o.from) : esc(o.from)+' <i>→</i> '+esc(o.wh))+'</span>'; }
+function ownBtns(o, wrap){
+  const b = (canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+
+    (canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Arxivə keçir">🔒 Bağla</button>':"")+
+    (canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sil</button>':"");
+  return b && wrap ? '<div class="ocb">'+b+'</div>' : b;
+}
 function orderCard(o){
   const st = stage(o);
   const act = myWork().some(x=>x.id===o.id);
@@ -2133,11 +2181,11 @@ function orderCard(o){
     : onlyProb && o.items.some(i=>problem(o,i)) ? '<div class="irows">'+o.items.map((i,k)=>problem(o,i)?itemRow(o,i,k,sts[k]):"").join("")+'</div>'+((n=>n?'<div class="meta">+ '+n+' mal qaydasındadır (gəlib) — burada göstərilmir</div>':"")(o.items.filter(i=>!problem(o,i)).length))
     : '<div class="irows">'+o.items.map((i,k)=>itemRow(o,i,k,sts[k])).join("")+'</div>';
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
-    '<div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'" title="Sifarişi düzəlt">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'" title="Sifarişi sil">🗑 Sil</button>':"")+'</div>'+
+    '<div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+routeTxt(o)+'<span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+'</div>'+
     chainRings(o, st)+'<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
     waitPill(o) + bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
-    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + '</article>';
+    (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + (fullSet.has(o.id)?'':ownBtns(o,1))+'</article>';
 }
 const openAct = {};
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
@@ -2392,7 +2440,7 @@ function acceptBox(o){
       return '<div class="rrow"><span class="nm">'+esc(pname(i.pid))+' <span class="meta mono">'+esc(i.qty)+'</span></span><select data-dest="'+o.id+'-'+k+'" style="width:auto;max-width:48%;padding:4px 6px;font-size:13px" aria-label="Hara">'+destOpts(dest(i))+'</select></div>'; }).join("")+'</div>';
   }).join("");
   const allDate = G.length>1 ? '<label class="qby"><span>📅 Hamısı üçün eyni gün</span><input type="date" data-etaall="'+o.id+'" value="'+esc(etaDraft[o.id+"|*"]||"")+'" min="'+today()+'"></label>' : "";
-  return '<div class="box">'+needBox+ansBox(o)+'<div class="lbl">Kimdən, nə vaxt gələcək?</div>'+allDate+'<div class="hint">Mallar kataloqa görə avtomatik bölünüb. Malı başqa firmaya və ya Təchizatçıya vermək üçün yanındakı siyahıdan seçin. Hər qrupun gəliş günü ayrıca.</div>'+body+
+  return '<div class="box">'+needBox+ansBox(o)+'<div class="lbl">Kimdən, nə vaxt gələcək?</div>'+allDate+'<div class="hint">Hər mala firma seçin və gəliş gününü yazın.</div>'+body+
     '<label class="row meta"><input type="checkbox" data-remember="'+o.id+'"'+(remember[o.id]?" checked":"")+' style="width:auto"> Firma dəyişikliyini kataloqda da yadda saxla</label>'+
     '<input id="spn-'+o.id+'" placeholder="Qeyd (məs. qabartma tozu yenidir, yoxlayın)">'+whoChips("a"+o.id,[o.wh],o)+
     '<button class="pri big" data-act="accept" data-id="'+o.id+'"'+(none?" disabled":"")+'>'+(none?"Əvvəl hər mala firma seçin":"✓ OK · "+G.length+" qrup · Anbar gözləsin")+'</button></div>';
@@ -2664,15 +2712,15 @@ let filter = "all", oq = "";
 // Sifarişlər: yalnız kim nə sifariş edib — qısa kart; "Ətraflı" basanda bütün şöbələrin xanaları açılır
 const fullSet = new Set();
 function orderBrief(o){
-  if (fullSet.has(o.id)) return orderCard(o).replace('</article>', '<button class="sm linkb" data-full="'+o.id+'">▴ Qısa göstər</button></article>');
+  if (fullSet.has(o.id)) return orderCard(o).replace('</article>', '<div class="ocb"><button class="sm linkb" data-full="'+o.id+'">▴ Qısa göstər</button>'+ownBtns(o)+'</div></article>');
   const st = stage(o), sd = sentDay(o);
   const chips = '<div class="chips">'+o.items.map(i=>{ const pr = o.status!=="acik" ? problem(o,i) : "";
     return '<span class="ic'+(pr?" bad":"")+'">'+thumb(i.pid,1)+esc(pname(i.pid))+' <b>'+esc(i.qty)+'</b>'+leftTag(i)+depTag(i)+(pr?' <span class="pill p-bad">'+esc(/^Keyfiyyət/.test(pr)?"Keyfiyyət ✗":/^Texnoloq/.test(pr)?"Texnoloq ✗":/^Satınalma/.test(pr)?"Yoxdur":pr.split(" ·")[0])+'</span>':"")+'</span>'; }).join("")+'</div>';
-  return '<article class="oc s-'+st.k+'" id="o-'+o.id+'"><div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+'<span class="route">'+esc(o.from)+' <i>→</i> '+esc(o.wh)+'</span><span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+
-    (canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+(canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Sifarişi bağla (Arxivə keçir)">🔒 Bağla</button>':"")+(canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sil</button>':"")+'</div>'+
+  return '<article class="oc s-'+st.k+'" id="o-'+o.id+'"><div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+routeTxt(o)+'<span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+
+    '</div>'+
     chainRings(o, st)+'<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
     waitPill(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
-    '<button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı: Satınalma, Keyfiyyət, Anbar</button></article>';
+    '<div class="ocb"><button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı</button>'+ownBtns(o)+'</div></article>';
 }
 let ofrom = "all";
 let osec = "aktiv";
@@ -2696,7 +2744,7 @@ function vOrders(){
   const sortR = rs => rs.sort((a,b)=> (!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)) || b.o.id-a.o.id);
   let body;
   if (osec==="aktiv"){ const list = active.filter(fit(ofrom)).filter(hit).sort((a,b)=> b.created.localeCompare(a.created)||b.id-a.id);
-    body = '<div class="seg">'+F.map(([k,l])=>'<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+active.filter(fit(k)).length+'</span></button>').join("")+'</div>'+
+    body = '<div class="seg">'+F.map(([k,l])=>{ const c = active.filter(fit(k)).length; return c||k==="all"||ofrom===k ? '<button class="'+(ofrom===k?"on":"")+'" data-ofrom="'+k+'">'+l+'<span class="k">'+c+'</span></button>' : ""; }).join("")+'</div>'+
       (list.length ? bySent(list, null, orderBrief) : '<div class="empty">Gözlənilən sifariş yoxdur</div>'); }
   else if (osec==="geldi"){ const list = came.filter(fit(ofrom)).filter(hit).sort((a,b)=>(a.arrivedAt||"").localeCompare(b.arrivedAt||"")||a.id-b.id);
     body = '<div class="meta">Mal gəlib — '+(role==="Keyfiyyət"?"yoxlayın":"Keyfiyyət yoxlayır və ya anbar qəbulu bitirir")+'.</div>'+(list.length ? bySent(list, null, orderBrief) : '<div class="empty">Hazırda yoxlanılan mal yoxdur</div>'); }
