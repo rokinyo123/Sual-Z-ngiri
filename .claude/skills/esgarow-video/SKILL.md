@@ -28,6 +28,17 @@ Talk to the user in Azerbaijani, "sən" form. Discuss first, then produce: **tex
 - Never longer than ~2:00 for shorts (2:42 episode underperformed).
 - Long videos (16:9 or 9:16, 8–10 min): chapters, a mini re-hook every 45–60 s, 2–3 signature effects per chapter, voice recorded per chapter.
 
+## 1b. HOOK CHECKLIST — ep5 standard (user, after ep13: "son videolar çox pisdir… ep5-də ilk 3 saniyəyə diqqət edirdin")
+Frame comparison ep5 vs ep13 (first 4 s): ep5 = fracture at 0.3 s, bright warm cinematic bg, huge "1:6" → 3 Arabic word chips + "3 SÖZ" → "GÜNDƏ 17 DƏFƏ" → "MƏNASINI BİLİRSƏNMİ?" + giant "?" — a new event every 0.7–1 s. ep13 = near-black frame, small "Quranda belə bir ayə var:" for 4 s, subtitle repeating it, nothing happens until 4.5 s; voice hook 6 s long because of leading [pause] tags. Every video MUST:
+1. Visual event at 0.0 s (fracture/shatter/light burst) — never a dark static frame.
+2. A concrete number + a question inside the first 3 s.
+3. Spoken hook ≤ 4–5 s, no [pause] tags before or inside the first sentence.
+4. Huge text (120–200 px), 1–3 words per beat, a new beat every 0.7–1 s.
+5. No subtitles during the hook (text is already on screen).
+6. Bright, warm, cinematic hook background (not dark).
+7. Total length 1:30–1:50. Don't reuse the "Quranda belə bir ayə var…" opener as a template every time.
+Render frames at 0.3/0.8/1.3/1.8/2.3/2.8/3.5 s and compare with `ep5/ihdina_final.mp4` before going further.
+
 ## 2a. Every new topic = TWO videos (user rule from ep8; YPP needs long-form watch hours, Shorts hours don't count)
 - **Long (16:9, ~6–8 min)**: tefsir + hadith + təbliğ, every meaning explained with images/animation; 5-step tracker on top, an on-screen open loop at the start ("Sonda: …sirri"), mercy before responsibility, a 2-s music silence before the big reveal, dua + share + teaser at the end.
 - **Short (9:16, ~1:30–2:00)**: *theory only* — hook in the first 3 s, the list/points in one line each, **one complete story** (so the Short satisfies on its own), then the big sirr is **left locked** and the outro sends viewers to the long video ("…uzun videoda. Aşağıdakı linkə toxun." + arrow to the Related-video link).
