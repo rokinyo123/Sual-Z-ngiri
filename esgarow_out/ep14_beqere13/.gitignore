@@ -1,0 +1,9 @@
+in/
+voice_main.wav
+voice_short.wav
+voice_norm.wav
+stills/
+.wa_*.json
+sheet*.jpg
+*.mp4
+!final_beqere_13_14.mp4
