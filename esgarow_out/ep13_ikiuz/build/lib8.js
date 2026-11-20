@@ -8,7 +8,7 @@ const SUB_Y = PORT ? 1468 : 984;                      // subtitle band centre
 const SAFE_B = PORT ? 1355 : 875;                     // content must stay above this
 const IM = {};
 function load(k, src) { pending++; const im = new Image(); im.onload = () => { IM[k] = im; pending--; }; im.onerror = () => { console.log('img fail', src); pending--; }; im.src = src; }
-['k_savab_1','k_savab_2','k_savab_3','k_savab_4','k_savab_5','k_emel_1','k_emel_2','k_emel_3','k_emel_4','k_emel_5','k_gunah_1','k_gunah_2','k_gunah_3','k_gunah_4','k_gunah_5'].forEach(k => load(k, `img/${k}.png`));
+['k_uz_1','k_uz_2','k_uz_3','k_uz_4','k_uz_5','k_cat_1','k_cat_2','k_cat_3','k_cat_4','k_cat_5','k_sv_1','k_sv_2','k_sv_3','k_sv_4','k_sv_5'].forEach(k => load(k, `img/${k}.png`));
 function loadBgs(list) { list.forEach(k => load(k, `img/${k}.jpg`)); }
 
 // ---------- offscreen groups ----------
@@ -78,7 +78,13 @@ function strikeReplace(a, b, x, y, size, t, ta, tb, t1 = 1e9) {
 function subs(t) {
   let cur = null, nxt = null;
   for (let i = 0; i < SUBS.length; i++) if (t >= SUBS[i].t0 - 0.12) { cur = SUBS[i]; nxt = SUBS[i + 1]; }
-  if (!cur) return; const end = Math.min(nxt ? nxt.t0 - 0.12 : 1e9, cur.t1 + 0.6); if (t > end) return;
+  if (!cur) return; let end = Math.min(nxt ? nxt.t0 - 0.12 : 1e9, cur.t1 + 0.6); if (t > end) return;
+  if (cur.w.length > 7) { // long phrase: show only the chunk (split after '…' / ',' ) that is being spoken
+    const ch = []; let c = []; cur.w.forEach((w, i) => { c.push(w); if ((/[…,]$/.test(w[0]) && c.length >= 3) || c.length >= 8) { ch.push(c); c = []; } }); if (c.length) { if (c.length < 3 && ch.length) ch[ch.length - 1] = ch[ch.length - 1].concat(c); else ch.push(c); }
+    let k = 0; ch.forEach((cc, j) => { if (t >= cc[0][1] - 0.15) k = j; });
+    const c0 = ch[k], cEnd = k + 1 < ch.length ? ch[k + 1][0][1] - 0.15 : end;
+    cur = { t0: k ? c0[0][1] : cur.t0, t1: cur.t1, w: c0 }; end = Math.min(end, cEnd);
+  }
   const a = R(t, cur.t0 - 0.12, cur.t0 + 0.05) * (1 - R(t, end - 0.12, end));
   const size = PORT ? 50 : 40, font = pf(800, size), maxW = PORT ? 900 : 1400, sp = measure(' ', font);
   const lines = []; let line = [], lw = 0;
