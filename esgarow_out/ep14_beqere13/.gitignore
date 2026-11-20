@@ -6,4 +6,5 @@ stills/
 .wa_*.json
 sheet*.jpg
 *.mp4
-!final_beqere_13_14.mp4
+render.log
+final_beqere_13_14.mp4
