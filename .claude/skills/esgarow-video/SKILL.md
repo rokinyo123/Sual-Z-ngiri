@@ -45,6 +45,7 @@ Give **all prompts in one copyable block**, each headed with its file name.
 - 3–4 elements, 1024×1024 on **solid green #00FF00**: single objects or **icon sheets (5 icons in one row, not touching)**. `key.py` keys the green and splits sheets automatically.
 - Everything else (Arabic calligraphy, numbers, cards, lines, stamps, ✓/✗) is drawn in code — list these too so the user knows nothing is missing.
 - Never depict prophets; symbolize shayatin (red embers), not draw them.
+- **Never symbolize Allah or His seeing/knowing with an image** (no eye icon — it reads as the masonic "all-seeing eye"/nazar; no hand, no figure of light). Use text or an ayah instead, e.g. أَلَمْ يَعْلَمْ بِأَنَّ اللَّهَ يَرَىٰ (Ələq 96:14). Ep13 had a gold eye for "Allah görür" and the user flagged it.
 
 ## 5. Montage (code in `esgarow_out/engine/` + `esgarow_out/ref_ep5_ihdina/`)
 Copy `engine/*` into a build dir, add `timeline.js` + `part_main.js` (start from `ref_ep5_ihdina/part_main.js`), images in `img/`, SFX in `sfx/`.
