@@ -33,7 +33,7 @@ const env = (t: number, a: number, b: number, fi = 0.35, fo = 0.3) =>
   Math.min(lerp(t, a, a + fi, 0, 1), b >= 999 ? 1 : lerp(t, b - fo, b, 1, 0));
 
 // impacts → camera shake (absolute seconds)
-const IMPACTS = [4.3, 25.0, 32.95, 66.62, 84.05];
+const IMPACTS = [4.3, 25.0, 32.95, 61.6, 66.62, 84.05];
 const Shake: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const t = useCurrentFrame() / FPS;
   let x = 0, y = 0, r = 0;
@@ -95,7 +95,7 @@ const Obj: React.FC<ObjP> = ({ n, w, x = 0, y = 0, r = 0, s = 1, o = 1, dark, cl
   </div>
 );
 // image aspect ratios (h/w) of the cut PNGs
-const AR_ = { 1: 601 / 498, 2: 826 / 613, 3: 558 / 631, 4: 615 / 435, 5: 668 / 552, 6: 962 / 529, 7: 1009 / 490, 8: 378 / 383, 9: 563 / 414, 10: 770 / 499 } as Record<number, number>;
+const AR_ = { 1: 601 / 498, 2: 826 / 613, 3: 558 / 631, 4: 615 / 435, 5: 668 / 552, 6: 962 / 529, 7: 1009 / 490, 8: 378 / 383, 9: 563 / 414, 10: 770 / 499, 11: 577 / 569, 12: 761 / 476, 13: 495 / 565, 14: 1176 / 230, 15: 1122 / 227 } as Record<number, number>;
 
 // ---------- typography ----------
 type TxP = { t: number; a: number; b?: number; y: number; size: number; dark?: boolean; red?: boolean; serif?: boolean; italic?: boolean; weight?: number; caps?: boolean; spacing?: number; glow?: boolean; children: React.ReactNode; maxW?: number; punch?: boolean };
@@ -161,6 +161,13 @@ const S1: React.FC = () => {
       <Tx t={t} a={1.2} b={2.9} y={355} size={44} dark red caps glow>dedinsə…</Tx>
       <Obj n={5} w={ww} y={wy} dark extra={{ transform: `translate(-50%,-50%) scale(${1 + land * 0.05},${squash})` }} />
       <Obj n={1} w={cw} x={cx} y={cy} r={cr} dark />
+      {t > 4.85 && (() => {
+        const k = lerp(t, 4.9, 6.3, 0, 1, Easing.inOut(Easing.sin));
+        const lx = 820 * (1 - k) + Math.sin(k * Math.PI * 2.2) * 70 * (1 - k) - 20;
+        const ly = -620 + (cy - 150 - -620) * k;
+        const lr = 160 * (1 - k) + Math.sin(k * 9) * 18 * (1 - k) + 12;
+        return <Obj n={11} w={250} x={lx} y={ly} r={lr} dark />;
+      })()}
       <Tx t={t} a={3.05} b={6.75} y={300} size={40} dark caps spacing={8}>həyatının</Tx>
       <Tx t={t} a={3.4} b={6.75} y={400} size={128} dark red serif glow>SON 10 İLİ</Tx>
       <Tx t={t} a={4.9} b={6.75} y={510} size={42} dark serif italic weight={500}>artıq indidən bilirsən</Tx>
@@ -194,7 +201,9 @@ const S2: React.FC = () => {
   const wr = (1 - win) * -60 + Math.sin(t * 1.6) * 2;
   const bOpen = spring({ frame: Math.max(0, t - A(15.0)) * FPS, fps: FPS, config: { damping: 14, mass: 0.8 } });
   const sep = lerp(t, A(21.9), A(23.0), 0, 1);
-  const bx = -200 * sep, by = 220;
+  const toL = lerp(t, A(15.2), A(15.9), 0, 1) * (1 - lerp(t, A(19.3), A(20.1), 0, 1));
+  const mri = toL;
+  const bx = -190 * toL - 200 * sep, by = 220;
   const mx = 230 * sep, my = 220 + -30 * sep, ms = 0.35 + 0.65 * sep, mr = 14 * sep;
   const drop = lerp(t, A(24.15), A(25.0), 0, 1, Easing.in(Easing.quad));
   const wtY = -1300 + (my - 230 - -1300) * drop;
@@ -208,7 +217,11 @@ const S2: React.FC = () => {
       <Tx t={t} a={A(11.6)} b={A(14.6)} y={445} size={96} serif red italic>İllüziyası</Tx>
       <Source t={t} a={A(11)} b={A(14.6)}>HERSHFIELD və b., 2009 · fMRI</Source>
 
-      {t > A(14.9) && <Obj n={3} w={600} x={bx} y={by} s={0.3 + 0.7 * bOpen} o={Math.min(1, bOpen * 1.5)} />}
+      {t > A(14.9) && <Obj n={3} w={560} x={bx} y={by} s={0.3 + 0.7 * bOpen} o={Math.min(1, bOpen * 1.5)} />}
+      {t > A(15.3) && t < A(20.2) && (
+        <Obj n={12} w={300} x={-20 + 250 * mri} y={210} r={4 * mri} s={0.7 + 0.3 * mri} o={mri}
+          extra={{ filter: `drop-shadow(0 0 ${20 + 30 * mri}px rgba(140,200,255,${0.55 * mri})) drop-shadow(0 20px 26px rgba(26,26,26,0.25))` }} />
+      )}
       {t > A(21.8) && <Obj n={4} w={330} x={mx} y={my} s={ms} r={mr} o={Math.min(1, sep * 3)} />}
       {t > A(24.1) && <Obj n={5} w={260} x={mx} y={wtY} extra={{ transform: `translate(-50%,-50%) scale(${1 + land * 0.06},${1 - land * 0.08})` }} />}
 
@@ -233,11 +246,25 @@ const S3: React.FC = () => {
   const by0 = 960 + bh / 2 + 40, byC = 230, byLow = 960 + bh * 0.25; // top 25 % visible
   const by = by0 + (byC - by0) * rise + (byLow - byC) * sink;
   const glowK = lerp(t, A(32.95), A(33.4), 0, 1) * env(t, A(32.95), A(37.6), 0.01, 0.5);
+  const live = lerp(t, A(29.5), A(31.5), 0, 1) * (1 - sink);
+  const zoom = 1 + 0.12 * lerp(t, A(30), A(41.3), 0, 1, Easing.inOut(Easing.sin)) * (1 - sink);
+  const breath = 1 + Math.sin(t * 2.1) * 0.018 * live;
+  const ry = Math.sin(t * 0.9) * 9 * live, rx = Math.cos(t * 0.7) * 4 * live;
+  const ink = lerp(t, A(37.6), A(38.55), 0, 1, Easing.out(Easing.cubic));
+  const inkOut = lerp(t, A(40.9), A(41.5), 0, 1);
+  const bookTop = by - (bh * zoom) / 2;
   return (
     <AbsoluteFill>
       <Dark />
       <AbsoluteFill style={{ opacity: glowK, background: "radial-gradient(40% 30% at 50% 40%, rgba(255,42,42,0.22), rgba(0,0,0,0) 70%)" }} />
-      <Obj n={6} w={bw} y={by} dark extra={{ filter: `drop-shadow(0 0 ${30 + 50 * glowK}px rgba(255,190,120,${0.12 + 0.25 * glowK})) drop-shadow(0 30px 40px rgba(0,0,0,0.9))` }} />
+      <div style={{ position: "absolute", inset: 0, perspective: 1400 }}>
+        <Obj n={6} w={bw} y={by} dark extra={{
+          transform: `translate(-50%,-50%) rotateY(${ry}deg) rotateX(${rx}deg) scale(${zoom * breath})`,
+          filter: `drop-shadow(0 0 ${30 + 50 * glowK}px rgba(255,190,120,${0.12 + 0.25 * glowK})) drop-shadow(0 30px 40px rgba(0,0,0,0.9))` }} />
+      </div>
+      {t > A(37.6) && t < A(41.5) && (
+        <Obj n={13} w={390} x={150} y={-1250 + (bookTop + 30 - -1250) * ink - 600 * inkOut} r={-8 + 8 * ink} o={1 - inkOut} dark />
+      )}
       <Tx t={t} a={A(28.27)} b={A(32.8)} y={300} size={40} dark caps spacing={10}>min il əvvəl</Tx>
       <Tx t={t} a={A(28.9)} b={A(32.8)} y={400} size={72} dark serif italic weight={500}>İslam alimləri adını qoydu</Tx>
       <Tx t={t} a={A(32.95)} b={A(37.6)} y={330} size={190} dark red serif glow punch>TƏSVİF</Tx>
@@ -246,14 +273,9 @@ const S3: React.FC = () => {
       <Tx t={t} a={A(35.0)} b={A(37.6)} y={620} size={54} dark serif italic weight={500}>özünü ovutmaq</Tx>
       <Tx t={t} a={A(37.7)} b={A(41.3)} y={310} size={38} dark caps spacing={8}>böyük müfəssir</Tx>
       <Tx t={t} a={A(38.2)} b={A(41.3)} y={410} size={84} dark serif glow>Fəxrəddin ər-Razi</Tx>
-      <div style={{
-        position: "absolute", left: 0, right: 0, top: 520, textAlign: "center", fontFamily: AR, fontSize: 170, color: "#fff", direction: "rtl",
-        opacity: env(t, A(41.5), 999, 0.8), filter: `blur(${(1 - lerp(t, A(41.5), A(42.4), 0, 1)) * 12}px)`,
-        textShadow: "0 0 24px rgba(255,255,255,0.6), 0 0 80px rgba(255,42,42,0.45)",
-      }}>وَالْعَصْرِ</div>
-      <Tx t={t} a={A(42.2)} b={999} y={830} size={72} dark serif glow>And olsun <R dark>əsrə</R></Tx>
-      <Tx t={t} a={A(42.7)} b={999} y={915} size={44} dark serif italic weight={500}>(zamana)</Tx>
-      <Tx t={t} a={A(43.9)} b={999} y={1040} size={58} dark red serif italic glow>insan ziyan içindədir</Tx>
+      <Tx t={t} a={A(41.6)} b={999} y={560} size={104} dark serif glow>And olsun <R dark>əsrə</R></Tx>
+      <Tx t={t} a={A(42.2)} b={999} y={690} size={60} dark serif italic weight={500}>(zamana)</Tx>
+      <Tx t={t} a={A(43.9)} b={999} y={860} size={62} dark red serif italic glow>insan ziyan içindədir</Tx>
       <Source t={t} a={A(42.5)} dark>ƏSR SURƏSİ 103:1–2 · ƏR-RAZİ, MƏFATİHUL-ĞEYB</Source>
       <Grain dark />
     </AbsoluteFill>
@@ -264,26 +286,35 @@ const S3: React.FC = () => {
 const S4: React.FC = () => {
   const t = useT(); const T0 = 47.5; const A = (s: number) => s - T0;
   const hOpen = spring({ frame: Math.max(0, t - A(47.76)) * FPS, fps: FPS, config: { damping: 15 } });
-  const side = lerp(t, A(49.6), A(50.5), 0, 1);
+  const side = lerp(t, A(49.4), A(50.2), 0, 1);
+  const thIn = lerp(t, A(49.7), A(50.6), 0, 1, Easing.out(Easing.back(1.3)));
+  const merc = lerp(t, A(50.6), A(55.4), 0.66, 0.11, Easing.inOut(Easing.quad));   // inset-top fraction of the red column
   const iceIn = lerp(t, A(49.7), A(50.6), 0, 1, Easing.out(Easing.back(1.4)));
-  const melt = lerp(t, A(52.14), A(55.4), 0, 0.72, Easing.inOut(Easing.quad));
+  const melt = lerp(t, A(51.4), A(55.4), 0, 0.86, Easing.in(Easing.quad));
   const iw = 380, ih = iw * AR_[8];
   const iceY = 260 + (1 - iceIn) * -1300;
   const puddle = lerp(t, A(52.3), A(55.6), 0, 1);
   return (
     <AbsoluteFill>
       <Paper />
-      <Obj n={7} w={300} x={-290 * side} y={120 + 140 * side} s={(0.2 + 0.8 * hOpen) * (1 - 0.35 * side)} o={Math.min(1, hOpen * 1.6)} />
+      {t < A(50.3) && <Obj n={7} w={300} x={-120 * side} y={120 + 60 * side} s={(0.2 + 0.8 * hOpen) * (1 - 0.6 * side)} o={Math.min(1, hOpen * 1.6) * (1 - side)} />}
+      {t > A(49.6) && (
+        <div style={{ position: "absolute", left: 540 - 250, top: 960 + 230 + (1 - thIn) * 900, width: 132, transform: "translate(-50%,-50%)",
+          filter: "drop-shadow(0 24px 26px rgba(26,26,26,0.22))" }}>
+          <Img src={staticFile("icons/obj14_empty.png")} style={{ width: "100%", display: "block" }} />
+          <Img src={staticFile("icons/obj14.png")} style={{ position: "absolute", left: 0, top: 0, width: "100%", display: "block", clipPath: `inset(${merc * 100}% 0 0 0)` }} />
+        </div>
+      )}
       {/* puddle */}
       <div style={{
         position: "absolute", left: 540 + 170 - 170 * (0.6 + puddle), top: 960 + iceY + ih / 2 - 30, width: 340 * (0.6 + puddle), height: 46 * (0.6 + puddle),
         borderRadius: "50%", background: "radial-gradient(rgba(150,190,215,0.35), rgba(150,190,215,0) 70%)", opacity: puddle,
       }} />
       {t > A(49.6) && (
-        <div style={{ position: "absolute", left: 540 + 170, top: 960 + iceY, width: iw, transform: `translate(-50%,-50%) scaleY(${1 - melt * 0.15})`, transformOrigin: "50% 100%" }}>
+        <div style={{ position: "absolute", left: 540 + 170, top: 960 + iceY, width: iw, transform: "translate(-50%,-50%)" }}>
           <Img src={staticFile("icons/obj8.png")} style={{
             width: "100%", display: "block",
-            clipPath: `inset(${melt * 100}% 0 0 0 round ${melt > 0 ? 40 : 0}px)`,
+            clipPath: `inset(${melt * 100}% 0 0 0)`,
             filter: `drop-shadow(0 22px 24px rgba(26,26,26,0.2)) blur(${melt * 1.5}px)`,
           }} />
         </div>
@@ -310,8 +341,9 @@ const T3: React.FC = () => {
   return (
     <AbsoluteFill>
       <Dark />
-      <Tx t={t} a={A(61.15)} b={A(63.0)} y={860} size={62} dark serif italic weight={500} punch>Bəs bu dairəni necə</Tx>
-      <Tx t={t} a={A(61.6)} b={A(63.0)} y={990} size={150} dark red serif punch glow>QIRMALI?</Tx>
+      <Tx t={t} a={A(60.92)} b={A(63.05)} y={820} size={96} dark serif glow punch>Bəs bu dairəni</Tx>
+      <Tx t={t} a={A(60.98)} b={A(63.05)} y={930} size={96} dark serif glow punch>necə</Tx>
+      <Tx t={t} a={A(61.6)} b={A(63.05)} y={1075} size={170} dark red serif punch glow>qırmalı?</Tx>
       <Tx t={t} a={A(63.16)} b={A(66.45)} y={820} size={86} dark serif punch>İSLAM</Tx>
       <Tx t={t} a={A(63.6)} b={A(66.45)} y={920} size={64} dark red serif punch glow>+</Tx>
       <Tx t={t} a={A(63.9)} b={A(66.45)} y={1020} size={86} dark serif punch>PSİXOLOGİYA</Tx>
@@ -326,12 +358,20 @@ const S5: React.FC = () => {
   const slam = lerp(t, A(66.5), A(66.62), 0, 1, Easing.in(Easing.quad));
   const bounce = t > A(66.62) ? Math.exp(-(t - A(66.62)) * 7) * Math.sin((t - A(66.62)) * 30) * 40 : 0;
   const corner = lerp(t, A(68.98), A(69.7), 0, 1);
-  const sx = (1 - slam) * 1100 + bounce + 290 * corner, sy = 130 + (-760 - 130) * corner, ss = 1 - 0.62 * corner;
-  const lockIn = spring({ frame: Math.max(0, t - A(75.54)) * FPS, fps: FPS, config: { damping: 13 } });
-  const open = lerp(t, A(84.02), A(84.9), 0, 1, Easing.out(Easing.cubic));
+  const swH = 470 * AR_[9];
+  const sx = (1 - slam) * 1100 + bounce, ss = 1 + 0.22 * corner;
+  const sy = 130 + (-960 - swH * ss * 0.5 + swH * ss * 0.42 - 130) * corner;   // pushed to the top edge, lower 34 % visible
+  const bead = spring({ frame: Math.max(0, t - A(71.9)) * FPS, fps: FPS, config: { damping: 16, mass: 1.1 } });
+  const beadOut = lerp(t, A(77.0), A(77.6), 0, 1);
+  const lockArr = spring({ frame: Math.max(0, t - A(77.6)) * FPS, fps: FPS, config: { damping: 11 } });
+  const tremble = lerp(t, A(82.4), A(84.0), 0, 1) * (t < A(84.02) ? 1 : 0);
+  const hit = t > A(83.9) && t < A(84.02) ? 1 - (A(84.02) - t) / 0.12 : 0;
+  const lockIn = lockArr;
+  const open = lerp(t, A(84.02), A(84.75), 0, 1, Easing.out(Easing.cubic));
   const flash = t > A(84.02) ? Math.exp(-(t - A(84.02)) * 5) : 0;
   const lw = 420, out = lerp(t, A(87.9), A(88.6), 1, 0);
-  const lockY = 230;
+  const lockY = 230 + Math.sin(t * 2.4) * 14 * (1 - open);
+  const jx = Math.sin(t * 90) * 7 * tremble, jr = Math.sin(t * 70) * 3 * tremble + Math.sin(t * 1.7) * 3 * (1 - open);
   const list = [["TÖVBƏ", 70.6], ["KİTAB", 71.35], ["NAMAZ", 72.0], ["YARIMÇIQ İŞ", 72.8]] as const;
   return (
     <AbsoluteFill style={{ opacity: out }}>
@@ -343,16 +383,20 @@ const S5: React.FC = () => {
       <Tx t={t} a={A(69.3)} b={A(70.5)} y={1000} size={84} dark serif>qurma</Tx>
       {t > A(69.6) && t < A(70.5) && <Strike t={t} a={A(69.6)} y={895} w={620} dark />}
       {list.map(([w, s], i) => (
-        <Tx key={w} t={t} a={A(s)} b={A(75.45)} y={560 + i * 140} size={92} dark serif punch glow={i === 3}>{w}</Tx>
+        <Tx key={w} t={t} a={A(s)} b={A(75.45)} y={420 + i * 105} size={78} dark serif punch glow={i === 3}>{w}</Tx>
       ))}
-      <Tx t={t} a={A(74.0)} b={A(75.45)} y={1150} size={54} dark red serif italic glow>sabaha saxlama</Tx>
-      {t > A(74.2) && t < A(75.45) && <Strike t={t} a={A(74.2)} y={1150} w={460} dark />}
+      <Tx t={t} a={A(74.0)} b={A(75.45)} y={850} size={54} dark red serif italic glow>sabaha saxlama</Tx>
+      {t > A(74.2) && t < A(75.45) && <Strike t={t} a={A(74.2)} y={850} w={460} dark />}
+      {t > A(71.85) && t < A(77.7) && (
+        <Obj n={15} w={150} y={330 + (1 - bead) * 500} r={(1 - bead) * 540 + Math.sin(t * 1.8) * 6} s={0.3 + 0.7 * bead} o={Math.min(1, bead * 2) * (1 - beadOut)} dark
+          extra={{ filter: "drop-shadow(0 0 30px rgba(255,170,60,0.35)) drop-shadow(0 20px 30px rgba(0,0,0,0.9))" }} />
+      )}
 
       {/* padlock: two halves */}
-      {t > A(75.45) && (
+      {t > A(77.55) && (
         <>
-          <Obj n={10} w={lw} x={-open * 285} y={lockY} r={-open * 18} s={0.4 + 0.6 * lockIn} o={Math.min(1, lockIn * 2)} dark clip="inset(0 50% 0 0)" />
-          <Obj n={10} w={lw} x={open * 285} y={lockY} r={open * 18} s={0.4 + 0.6 * lockIn} o={Math.min(1, lockIn * 2)} dark clip="inset(0 0 0 50%)" />
+          <Obj n={10} w={lw} x={jx - open * 300} y={lockY - (1 - lockIn) * 900 + open * 60} r={jr - open * 24} s={(0.6 + 0.4 * lockIn) * (1 - hit * 0.06)} o={Math.min(1, lockIn * 2)} dark clip="inset(0 50% 0 0)" />
+          <Obj n={10} w={lw} x={jx + open * 300} y={lockY - (1 - lockIn) * 900 + open * 60} r={jr + open * 24} s={(0.6 + 0.4 * lockIn) * (1 - hit * 0.06)} o={Math.min(1, lockIn * 2)} dark clip="inset(0 0 0 50%)" />
         </>
       )}
       <AbsoluteFill style={{ opacity: flash * 0.9, background: "radial-gradient(35% 25% at 50% 62%, rgba(255,255,255,0.95), rgba(255,42,42,0.35) 45%, rgba(0,0,0,0) 75%)" }} />
@@ -370,15 +414,15 @@ const S5: React.FC = () => {
 
 // ---------- audio ----------
 const SFX: [string, number][] = [
-  ["whoosh", 0.05], ["whoosh", 2.93], ["boom", 4.3], ["whoosh", 6.9], ["whoosh", 7.76],
-  ["whoosh", 10.11], ["clock", 10.4], ["whoosh", 14.63], ["whoosh", 21.9], ["whoosh", 24.2], ["boom", 25.0],
-  ["whoosh", 28.27], ["boom", 32.95], ["whoosh", 41.41],
-  ["whoosh", 47.76], ["whoosh", 49.6], ["clock", 55.6],
-  ["whoosh", 61.15], ["whoosh", 63.16],
-  ["whoosh", 66.45], ["boom", 66.62], ["clock", 66.9], ["whoosh", 68.98], ["whoosh", 75.54], ["lock", 75.7],
+  ["whoosh", 0.05], ["whoosh", 2.93], ["boom", 4.3], ["whoosh", 4.9], ["click", 6.25], ["whoosh", 6.9], ["whoosh", 7.76],
+  ["whoosh", 10.11], ["clock", 10.4], ["whoosh", 14.63], ["whoosh", 15.3], ["click", 15.9], ["whoosh", 21.9], ["whoosh", 24.2], ["boom", 25.0],
+  ["whoosh", 28.27], ["boom", 32.95], ["whoosh", 37.6], ["click", 38.5], ["whoosh", 41.41],
+  ["whoosh", 47.76], ["whoosh", 49.6], ["click", 50.55], ["melt", 51.4], ["clock", 55.6],
+  ["whoosh", 60.92], ["boom", 61.6], ["whoosh", 63.16],
+  ["whoosh", 66.45], ["boom", 66.62], ["clock", 66.9], ["whoosh", 68.98], ["whoosh", 71.9], ["click", 72.6], ["whoosh", 75.54], ["whoosh", 77.6], ["click", 78.05],
   ["riser", 81.0], ["lock", 84.0], ["boom", 84.05],
 ];
-const SFX_LEN: Record<string, number> = { whoosh: 1.0, boom: 1.6, clock: 2.3, lock: 1.2, riser: 3.05 };
+const SFX_LEN: Record<string, number> = { whoosh: 1.0, boom: 1.6, clock: 2.3, lock: 1.2, riser: 3.05, click: 0.6, melt: 4.0 };
 
 export const Main: React.FC = () => {
   const frame = useCurrentFrame();
