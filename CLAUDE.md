@@ -6,7 +6,7 @@ This repo holds two things:
 
 For any @esgarow video work (script, hook, voice, image prompts, montage, ASMR, titles), **use the `esgarow-video` skill** (`.claude/skills/esgarow-video/SKILL.md`). It defines the house standard set by episode 5; every new video must be at least that good. When a new technique works, add it to the skill's Changelog.
 
-For videos in the **Flow one-shot style** (AI clips from Google Flow/Veo chained with Extend, like `esgarow_out/tesvif_zaman/out/final4.mp4`, which the user loves), **use the `esgarow-flow` skill** (`.claude/skills/esgarow-flow/SKILL.md`) and the template in `esgarow_out/flow_engine/`.
+For videos in the **Flow one-shot style** (AI clips from Google Flow/Veo chained with Extend, like `esgarow_out/tesvif_zaman/out/final4.mp4`, which the user loves), **use the `esgarow-flow` skill** (`.claude/skills/esgarow-flow/SKILL.md`) and the template in `esgarow_out/flow_engine/`. The user's favourite genre now is the **surə təfsiri Flow hibrid** series (Bəqərə ayah by ayah, reference `esgarow_out/beqere_19_20/`); its rules are in that skill's ★ section.
 
 ## Almond Anbar app (`app/`)
 
