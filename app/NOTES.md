@@ -80,3 +80,9 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Sifarişlər filtrində sayı 0 olan şöbə düymələri gizlidir.
 - Menyuda 5-dən çox bölmə varsa: 4 bölmə + "☰ Daha" (aşağıdan açılan `#tsheet`).
 - Satınalma "Kim görsün" seçimi bağlı `<details class="more who">` içindədir (`whoOpen`).
+
+## v68 — calmer warehouse home, notifications page
+- 🔔 in the header (`#bell`, badge = `myAlerts()`) opens `tab="notif"` (`vNotif`, not in the tab bar; `renderTabs` keeps it). Home shows only one line (`alertsLine`); Texnoloq keeps full alerts on home (it decides on them).
+- Anbar / İnqilab home = `whHome()`: 4 tiles (İndi edin · Keyfiyyətdə · Bu gün gələcək · Gecikir, `data-jump` scrolls), "✅ İndi edin" cards (receive-ready, istek, due "Gəldi"), "🔍 Keyfiyyət yoxlayır" as collapsed rows, warehouse reports (xəbərsiz/qaiməsiz) in one `<details>`, link to Sifarişlər instead of the long sent-orders list. Footer moved to `footHtml()`.
+- "Gəldi · yoxlanır" count and list use the same filter (the hidden department filter from "Gözlənilir" no longer empties it).
+- Keyfiyyət checked on the spot: Anbar may finish at once with "✓ Keyfiyyət yerində yoxladı → Bitir" (`receivelive` → `o.qcSkip.live`). Keyfiyyət gets "nəticəni yazın"; it becomes a problem (Problemlər) only if the result is still missing 1 hour after arrival. After 1 hour without it, the old "şərti qəbul" path applies.
