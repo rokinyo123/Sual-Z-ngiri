@@ -993,6 +993,31 @@ function addLog(o, act, note, by){
 // status: acik (Satınalmada) · yolda (Gözlənilir) · anbar (Anbar qeyd edir) · bagli · redd
 const isOpen = o => o.status!=="bagli" && o.status!=="redd";
 const hasQC = o => o.wh==="Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype!=="office" && o.stype!=="cargo";   // Keyfiyyət Anbarın öz sifarişlərinə baxır; nümunə və Texnoloq sifarişi Anbar qəbulundan sonra Texnoloqa gedir
+// Keyfiyyət yoxlaması üçün vaxt həddi (ISO 9001 8.6 / ISO 22000 "şərti buraxılış"): mal gələndən QC_MIN dəqiqə
+// sonra Keyfiyyət yoxlamayıbsa, Anbar qəbulu ŞƏRTİ bitirə bilər (o.qcSkip). Sifariş Keyfiyyətin siyahısında qalır,
+// Problemlərdə görünür və Keyfiyyət sonradan yoxlayanda nəticə (gecikmə dəqiqəsi ilə) qeyd olunur.
+const QC_MIN = 60;
+const qcDueMs = o => new Date(o.arrivedAt||o.last_move||o.created).getTime() + QC_MIN*60000;
+const qcLeftMin = o => Math.ceil((qcDueMs(o) - Date.now())/60000);
+const qcLate = o => o.status==="anbar" && hasQC(o) && !o.qcAt && Date.now() >= qcDueMs(o);
+const qcPend = o => hasQC(o) && !o.qcAt && !o.deleted && (o.status==="anbar" || (!!o.qcSkip && o.status!=="redd"));
+const minTxt = m => m>=60 ? Math.floor(m/60)+" saat"+(m%60?" "+(m%60)+" dəq":"") : m+" dəq";
+function qcSkipNote(o){
+  if (!o.qcSkip) return "";
+  const k = o.qcSkip, t = shortT(new Date(k.at));
+  return '<div class="stk">⚠ Keyfiyyət '+QC_MIN/60+' saat ərzində yoxlamadı — <b>'+esc(k.by)+'</b> '+t+'-da qəbulu şərti bitirdi'+
+    (o.qcAt ? ' · Keyfiyyət sonradan yoxladı ('+minTxt(o.qcLateMin||0)+' gecikmə)' : ' · <b>Keyfiyyət hələ yoxlamayıb</b>')+'</div>';
+}
+function qcSignals(){
+  S.orders.forEach(o=>{
+    if (!(o.status==="anbar" && hasQC(o) && !o.qcAt)) return;
+    const left = qcLeftMin(o), items = o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty);
+    if (left<=QC_MIN/2 && left>0)
+      notify(["Keyfiyyət"], "stuck", "⏳ #"+o.id+" · Keyfiyyət yoxlamalıdır — "+left+" dəq qalıb", (o.supplier||"Firmasız")+" · vaxt bitəndə "+o.wh+" qəbulu şərti bitirə biləcək", items, o.id, "qc-half-"+o.id);
+    if (left<=0)
+      notify(["Keyfiyyət", o.wh, "Rəhbərlik"], "stuck", "⏰ #"+o.id+" · Keyfiyyət "+QC_MIN/60+" saatda yoxlamadı", o.wh+" qəbulu şərti bitirə bilər · Keyfiyyət sonradan yoxlamalıdır", items, o.id, "qc-late-"+o.id);
+  });
+}
 // Keyfiyyət: yoxlayan şəxs, istehsal / son istifadə tarixi, riskli mallarda temperatur
 const QC_PEOPLE = ["Məcidli Məsumə","Məmmədzadə Aysun"];
 const RISKY = /s[üu]d|sosis|kolbas|sucu|qaym|xama|k[əe]smik|pendir|qat[ıi]q|ayran|k[əe]r[əe]\s*ya|ya[ğg]\s*k[əe]r|\b[əe]t\b|[əe]t\s|toyuq|bal[ıi]q|yumurta|dondurma|ma[sş]karpon|mocarel|mozzarel|krem\s*[şs]anti|slivk|sliv|qaymaq|kefir|smetan/i;
@@ -1051,7 +1076,7 @@ function waitOn(o){
       : { who:o.wh, neg:o.wh+" qərar verməyib", what:"malı verməli və ya Satınalmaya göndərməlidir", since:o.reqAcc.at, lim:o.needAt ? Math.max(1,(new Date(o.needAt)-new Date(o.reqAcc.at))/HOUR) : 24 }; }
   else if (held(o)) w = { who:"Satınalma", neg:holdOf(o).wait, what:holdOf(o).need, since:o.hold.at, lim:o.rep?ANS_H:2 };
   else if (o.status==="acik") w = { who:"Satınalma", neg:"Satınalma qəbul etməyib", what:"gəliş günü təyin etməlidir", since:o.created, lim:Math.max(1,(ansDue(o)-new Date(o.created).getTime())/HOUR) };
-  else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", neg:"Keyfiyyət yoxlamayıb", what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:3 };
+  else if (o.status==="anbar" && hasQC(o) && !o.qcAt) w = { who:"Keyfiyyət", neg:"Keyfiyyət yoxlamayıb"+(qcLate(o)?" · "+o.wh+" şərti qəbul edə bilər":""), what:"yoxlamanı bitirməlidir", since:o.arrivedAt||o.last_move, lim:QC_MIN/60 };
   else if (o.status==="anbar") w = { who:o.wh, neg:o.wh+" qəbulu bitirməyib", what:"qəbulu bitirməlidir", since:o.qcAt||o.arrivedAt||o.last_move, lim:3 };
   else if (lateNeedsAns(o)) w = { who:"Satınalma", neg:"Satınalma açıqlama verməyib", what:"gecikmənin səbəbini və yeni tarixi yazmalıdır", since:o.eta+"T23:59:00", lim:ANS_H };
   else if (!needsAnswer(o) && techPending(o)){
@@ -1219,7 +1244,8 @@ function stage(o){
   if (o.rep) return {k:"done", t:holdOf(o).ic+" "+holdOf(o).n+" · Satınalma cavab verdi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
   if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=16 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
-  if (o.status==="anbar") return hasQC(o) && !o.qcAt ? {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"} : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
+  if (o.qcSkip && !o.qcAt && o.status!=="redd") return {k:"bad", t:"Şərti qəbul · Keyfiyyət yoxlamayıb"};
+  if (o.status==="anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? {k:"chk", t:"Keyfiyyət gecikir · "+o.wh+" şərti qəbul edə bilər"} : {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"}) : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
   if (techPending(o)){ const d = o.items.filter(i=>techReady(o,i)).map(i=>i.techDue).filter(Boolean).sort()[0]; return {k: d && daysTo(d)<0 ? "bad" : "chk", t:"Texnoloqda"+(d?" · cavab "+fmtD(d).slice(0,5)+(daysTo(d)<0?" keçib":""):"")}; }
   if (o.items.some(i=>problem(o,i))) return {k:"bad", t:"Natamam · cavablandı"};
@@ -1309,7 +1335,7 @@ function myWork(){
   return S.orders.filter(o=>{
     if (o.status==="redd") return false;
     if (role==="Satınalma") return o.status==="acik" || lateNeedsAns(o) || held(o);
-    if (role==="Keyfiyyət") return o.status==="anbar" && hasQC(o) && !o.qcAt;
+    if (role==="Keyfiyyət") return qcPend(o);
     if (role==="Texnoloq") return techPending(o);
     if (isDriver(role)) return o.supplier===role && o.status==="yolda";
     if (WAREHOUSES.includes(role)) return o.wh===role && (o.status==="anbar" || o.status==="istek" || dueNow(o));
@@ -1411,7 +1437,7 @@ function renderTabs(){
   const T = tabsFor(role); if (!T.some(t=>t[0]===tab)) tab = T[0][0];
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
   const n = myWork().length + myAlerts().length + (role==="Satınalma" ? wa : 0) + myMeetTasks().filter(t=>!t.done).length;
-  const nq = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).length, np = probCount();
+  const nq = S.orders.filter(qcPend).length, np = probCount();
   const many = T.length > 5, vis = many ? T.slice(0,4) : T, rest = many ? T.slice(4) : [];
   if (many && rest.some(t=>t[0]===tab)){ const x = T.find(t=>t[0]===tab); vis[3] = x; rest.splice(rest.indexOf(x),1, T[3]); }
   const cOf = {};
@@ -1425,7 +1451,7 @@ function renderTabs(){
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  autoMissing(); stuckSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
+  autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
@@ -2017,7 +2043,7 @@ function vBuy(){
 }
 // Keyfiyyət: yoxlanılmalı, qəbul etmədikləri, son yoxlananlar
 function vQc(){
-  const w = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt).sort((a,b)=>(a.arrivedAt||"").localeCompare(b.arrivedAt||""));
+  const w = S.orders.filter(qcPend).sort((a,b)=>(!!b.qcSkip - !!a.qcSkip) || (a.arrivedAt||"").localeCompare(b.arrivedAt||""));
   const rej = resultRows().filter(r=>r.cat==="qc" && (!r.i.ans || rDate(r)>=plusDays(-30))).sort((a,b)=>(!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)));
   // Keyfiyyətin yoxladığı bütün sifarişlər (tam gələnlər də) — son 30 gün, istəsə hamısı
   const doneAll = S.orders.filter(o=>o.qcAt && o.items.some(i=>i.qc) && o.status!=="redd").sort((a,b)=>b.qcAt.localeCompare(a.qcAt));
@@ -2025,7 +2051,7 @@ function vQc(){
   const ex = expList();
   const smp = S.orders.filter(o=>o.sample && !o.deleted && ["yolda","anbar"].includes(o.status) && !held(o)).sort((a,b)=>(a.eta||"").localeCompare(b.eta||""));
   return (smp.length ? '<h2>🧪 Gələcək nümunələr <span class="cnt">'+smp.length+'</span></h2><div class="meta">Məlumat üçün — Satınalma yazıb, Anbar qəbul edəcək, Texnoloq dəyərləndirəcək.</div>'+smp.map(o=>orderBrief(o)).join("") : "")+
-    '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2>'+
+    '<h2>Gəldi · yoxlanılmalı <span class="cnt">'+w.length+'</span></h2><div class="meta">Mal gələndən '+QC_MIN/60+' saat ərzində yoxlayın. Vaxt keçsə, Anbar qəbulu şərti bitirir və bu sifariş burada “gecikmiş yoxlama” kimi qalır.</div>'+
     
     (w.length ? w.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Yoxlanılacaq mal yoxdur</div>')+
     ((op=>(op.length ? '<h2>📝 Tamamlanmalı · qeydlər <span class="cnt">'+op.length+'</span></h2><div class="meta">Anbara OK verilib. Dərəcə, tarix və yoxlayanı vaxtınız olanda yazın — istəyə görədir.</div>'+op.map(o=>orderCard(o)).join("") : ""))
@@ -2061,13 +2087,15 @@ function expirySignals(){
 // Problemlər: Satınalma 12 saat ərzində cavab verməyib
 const probRows = () => resultRows().filter(r=>r.cat!=="ok" && ansLate(r.o,r.i));
 const probLate = () => S.orders.filter(o=>lateNeedsAns(o) && (Date.now()-new Date(o.eta+"T23:59:00").getTime())/HOUR > ANS_H);
-const probCount = () => probRows().length + probLate().length + S.orders.filter(held).length;
+const qcSkipOpen = () => S.orders.filter(o=>o.qcSkip && !o.qcAt && qcPend(o));
+const probCount = () => probRows().length + probLate().length + S.orders.filter(held).length + qcSkipOpen().length;
 function vProb(){
-  const rs = probRows().sort((a,b)=>ansLeftH(a.o,a.i)-ansLeftH(b.o,b.i)), ls = probLate(), hl = S.orders.filter(held);
-  return '<h2>Problemlər <span class="cnt">'+(rs.length+ls.length+hl.length)+'</span></h2>'+
+  const rs = probRows().sort((a,b)=>ansLeftH(a.o,a.i)-ansLeftH(b.o,b.i)), ls = probLate(), hl = S.orders.filter(held), qs = qcSkipOpen();
+  return '<h2>Problemlər <span class="cnt">'+(rs.length+ls.length+hl.length+qs.length)+'</span></h2>'+
+    (qs.length ? '<h3>🔍 Keyfiyyət yoxlamadan şərti qəbul olunub · '+qs.length+'</h3><div class="meta">Keyfiyyət '+QC_MIN/60+' saat ərzində yoxlamadı, anbar qəbulu bitirdi. Keyfiyyət yoxlayana qədər burada qalır.</div>'+qs.map(o=>role==="Keyfiyyət"?orderCard(o):orderBrief(o)).join("") : "")+
     (hl.length ? '<h3>⛔ Xəbərsiz nümunə / qaiməsiz / xəbərsiz mal — Satınalma cavab verməyib · '+hl.length+'</h3>'+hl.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
     '<div class="meta">Satınalma '+ANS_H+' saat ərzində cavab verməyib</div>'+
-    (rs.length+ls.length+hl.length ? "" : '<div class="empty">✓ Problem yoxdur</div>')+
+    (rs.length+ls.length+hl.length+qs.length ? "" : '<div class="empty">✓ Problem yoxdur</div>')+
     (ls.length ? '<h3>⏰ Gəlmədi, Satınalma açıqlama verməyib · '+ls.length+'</h3>'+ls.map(o=>role==="Satınalma"?orderCard(o):orderBrief(o)).join("") : "")+
     (rs.length ? '<h3>📋 Cavabsız mallar · '+rs.length+'</h3><div class="irows">'+rs.map(resRow).join("")+'</div>' : "");
 }
@@ -2111,7 +2139,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v64 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v65 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
@@ -2183,7 +2211,7 @@ function orderCard(o){
   return '<article class="oc s-'+st.k+(act?" act":"")+'" id="o-'+o.id+'">'+
     '<div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+routeTxt(o)+'<span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+'</div>'+
     chainRings(o, st)+'<div class="oc-t">'+need+promise+'</div>'+ (extra?'<div class="meta">'+esc(extra)+'</div>':"")+
-    waitPill(o) + bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
+    waitPill(o) + qcSkipNote(o) + bar + (o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"") +
     (o.spNote?'<div class="spn">💬 <b>Satınalma:</b> '+esc(o.spNote)+toLine(o.noteTo)+'</div>':"") +
     (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + (fullSet.has(o.id)?'':ownBtns(o,1))+'</article>';
 }
@@ -2202,7 +2230,7 @@ function itemRow(o,i,k,st){
           '<label class="tmp"><span>🌡 Dərəcə °C</span><input inputmode="decimal" placeholder="məs. 4" data-qf="'+key+'|temp" value="'+esc(i.temp??"")+'"></label>'+
           '<label class="qby"><span>Yoxlayan</span><select data-qf="'+key+'|qcBy"><option value="">— seçin —</option>'+QC_PEOPLE.map(n=>'<option'+(i.qcBy===n?" selected":"")+'>'+n+'</option>').join("")+'</select></label>'+
         '</div></div>');
-    } else if (role==="Keyfiyyət" && o.status==="anbar" && !o.qcAt){
+    } else if (role==="Keyfiyyət" && (o.status==="anbar" || o.qcSkip) && !o.qcAt){
       cells.push('<div class="cell"><span class="cl">Keyfiyyət</span><div class="seg3">'+
         '<button class="'+(i.qc==="ok"?"on ok":"")+'" data-qc="'+key+'" data-v="ok">✓ Uyğun</button>'+
         '<button class="'+(i.qc==="bad"?"on bad":"")+'" data-qc="'+key+'" data-v="bad">✗ Uyğun deyil</button>'+
@@ -2277,8 +2305,11 @@ function footActions(o){
     return need+acc+'<div class="meta">📤 '+esc(o.wh)+(o.reqAcc?" hazırlayır":" hələ qəbul etməyib")+'</div>';
   }
   if (held(o)) return holdBox(o);
-  if (role==="Keyfiyyət" && o.status==="anbar" && hasQC(o) && !o.qcAt){
+  if (role==="Keyfiyyət" && qcPend(o)){
     const left = o.items.filter(i=>!i.qc).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
+    if (o.qcSkip) return '<div class="box late"><div class="lbl">⚠ Gecikmiş yoxlama — '+esc(o.wh)+' malı artıq qəbul edib</div><button class="okb big" data-act="qcok" data-id="'+o.id+'">✓ Yoxladım · nəticəni qeyd et</button>'+
+      '<div class="hint">Uyğun olmayan mala ✗ qoyub səbəbini yazın — Satınalma və '+esc(o.wh)+' dərhal xəbər tutacaq, mal ayrılmalıdır.'+(left?" Qalan "+left+" mal uyğun sayılacaq.":"")+'</div>'+
+      (noWhy?'<div class="hint rs">'+noWhy+' “uyğun deyil” malın şərhi yazılmayıb.</div>':"")+'</div>';
     return '<div class="box"><button class="okb big" data-act="qcok" data-id="'+o.id+'">✓ Anbara OK ver</button>'+
       '<div class="hint">Anbar gözləyir: OK verin, Anbar malını yoxlasın. Uyğun olmayan mala əvvəlcə ✗ qoyub səbəbini yazın'+(left?" — qalan "+left+" mal uyğun sayılacaq":"")+'. Dərəcə, tarix və yoxlayanı sonra “Sifarişi tamamla”da rahatca yaza bilərsiniz.</div>'+
       (noWhy?'<div class="hint rs">'+noWhy+' “uyğun deyil” malın şərhi yazılmayıb.</div>':"")+'</div>';
@@ -2288,9 +2319,11 @@ function footActions(o){
   if (role===o.wh && o.status==="yolda")
     return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
   if (role===o.wh && o.status==="anbar"){
-    const wait = hasQC(o) && !o.qcAt, tw = false;
-    return '<div class="box"><button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
-      '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait||tw?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlamasını gözləyir…":tw?"Texnoloqun qərarını gözləyir…":"Bitir → Satınalmaya göndər")+'</button>'+
+    const late = qcLate(o), wait = hasQC(o) && !o.qcAt && !late, tw = false;
+    return '<div class="box'+(late?" late":"")+'">'+
+      (late ? '<div class="lbl">⚠ Keyfiyyət '+QC_MIN/60+' saat ərzində yoxlamadı</div><div class="hint">Qəbulu özünüz bitirə bilərsiniz. Sifarişdə “Keyfiyyət yoxlamadan şərti qəbul” qeydi qalacaq, Keyfiyyət və Rəhbərlik xəbər tutacaq, Keyfiyyət malı sonradan yoxlayacaq. Uyğunsuzluq tapılsa, mal ayrılmalıdır.</div>' : "")+
+      '<button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
+      '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(wait||tw?" disabled":"")+'>'+(wait?"Keyfiyyət yoxlayır · "+qcLeftMin(o)+" dəq sonra özünüz bitirə bilərsiniz":tw?"Texnoloqun qərarını gözləyir…":late?"⚠ Şərti qəbul et → Satınalmaya göndər":"Bitir → Satınalmaya göndər")+'</button>'+
       '<div class="hint">Boş qalan mallar "gəlmədi" sayılacaq. Nəticə Satınalmaya gedəcək.</div></div>';
   }
   if (role==="Satınalma" && o.status==="acik") return acceptBox(o);
@@ -2547,10 +2580,11 @@ function deptBoard(){
     [acc.length+" sifariş qəbul edilməyib", acc.filter(stuck).length, acc.map(o=>L(o,esc(o.from)+" · "+hTxt((Date.now()-new Date(o.created))/HOUR)))],
     [lt.length+" gecikən sifarişə açıqlama verməyib", lt.filter(o=>(Date.now()-new Date(o.eta+"T23:59:00"))/HOUR>ANS_H).length, lt.map(o=>L(o,esc(o.supplier||"Firmasız")+" · "+fmtD(o.eta)))],
     [un.length+" gəlməyən / qəbul olunmayan mala cavab verməyib", un.filter(r=>ansLeftH(r.o,r.i)<0).length, un.map(r=>L(r.o,esc(pname(r.i.pid))+" · "+(ansLeftH(r.o,r.i)<0?'<b class="rs">'+hTxt(-ansLeftH(r.o,r.i))+' gecikir</b>':hTxt(ansLeftH(r.o,r.i))+" qalıb")))] ]]);
-  const qc = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt);
-  D.push(["🔍","Keyfiyyət",[[qc.length+" sifarişi yoxlamayıb", qc.filter(stuck).length, qc.map(o=>L(o,esc(o.supplier||"")+" · "+hTxt((Date.now()-new Date(o.arrivedAt||o.last_move))/HOUR)+" əvvəl gəlib"))]]]);
+  const qc = S.orders.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt), qs = S.orders.filter(o=>o.qcSkip && !o.qcAt && qcPend(o));
+  D.push(["🔍","Keyfiyyət",[[qc.length+" sifarişi yoxlamayıb", qc.filter(stuck).length, qc.map(o=>L(o,esc(o.supplier||"")+" · "+hTxt((Date.now()-new Date(o.arrivedAt||o.last_move))/HOUR)+" əvvəl gəlib"))],
+    [qs.length+" sifariş yoxlanmadan şərti qəbul olunub", qs.length, qs.map(o=>L(o,esc(o.supplier||"")+" · "+esc(o.qcSkip.by)+" "+shortT(new Date(o.qcSkip.at))))]]]);
   WAREHOUSES.forEach(wh=>{
-    const rc = S.orders.filter(o=>o.wh===wh && o.status==="anbar" && (!hasQC(o) || o.qcAt)), wt = S.orders.filter(o=>o.wh===wh && lateOpen(o));
+    const rc = S.orders.filter(o=>o.wh===wh && o.status==="anbar" && (!hasQC(o) || o.qcAt || qcLate(o))), wt = S.orders.filter(o=>o.wh===wh && lateOpen(o));
     D.push([wh==="Anbar"?"🏬":"🏪", wh, [[rc.length+" sifarişin qəbulunu bitirməyib", rc.filter(stuck).length, rc.map(o=>L(o,esc(o.supplier||"")))],
       [wt.length+" sifariş gecikir (mal gəlməyib)", 0, wt.map(o=>L(o,esc(o.supplier||"Firmasız")+" · "+fmtD(o.eta)))]]]);
   });
@@ -2719,7 +2753,7 @@ function orderBrief(o){
   return '<article class="oc s-'+st.k+'" id="o-'+o.id+'"><div class="oc-h"><span class="oid">#'+o.id+'</span>'+sampleTag(o)+routeTxt(o)+'<span class="pill c-'+st.k+'">'+esc(st.t)+'</span>'+
     '</div>'+
     chainRings(o, st)+'<div class="oc-t"><span class="sent">📝 '+relDay(sd)+' · '+shortT(new Date(o.created)).slice(-5)+'</span>'+(o.eta && o.status!=="acik"?'<span>🚚 <b>'+fmtD(o.eta)+'</b>'+(o.supplier?' · '+esc(o.supplier):"")+'</span>':"")+'</div>'+
-    waitPill(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
+    waitPill(o)+qcSkipNote(o)+(o.note?'<div class="hint">“'+esc(o.note)+'”</div>':"")+(editDraft[o.id]?editBox(o):chips)+
     '<div class="ocb"><button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı</button>'+ownBtns(o)+'</div></article>';
 }
 let ofrom = "all";
@@ -3534,11 +3568,19 @@ function orderAct(act, id){
     const nd = o.items.find(i=>(i.mfg && !dtISO(i.mfg)) || (i.exp && !dtISO(i.exp)));
     if (nd) return toast(pname(nd.pid)+": tarixi gün.ay.il kimi yazın (məs. 01.05.2026)");
     o.items.forEach(i=>{ if (!i.qc) i.qc = "none"; });
-    o.qcAt = o.last_move = new Date().toISOString(); o.qcOpen = true;   // qeydlər (dərəcə, tarix, yoxlayan) sonra "Sifarişi tamamla"da
+    const after = !!o.qcSkip;
+    o.qcAt = new Date().toISOString(); if (!after) o.last_move = o.qcAt; o.qcOpen = true;   // qeydlər (dərəcə, tarix, yoxlayan) sonra "Sifarişi tamamla"da
+    if (after) o.qcLateMin = Math.round((Date.now()-new Date(o.arrivedAt||o.qcSkip.at).getTime())/60000);
     const bad = o.items.filter(i=>i.qc!=="ok");
     addLog(o,"Keyfiyyət yoxladı", (bad.length ? bad.map(i=>pname(i.pid)+": "+(i.qc==="bad"?i.qcWhy:"gəlmədi")).join("; ") : "Hamısı uyğundur")+" · Yoxlayan: "+[...new Set(o.items.map(i=>i.qcBy).filter(Boolean))].join(", "));
     const blk = o.items.filter(i=>i.qc==="bad");
     if (blk.length) notify(["Satınalma","Rəhbərlik"], "late", "Keyfiyyət qəbul etmədi · #"+o.id, "Satınalma: yenidən sifariş edin və ya əvəzinə başqa mal — cavab verin", blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
+    if (after){
+      addLog(o, "Keyfiyyət sonradan yoxladı", (blk.length ? blk.length+" mal uyğun deyil" : "Hamısı uyğundur")+" · "+minTxt(o.qcLateMin)+" gecikmə");
+      notify([o.wh,"Rəhbərlik"].concat(blk.length?["Satınalma"]:[]), blk.length ? "late" : "ok", blk.length ? "⚠ Keyfiyyət sonradan uyğunsuzluq tapdı · #"+o.id+" — malı ayırın" : "✅ Keyfiyyət sonradan yoxladı · #"+o.id+" — hamısı uyğundur",
+        (o.supplier||"Firmasız")+" · "+minTxt(o.qcLateMin)+" gecikmə ilə yoxlandı"+(blk.length?" · uyğun olmayan mal istifadə olunmasın":""), blk.map(i=>pname(i.pid)+": "+i.qcWhy), o.id);
+      save(); render(); return toast("Yoxlama qeyd olundu ✓");
+    }
     // Anbar həmişə xəbər tutur: yoxlama bitdi, qəbulu bitirsin
     const okN = o.items.filter(i=>i.qc==="ok").length, who = [...new Set(o.items.map(i=>i.qcBy).filter(Boolean))].join(", ");
     notify([o.wh], blk.length ? "late" : "ok", (blk.length ? "🔍 Keyfiyyət yoxladı · #"+o.id+" — "+blk.length+" mal qəbul olunmadı" : "✅ Keyfiyyət yoxladı · #"+o.id+" — hamısı uyğundur"),
@@ -3548,7 +3590,10 @@ function orderAct(act, id){
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
   else if (act==="receive"){
-    if (hasQC(o) && !o.qcAt) return toast("Keyfiyyət hələ yoxlamayıb");
+    if (hasQC(o) && !o.qcAt && !qcLate(o)) return toast("Keyfiyyət yoxlayır — "+qcLeftMin(o)+" dəq sonra özünüz bitirə bilərsiniz");
+    const skip = hasQC(o) && !o.qcAt;
+    if (skip){ o.qcSkip = { at:new Date().toISOString(), by:role, min:Math.round((Date.now()-new Date(o.arrivedAt||o.last_move).getTime())/60000) };
+      addLog(o, "Keyfiyyət yoxlamadan şərti qəbul", "Keyfiyyət "+minTxt(o.qcSkip.min)+" ərzində yoxlamadı — "+role+" qəbulu bitirdi"); }
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
     const n = finishReceive(o, role, v("rn"));
     const kid = splitProblems(o), P = kid || o;           // P — problemli malların sifarişi (ayrılıbsa yeni nömrə)
@@ -3560,6 +3605,7 @@ function orderAct(act, id){
     // tam gələnlər üçün başqa şöbələrə bildiriş getmir — yalnız problem olanda
     if (pr.length) notify(["Satınalma",o.from,"Rəhbərlik"], "late", "#"+P.id+" · "+pr.length+" mal gəlmədi / az gəldi"+(kid?" (#"+o.id+"-dən ayrıldı)":""),
       (o.supplier||"Firmasız")+" → "+o.wh+(kid?" · qalan "+o.items.length+" mal tam gəldi":"")+" · Satınalma cavab verməlidir", pr.map(i=>pname(i.pid)+": "+problem(P,i)), P.id);
+    if (skip) notify(["Keyfiyyət","Rəhbərlik"], "late", "⚠ Keyfiyyət yoxlamadan şərti qəbul · #"+o.id, o.wh+" qəbulu bitirdi ("+minTxt(o.qcSkip.min)+" gözlədi) · Keyfiyyət malı sonradan yoxlamalıdır", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id, "qc-skip-"+o.id);
     toast(kid ? "Qəbul bitdi · "+o.items.length+" mal tam · "+pr.length+" problemli mal #"+kid.id+"-ə ayrıldı" : n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
