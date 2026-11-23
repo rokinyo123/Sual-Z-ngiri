@@ -16,10 +16,10 @@ alter table almond.tg_sent  enable row level security;
 grant usage on schema almond to service_role;
 grant all on almond.tg_chats, almond.tg_sent to service_role;
 
--- Səhər xülasəsi: hər gün 09:30 Bakı vaxtı (05:30 UTC). Əvvəlcə Database → Extensions: pg_cron və pg_net açılmalıdır.
+-- Səhər 08:00 Bakı (04:00 UTC): hər şöbəyə "bu gün nə etməlisiniz". Əvvəlcə Database → Extensions: pg_cron və pg_net açılmalıdır.
 -- create extension if not exists pg_cron;
 -- create extension if not exists pg_net;
--- select cron.schedule('almond-seher', '30 5 * * *',
+-- select cron.schedule('almond-seher', '0 4 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?morning=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
 
@@ -28,17 +28,17 @@ grant all on almond.tg_chats, almond.tg_sent to service_role;
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?midday=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
 
--- Axşam yekunu: hər gün 18:00 Bakı vaxtı (14:00 UTC) — bütün qoşulmuş söhbətlərə
--- select cron.schedule('almond-axsam', '0 14 * * *',
+-- Axşam 20:00 Bakı (16:00 UTC): hər şöbəyə "bu gün nə edilmədi" + Rəhbərliyə günün yekunu
+-- select cron.schedule('almond-axsam', '0 16 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?evening=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
 
--- Excel hesabatı: hər gün 20:05 Bakı (16:05 UTC) yoxlanır — bazar günü həftəlik, ayın son günü aylıq → Rəhbərlik
--- select cron.schedule('almond-hesabat', '5 16 * * *',
+-- Excel hesabatı: hər gün 17:45 Bakı (13:45 UTC) yoxlanır — bazar günü həftəlik, ayın son günü aylıq → Rəhbərlik
+-- select cron.schedule('almond-hesabat', '45 13 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?report=auto',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);
 
--- Ehtiyat nüsxə: hər gün 23:30 Bakı (19:30 UTC) — bazanın tam nüsxəsi JSON fayl kimi "/qosul Ehtiyat KOD" yazılan söhbətə
--- select cron.schedule('almond-ehtiyat', '30 19 * * *',
+-- Ehtiyat nüsxə: hər gün 19:55 Bakı (15:55 UTC) — bazanın tam nüsxəsi JSON fayl kimi "/qosul Ehtiyat KOD" yazılan söhbətə
+-- select cron.schedule('almond-ehtiyat', '55 15 * * *',
 --   $$ select net.http_post(url := 'https://qzvyawuhmqdhzawfihzy.supabase.co/functions/v1/telegram?backup=1',
 --        headers := '{"Content-Type":"application/json"}'::jsonb, body := '{}'::jsonb) $$);

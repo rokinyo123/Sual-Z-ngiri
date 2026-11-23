@@ -75,7 +75,10 @@ async function load() {
   const P = new Map<number, string>();
   out.filter((r) => r.kind === "product").forEach((r) => P.set(Number(r.data.id), r.data.name));
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
-  return { orders, pname: (id: unknown) => P.get(Number(id)) ?? "?" };
+  // Satışın tapşırıqları, iclas öhdəlikləri, Aktlar (səhər / axşam şöbə siyahıları üçün)
+  const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
+  const pick = (pre: string) => meta.filter((r) => String(r.id).startsWith(pre)).map((r) => r.data).filter((x) => x && !x.deleted);
+  return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
 const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype !== "office" && o.stype !== "cargo";
 const held = (o: any) => !!(o.hold && !o.holdDone);
@@ -233,6 +236,11 @@ async function onTelegram(update: any) {
   }
 }
 
+// İş saatı: 08:00–18:00 Bakı. Bundan kənarda anlıq bildirişlər Telegrama getmir (proqramda qalır);
+// səhər 08:00 və axşam 20:00 şöbə siyahıları hər şeyi toplayır.
+const WORK_FROM = 8 * 60, WORK_TO = 18 * 60;
+const bakuMin = () => { const b = bakuNow(); return b.getUTCHours() * 60 + b.getUTCMinutes(); };
+const workTime = () => bakuMin() >= WORK_FROM && bakuMin() < WORK_TO;
 async function onAlert(req: Request, body: any) {
   // yalnız proqrama daxil olmuş istifadəçi göndərə bilər
   const auth = req.headers.get("authorization") ?? "";
@@ -240,6 +248,7 @@ async function onAlert(req: Request, body: any) {
   if (!u.ok) return json({ ok: false, error: "auth" }, 401);
   const a = body.alert ?? {};
   if (!a.id || !a.title) return json({ ok: false, error: "bad" }, 400);
+  if (!workTime()) return json({ ok: true, skip: "iş saatı deyil (08:00–18:00)" });
   // eyni bildiriş iki dəfə getməsin
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: String(a.id) }) });
   if (s.status === 409) return json({ ok: true, dup: true });
@@ -258,18 +267,86 @@ async function onAlert(req: Request, body: any) {
   return json({ ok: true, sent });
 }
 
-// Səhər xülasəsi: bütün qoşulmuş söhbətlərə, gündə bir dəfə (09:30 Bakı)
+// ---------- Şöbələrin siyahısı: səhər "bu gün nə etməlisiniz", axşam "nə edilmədi" ----------
+const PLAN_DEPTS = ["Satınalma", "Keyfiyyət", "Anbar", "Anbar (İnqilab)", "Texnoloq", "Satış", "Üzeyir", "Elçin", "İstehsalat", "Çeşidləmə", "Rəhbərlik"];
+const PLAN_ICON: Record<string, string> = { "Satınalma": "🛒", "Keyfiyyət": "🔍", "Anbar": "🏬", "Anbar (İnqilab)": "🏪", "Texnoloq": "🧪", "Satış": "💼", "Üzeyir": "👤", "Elçin": "👤", "İstehsalat": "🏭", "Çeşidləmə": "🧺", "Rəhbərlik": "📋" };
+const QC_PLAN_MIN = 60;
+const qcLateP = (o: any) => o.status === "anbar" && hasQC(o) && !o.qcAt && Date.now() >= new Date(o.arrivedAt || o.last_move || o.created).getTime() + QC_PLAN_MIN * 60000;
+function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
+  const t = today(), P: Record<string, string[]> = {};
+  PLAN_DEPTS.forEach((x) => P[x] = []);
+  const add = (dept: string, head: string, list: string[]) => { if (!list.length || !P[dept]) return;
+    P[dept].push(`• <b>${head}</b>` + list.slice(0, 6).map((x) => "\n   " + x).join("") + (list.length > 6 ? `\n   … və daha ${list.length - 6}` : "")); };
+  const oLine = (o: any) => `${link(o.id)} ${esc(o.supplier || "Firmasız")} · ${o.from && o.from !== o.wh ? esc(o.from) + " → " : ""}${esc(o.wh)} · ${o.items.length} mal`;
+  const O = d.orders;
+  // Satınalma
+  add("Satınalma", eve ? "Qəbul etmədiyiniz sifarişlər" : "Qəbul edin, gəliş günü yazın", O.filter((o) => o.status === "acik").map(oLine));
+  add("Satınalma", eve ? "Cavab vermədiyiniz xəbərsiz / qaiməsiz mallar" : "Xəbərsiz / qaiməsiz mallara cavab verin", O.filter(held).map((o) => holdLine(o).replace(/^⛔ /, "")));
+  add("Satınalma", eve ? "Gecikməyə açıqlama yazmadınız" : "Gecikən sifarişlərə açıqlama və yeni tarix yazın", O.filter((o) => lateOpen(o) && !(lateEntry(o) || {}).note).map((o) => `${oLine(o)} · ${fmtD(o.eta)} gəlməli idi`));
+  add("Satınalma", eve ? "Cavab vermədiyiniz mallar" : "Gəlməyən / qəbul olunmayan mallara cavab verin",
+    O.flatMap((o) => o.items.filter((i: any) => canAnswer(o, i)).map((i: any) => `${link(o.id)} ${esc(d.pname(i.pid))} — ${esc(problem(o, i))}${ansLeftH(o, i) < 0 ? " · <b>vaxtı keçib</b>" : ""}`)));
+  add("Satınalma", eve ? "Bu gün gəlməli idi, gəlmədi — sabah firmaya zəng edin" : "Bu gün gələcək — izləyin", O.filter((o) => o.status === "yolda" && o.eta === t).map(oLine));
+  // Keyfiyyət
+  add("Keyfiyyət", eve ? "Yoxlamadığınız mallar" : "Gələn malları yoxlayın (1 saat ərzində)", O.filter((o) => o.status === "anbar" && hasQC(o) && !o.qcAt).map(oLine));
+  add("Keyfiyyət", eve ? "Şərti qəbul olunub, hələ yoxlamadınız" : "Şərti qəbul olunan malları yoxlayın", O.filter((o) => o.qcSkip && !o.qcAt).map(oLine));
+  // Anbarlar
+  for (const wh of ["Anbar", "Anbar (İnqilab)"]) {
+    add(wh, eve ? "Qəbulunu bitirmədiyiniz sifarişlər" : "Qəbulu bitirin", O.filter((o) => o.wh === wh && o.status === "anbar" && !held(o) && (!hasQC(o) || o.qcAt || qcLateP(o))).map(oLine));
+    add(wh, eve ? "Qəbul etmədiyiniz istəklər" : "Satışın istəklərinə baxın", O.filter((o) => o.req && o.wh === wh && o.status === "istek").map((o) => `${link(o.id)} ${esc(o.from)} · ${o.items.length} mal`));
+    if (!eve) add(wh, "Bu gün gələcək", O.filter((o) => o.wh === wh && o.status === "yolda" && o.eta === t).map(oLine));
+  }
+  // Texnoloq
+  add("Texnoloq", eve ? "Nəticə vermədiyiniz mallar" : "Nəticə verin", O.flatMap((o) => o.items.filter((i: any) => techReady(o, i)).map((i: any) => `${link(o.id)} ${esc(d.pname(i.pid))}${i.techDue ? " · nəticə günü " + fmtD(i.techDue) : " · nəticə günü seçilməyib"}`)));
+  // Aktlar
+  const qaTxt = (x: any) => `${x.kind === "ret" ? "↩️ qaytarma" : "🛡 akt"} · ${esc(x.product || "")}${x.retDate ? " · " + fmtD(x.retDate) : ""}`;
+  const qas = (d.qas || []).filter((x: any) => x.status !== "closed" && x.status !== "done");
+  add("Satınalma", eve ? "Cavab vermədiyiniz aktlar" : "Aktlara cavab verin", qas.filter((x: any) => x.status === "open").map(qaTxt));
+  add("Keyfiyyət", eve ? "Qərar vermədiyiniz aktlar" : "Aktlarda qərar verin", qas.filter((x: any) => x.status === "answered" || x.status === "dated").map(qaTxt));
+  for (const wh of ["Anbar", "Anbar (İnqilab)"]) add(wh, eve ? "Qaytarılmayan mallar" : "Malı qaytarın", qas.filter((x: any) => x.status === "approved" && x.wh === wh).map(qaTxt));
+  // Satışın tapşırıqları (Üzeyir, Elçin) — səhər: bu gün və gecikən, axşam: vaxtı keçən
+  const now = bakuNow().toISOString().slice(0, 16);
+  const tk = (d.tasks || []).filter((x: any) => !x.done && x.due && (eve ? x.due <= now : x.due.slice(0, 10) <= t));
+  for (const who of ["Üzeyir", "Elçin"]) add(who, eve ? "Yerinə yetirmədiyiniz tapşırıqlar" : "Bu günün tapşırıqları", tk.filter((x: any) => (x.to || []).includes(who)).map((x: any) => `${esc(x.title)} · ${fmtD(x.due.slice(0, 10))} ${x.due.slice(11, 16)}`));
+  add("Satış", eve ? "Yerinə yetirilməyən tapşırıqlar" : "Bu gün yoxlanacaq tapşırıqlar", tk.map((x: any) => `${esc((x.to || []).join(", "))}: ${esc(x.title)} · ${x.due.slice(11, 16)}`));
+  // İclas öhdəlikləri
+  const mt = (d.mtasks || []).filter((x: any) => !x.done && (!x.due || x.due.slice(0, 10) <= t));
+  mt.forEach((x: any) => { const k = PLAN_DEPTS.includes(x.to) ? x.to : "Rəhbərlik";
+    add(k, eve ? "İclas öhdəliyi yerinə yetirilmədi" : "İclas öhdəliyi", [`${k === x.to ? "" : esc(x.to) + ": "}${esc(x.what)}${x.due ? " · " + fmtD(x.due.slice(0, 10)) : ""}`]); });
+  return P;
+}
+function planText(P: Record<string, string[]>, depts: string[], eve: boolean, all = false) {
+  if (all) { const busy = depts.filter((k) => P[k].length), idle = depts.filter((k) => !P[k].length);
+    return (busy.length ? planText(P, busy, eve) : "") + (idle.length ? (busy.length ? "\n\n" : "") + `✅ <i>${idle.map(esc).join(", ")}: ${eve ? "hamısı edilib" : "açıq işi yoxdur"}</i>` : ""); }
+  return depts.map((k) => `${PLAN_ICON[k] ?? "▫️"} <b>${esc(k)}</b>\n` + (P[k].length ? P[k].join("\n") : eve ? "✅ hamısı edilib" : "✅ açıq işiniz yoxdur")).join("\n\n");
+}
+// hər söhbətə öz şöbəsinin siyahısı; "hamısı", Rəhbərlik və Admin — bütün şöbələr
+async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head: string, tail: string) {
+  const P = plan(d, eve);
+  const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
+  const byChat = new Map<number, Set<string>>();
+  rows.forEach((r) => { if (r.dept === "Ehtiyat") return; const s = byChat.get(r.chat_id) ?? new Set<string>(); s.add(r.dept); byChat.set(r.chat_id, s); });
+  let sent = 0;
+  for (const [chat, ds] of byChat) {
+    const all = ds.has("*") || ds.has("Rəhbərlik") || ds.has("Admin");
+    const depts = all ? PLAN_DEPTS.filter((k) => k !== "Rəhbərlik" || P[k].length) : PLAN_DEPTS.filter((k) => ds.has(k));
+    if (!depts.length) continue;
+    const text = cut(head + "\n\n" + planText(P, depts, eve, all) + (all && tail ? "\n\n" + tail : "") + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
+    const r = await say(chat, text); if (r.ok) sent++;
+  }
+  return sent;
+}
+
+// Səhər 08:00 Bakı: hər şöbəyə "bu gün nə etməlisiniz"
 async function morning(force: boolean) {
   const t = today(), b = bakuNow();
-  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 9 * 60 + 20) return json({ ok: true, skip: "tez" });
+  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 7 * 60 + 50) return json({ ok: true, skip: "tez" });
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: (force ? "morning-test-" + Date.now() : "morning-" + t) }) });
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const d = await load();
   const WD = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
-  const text = cut(`☀️ <b>Sabahınız xeyir! ${fmtD(t)} · ${WD[b.getUTCDay()]}</b>\n\n` + cmdBugun(d) + "\n\n" + cmdGeciken(d) + "\n\n" + cmdProblemler(d) + ((x) => x ? "\n\n" + x : "")(cmdExpiry(d)) + "\n\n📋 <b>Şöbələr</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
-  const rows: any[] = await db("tg_chats?select=chat_id").then((r) => r.json()).catch(() => []);
-  let sent = 0;
-  for (const c of [...new Set(rows.map((r) => r.chat_id))]) { const r = await say(c, text); if (r.ok) sent++; }
+  const head = `☀️ <b>Sabahınız xeyir! ${fmtD(t)} · ${WD[b.getUTCDay()]}</b>\n<i>Bu gün nə etməlisiniz</i>`;
+  const tail = cmdBugun(d) + ((x) => x ? "\n\n" + x : "")(cmdExpiry(d));
+  const sent = await sendPlan(d, false, head, tail);
   return json({ ok: true, sent });
 }
 
@@ -298,7 +375,7 @@ async function midday(force: boolean) {
 const bakuDay = (iso?: string) => iso ? new Date(new Date(iso).getTime() + 4 * H).toISOString().slice(0, 10) : "";
 async function evening(force: boolean) {
   const t = today(), b = bakuNow();
-  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 17 * 60 + 50) return json({ ok: true, skip: "tez" });
+  if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 19 * 60 + 50) return json({ ok: true, skip: "tez" });
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: (force ? "evening-test-" + Date.now() : "evening-" + t) }) });
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const d = await load();
@@ -317,14 +394,13 @@ async function evening(force: boolean) {
   const line = (o: any) => { const bad = o.items.filter((i: any) => problem(o, i));
     return `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> · ${route(o)}` +
       bad.slice(0, 10).map((i: any) => "\n   " + itemTxt(o, i)).join("") + (bad.length > 10 ? `\n   … və daha ${bad.length - 10} mal` : ""); };
-  const text = cut(`🌆 <b>Günün yekunu · ${fmtD(t)}</b>\n\n` +
+  const summary = (`🌆 <b>Günün yekunu · ${fmtD(t)}</b>\n\n` +
     ((pg) => pg.length ? `⚠️ <b>Bu gün qəbul olunanlarda problem · ${pg.length} sifariş</b>\n` + pg.map(line).join("\n") : `✅ Bu gün qəbul olunanlarda problem yoxdur`)(got.filter((o) => o.items.some((i: any) => problem(o, i)))) + "\n\n" +
     `⛔ <b>Bu gün gəlməli idi, gəlmədi · ${miss.length}</b>\n` + (miss.length ? miss.map((o) => `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> · ${route(o)} · ${o.items.length} mal`).join("\n") : "—") + "\n\n" +
     (rej.length ? `🔍 <b>Keyfiyyət bu gün qəbul etmədi · ${rej.length}</b>\n` + rej.map(({ o, i }) => `• ${esc(d.pname(i.pid))} — ${esc(i.qcWhy || "uyğun deyil")} · ${link(o.id)} ${esc(o.supplier || "")}`).join("\n") + "\n\n" : "") +
-    cmdProblemler(d) + "\n\n📋 <b>Kim işini bitirməyib</b>\n" + board(d.orders) + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
-  const rows: any[] = await db("tg_chats?select=chat_id").then((r) => r.json()).catch(() => []);
-  let sent = 0;
-  for (const c of [...new Set(rows.map((r) => r.chat_id))]) { const r = await say(c, text); if (r.ok) sent++; }
+    cmdProblemler(d));
+  const head = `🌙 <b>Günün sonu · ${fmtD(t)}</b>\n<i>Bu gün nə edilmədi</i>`;
+  const sent = await sendPlan(d, true, head, summary);
   return json({ ok: true, sent });
 }
 
