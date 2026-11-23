@@ -98,12 +98,17 @@ const ansLeftH = (o: any, i: any) => ANS_H - (Date.now() - new Date(ansSince(o, 
 const lateOpen = (o: any) => o.status === "yolda" && !!o.eta && o.eta < today();
 const lateEntry = (o: any) => (o.lates || []).find((x: any) => x.eta === o.eta);
 const techReady = (o: any, i: any) => i.tech && !i.techRes && i.qc !== "bad" && i.qc !== "none" && !i.unav && !i.notFound && o.recvDone && i.got > 0;
+// Keyfiyyət 60 dəq ərzində yoxlamasa anbar qəbulu şərti bitirir (o.qcSkip) — Keyfiyyət yoxlayana qədər problem kimi qalır
+const QC_MIN = 60;
+const qcLate = (o: any) => o.status === "anbar" && hasQC(o) && !o.qcAt && Date.now() >= new Date(o.arrivedAt || o.last_move || o.created).getTime() + QC_MIN * 60000;
+const qcSkipOpen = (o: any) => !!o.qcSkip && !o.qcAt && o.status !== "redd" && !o.deleted;
 function stageTxt(o: any) {
   if (o.req) return o.status === "istek" ? `📤 ${o.wh} hazırlayır` : (o.reqDone && !o.reqDone.full ? "Qismən verildi" : "Verildi ✓");
   if (held(o)) return o.rep ? `⛔ ${HOLDN[o.hold.t]} — Satınalmanın cavabı gözlənilir` : "⛔ Saxlanılır — Satınalma xəbərsiz nümunəni yazmayıb";
   if (o.status === "acik") return "Satınalmada (gəliş günü təyin olunmayıb)";
   if (o.status === "yolda") return lateOpen(o) ? `Gecikir · ${fmtD(o.eta)} gəlməli idi` : o.eta === today() ? "Bu gün gəlməlidir" : `Gözlənilir · ${fmtD(o.eta)}`;
-  if (o.status === "anbar") return hasQC(o) && !o.qcAt ? "Gəldi · Keyfiyyət yoxlamayıb" : `Gəldi · ${o.wh} qəbulu bitirməyib`;
+  if (o.status === "anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? `Keyfiyyət 1 saatda yoxlamadı · ${o.wh} şərti qəbul edə bilər` : "Gəldi · Keyfiyyət yoxlamayıb") : `Gəldi · ${o.wh} qəbulu bitirməyib`;
+  if (qcSkipOpen(o)) return "⚠ Keyfiyyət yoxlamadan şərti qəbul olunub — Keyfiyyət yoxlamalıdır";
   if (o.items.some((i: any) => problem(o, i) && !i.ans)) return "Satınalmanın cavabı gözlənilir";
   if (o.items.some((i: any) => techReady(o, i))) return "Texnoloqda";
   return "Bağlanıb ✓";
@@ -114,12 +119,13 @@ function board(orders: any[]) {
   const un = orders.flatMap((o) => o.items.filter((i: any) => canAnswer(o, i)).map((i: any) => ({ o, i })));
   const unLate = un.filter((r) => ansLeftH(r.o, r.i) < 0).length;
   const qc = orders.filter((o) => o.status === "anbar" && hasQC(o) && !o.qcAt);
-  const wh = (w: string) => orders.filter((o) => o.wh === w && o.status === "anbar" && (!hasQC(o) || o.qcAt)).length;
+  const wh = (w: string) => orders.filter((o) => o.wh === w && o.status === "anbar" && (!hasQC(o) || o.qcAt || qcLate(o))).length;
+  const qs = orders.filter(qcSkipOpen).length;
   const tp = orders.filter((o) => o.items.some((i: any) => techReady(o, i))).length;
   const L = (name: string, parts: string[]) => `${parts.length ? "🔸" : "✅"} <b>${name}</b>: ${parts.length ? parts.join(", ") : "işi yoxdur"}`;
   return [
     L("Satınalma", [hl.length ? `⛔ ${hl.length} xəbərsiz / qaiməsiz mala cavab verməyib` : "", acc.length ? `${acc.length} sifariş qəbul edilməyib` : "", late.length ? `${late.length} gecikməyə açıqlama yoxdur` : "", un.length ? `${un.length} mala cavab yoxdur` + (unLate ? ` (⚠ ${unLate}-i 12 saatı keçib)` : "") : ""].filter(Boolean)),
-    L("Keyfiyyət", qc.length ? [`${qc.length} sifarişi yoxlamayıb`] : []),
+    L("Keyfiyyət", [qc.length ? `${qc.length} sifarişi yoxlamayıb` : "", qs ? `⚠ ${qs} sifariş yoxlanmadan şərti qəbul olunub` : ""].filter(Boolean)),
     L("Anbar", wh("Anbar") ? [`${wh("Anbar")} sifarişin qəbulunu bitirməyib`] : []),
     L("İnqilab", wh("Anbar (İnqilab)") ? [`${wh("Anbar (İnqilab)")} sifarişin qəbulunu bitirməyib`] : []),
     L("Texnoloq", tp ? [`${tp} sifarişdə cavab verməyib`] : []),
