@@ -1,0 +1,42 @@
+@esgarow · Bəqərə 2:17–18 · Flow (Veo 3.1, 9:16) · hər blok = 1 klip (~10 san)
+Klip 1: Text to Video (və ya Nano Banana ilə start kadrı → Frames to Video). Klip 2+: Add to scene → "+" → Extend.
+Vaxtlar təxminidir (qari ~20 san fərz edilib); montajda klipləri sözlərə özüm uyğunlaşdıracağam.
+
+=== START KADRI (istəsən · Nano Banana · 1080×1920) ===
+Vertical 9:16 photo. A single antique brass-and-glass oil lantern with a warm glowing flame stands in the lower-middle of a seamless warm light-gray studio backdrop, soft diffused top light, gentle contact shadow, empty space in the upper 35 %. Photorealistic premium 3D product render, calm muted palette. No text, no people, no hands.
+
+=== KLIP 01 · 0:00–0:09 · "Onlar kardırlar, laldırlar, kordurlar… Bəs bu necə olur?" ===
+Vertical 9:16, one continuous shot, no cuts. Photorealistic premium 3D product render on a seamless warm light-gray studio backdrop, soft diffused top light, gentle contact shadows, calm muted palette (warm gray, charcoal, amber). An antique brass-and-glass oil lantern glows warmly in the lower middle of the frame. The flame flickers three times, then suddenly goes out; the lantern glass darkens and a thin ribbon of gray smoke curls slowly upward from the top of the lantern. The studio light dims slightly. Camera drifts slowly upward following the smoke. Smooth realistic physics, slow and calm motion. No text, no people, no hands.
+
+=== KLIP 02 · 0:09–0:16 · "Bəqərə surəsi, 17 və 18-ci ayələr… bir məsəllə" (Extend) ===
+Continue the same continuous shot, same studio backdrop and lighting. The lantern fades away below. The rising smoke slowly swirls and thickens into a soft spiral, then condenses into a closed ancient Quran manuscript with a deep green leather cover and fine gold geometric arabesque ornaments, which gently settles onto a carved dark walnut wooden book stand (rehal) in the center of the frame. A faint warm golden rim light outlines the book. Slow, dignified, reverent. No text, no people, no hands.
+
+=== KLIP 03 · 0:16–0:26 · QARİ (2:17) — Quran açılır, ayələr işıqlanır (Extend) ===
+Continue the same continuous shot. The ancient Quran on the wooden stand slowly opens by itself, the cover turning gently, revealing two cream-colored pages with ornate gold borders. Line by line, soft golden light flows across the pages from right to left, as if each line is gently illuminated from within; the pages glow warmer and warmer. The text on the pages is soft and out of focus, only glowing golden light strokes, no readable letters. Slow push-in toward the open pages. Reverent, calm, warm golden light. No people, no hands.
+
+=== KLIP 04 · 0:26–0:36 · QARİ (2:17 sonu + 2:18) — işıq yuxarı qalxır (Extend) ===
+Continue the same continuous shot. The glowing golden light lines slowly lift off the open pages and rise into the air above the book as thousands of tiny floating golden light particles, drifting in a slow gentle spiral above the Quran like warm dust in sunlight. The book keeps glowing softly beneath them. Camera slowly rises with the particles, keeping the book at the bottom of the frame. Calm, reverent, magical but realistic. No text, no people, no hands.
+
+=== KLIP 05 · 0:36–0:44 · "İstəvqədə nəran — od yandırdı" (Extend) ===
+Continue the same continuous shot. The Quran gently fades away into soft light below. The golden particles drift down and settle onto a small neat pile of dry wooden logs on the studio floor. A tiny spark catches, and a real campfire ignites and grows into warm tall flames. A wide circle of warm orange light spreads across the floor and the backdrop around the fire, the whole studio becomes warm and bright. Realistic fire physics, crackling sparks rising. Slow and calm. No text, no people, no hands.
+
+=== KLIP 06 · 0:44–0:57 · "Ədaət — işıqlandı… nurlarını apardı… heç nə qalmadı" (Extend) ===
+Continue the same continuous shot. The campfire burns bright and steady, its warm light illuminating everything around it for a few seconds. Then, without any wind, the flames shrink downward all at once, the glowing embers fade from orange to gray, and the circle of light on the floor contracts and disappears completely. No smoke glow, no ember remains — the studio falls into deep, quiet darkness, only the faint outline of the cold logs still barely visible. Slow, heavy, solemn. No text, no people, no hands.
+
+=== KLIP 07 · 0:57–1:05 · "Zulumat — qaranlıqlar… nur təkdir, qaranlıq cəm" (Extend) ===
+Continue the same continuous shot, now in near darkness. The cold logs dissolve. Many layers of thick black fog and dark translucent veils slowly drift and overlap in front of each other at different depths, darkness upon darkness. Then a single thin vertical beam of pure soft white light falls from above into the center of the frame, cutting through all the dark layers, perfectly still and calm. Low-key, cinematic, high contrast, minimal. No text, no people, no hands.
+
+=== KLIP 08 · 1:05–1:11 · "Summun, bukmun, umyun — kar, lal, kor" (Extend) ===
+Continue the same continuous shot. Inside the single beam of white light, three objects rise slowly from the darkness and stand in a row: an old brass hand bell, a rolled parchment scroll, and a glass oil lantern. One by one, a layer of thick black wax pours over each of them and hardens: the bell is sealed silent, the scroll is closed with a heavy black wax seal, the lantern glass turns completely black and opaque. The beam of light shines on them but they do not respond. Slow, solemn. No text, no people, no hands.
+
+=== KLIP 09 · 1:11–1:22 · "Fəhum lə yərciun — geri dönməzlər" (Extend) ===
+Continue the same continuous shot. The three black-sealed objects melt together into one dark shape that reforms into an antique brass compass lying open on the floor. Its needle spins wildly and endlessly, never settling on any direction. Behind the compass, the single beam of white light slowly narrows to a thin line and closes, like a door shutting softly. The compass slowly sinks into the darkness. Low-key, heavy, slow. No text, no people, no hands.
+
+=== KLIP 10 · 1:22–1:33 · "Bəs biz? Ramazanda, bir tövbədə… köhnə yola qayıdırıq… Qorx ki" (Extend) ===
+Continue the same continuous shot in darkness. From the spot where the compass disappeared, a single tall white candle slowly rises. Its wick ignites by itself with a small warm flame, gently lighting the space around it in soft amber. Then a cold draft passes: the flame bends sideways, shrinks and flickers dangerously, almost going out, the light around it trembling and fading. Realistic candle flame physics, slow and tense. No text, no people, no hands.
+
+=== KLIP 11 · 1:33–1:41 · "Rəbbimiz, nurumuzu tamamla… Səndə işığı söndürən nədir?" (Extend) ===
+Continue the same continuous shot. The candle flame steadies, straightens and slowly grows taller and brighter. Its warm golden light expands outward in soft waves, pushing away all the darkness, until the whole studio is filled with calm warm golden-hour light and gentle floating light particles. Camera slowly pushes in toward the bright, steady flame. Hopeful, peaceful, uplifting. No text, no people, no hands.
+
+=== KLIP 12 · 1:41–1:52 · TİZER "qaranlıq, leysan, ildırım… Bəqərə 19" (Extend) ===
+Continue the same continuous shot. The golden light slowly dims to a cool blue-gray. Above the candle, dark heavy storm clouds gather and swirl in the upper part of the frame. Heavy rain begins to fall in slow motion, drops splashing on the floor. A sudden bright flash of lightning illuminates the whole scene for an instant, then darkness and rain again. Cinematic, dramatic but calm camera, slow motion rain. No text, no people, no hands.
