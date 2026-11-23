@@ -61,7 +61,8 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Secrets: `TELEGRAM_TOKEN`, `TG_KOD` (+ Supabase defaults). `APP` constant = site URL for deep links (`#o=ID`).
 - `?setup=1` sets the webhook (secret = sha256(token) prefix).
 - Commands: `/qosul KOD Şöbə`, `/bugun`, `/geciken`, `/problemler`, `/sobeler`, `/sifaris`, `/hesabat`.
-- pg_cron (UTC): `almond-seher 30 5` (09:30 Baku), `almond-gunorta 0 12` (16:00), `almond-axsam 0 14` (18:00, problems only, "from → wh"), `almond-hesabat 5 16` (weekly/monthly Excel to Rəhbərlik).
+- Work hours 08:00–18:00 Baku (owner, v67): instant alerts (`onAlert`) outside them are NOT sent to Telegram (they stay in the app); the app's Keyfiyyət 1-hour warnings (`qcSignals`) are only created in work hours (`bakuWork`).
+- pg_cron (UTC), SQL in `supabase-cron-saatlar.sql`: `almond-seher 0 4` (08:00, per-department "bu gün nə etməlisiniz" via `plan()`/`sendPlan()`; each chat gets its own department, `*`/Rəhbərlik/Admin get all), `almond-gunorta 0 12` (16:00 → Satınalma), `almond-hesabat 45 13` (17:45 Excel), `almond-ehtiyat 55 15` (19:55 backup), `almond-axsam 0 16` (20:00, per-department "nə edilmədi" + day summary for management; last message of the day).
 
 ## Backups (free plan has none)
 - Bot sends a full JSON backup daily 23:30 Baku (`?backup=1`, cron `almond-ehtiyat`) ONLY to chats connected with `/qosul Ehtiyat KOD` (owner's private chat). File: `{app, made, records:[{kind,id,version,data,updated_at}], tg_chats:[...]}`.

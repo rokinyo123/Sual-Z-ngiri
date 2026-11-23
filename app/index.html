@@ -1010,7 +1010,10 @@ function qcSkipNote(o){
   return '<div class="stk">⚠ Keyfiyyət '+QC_MIN/60+' saat ərzində yoxlamadı — <b>'+esc(k.by)+'</b> '+t+'-da qəbulu şərti bitirdi'+
     (o.qcAt ? ' · Keyfiyyət sonradan yoxladı ('+minTxt(o.qcLateMin||0)+' gecikmə)' : ' · <b>Keyfiyyət hələ yoxlamayıb</b>')+'</div>';
 }
+// İş saatı 08:00–18:00 (Bakı): Keyfiyyətin 1 saat xəbərdarlıqları yalnız bu vaxtda yaranır
+const bakuWork = () => { const d = new Date(Date.now()+4*3600000), m = d.getUTCHours()*60+d.getUTCMinutes(); return m>=480 && m<1080; };
 function qcSignals(){
+  if (!bakuWork()) return;
   S.orders.forEach(o=>{
     if (!(o.status==="anbar" && hasQC(o) && !o.qcAt)) return;
     const left = qcLeftMin(o), items = o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty);
@@ -2141,7 +2144,7 @@ function vHome(){
     if (mine.length) html += '<h2>Göndərdiyiniz sifarişlər <span class="cnt">'+mine.length+'</span></h2>' + bySent(mine, null, orderBrief);
   }
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v66 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v67 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Nəticələrin qısa xülasəsi: basanda həmin siyahı açılır
