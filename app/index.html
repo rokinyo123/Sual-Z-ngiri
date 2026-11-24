@@ -1373,7 +1373,7 @@ function resRow(r){
   const form = r.cat==="ok" || i.ans ? "" : role==="Satınalma" && canAnswer(o,i) ? '<div class="cell ans"><span class="cl">Cavabınız</span>'+ansForm(key,i)+'</div>' : !canAnswer(o,i) ? '<div class="meta">'+waitWhy(o,i)+'</div>' : "";
   const rest = Math.max(0, num(i.qty)-(i.got||0));
   const lr = r.cat==="miss" && role===o.wh && !(i.ans && i.ans.follow) && !i.unav && !i.notFound
-    ? '<div class="cell lrecv"><span class="cl">📦 Sonradan gəldi?</span><input type="number" min="0" step="any" id="lr-'+key+'" value="'+(rest||"")+'" placeholder="neçə gəldi" aria-label="Neçə gəldi"><button class="okb" data-lrecv="'+key+'">Qəbul et</button><button class="sm" data-other="'+key+'">🔄 Başqa firma gətirdi</button>'+(openAct[key]==="other"?otherBox(key):"")+
+    ? '<div class="cell lrecv"><span class="cl">📦 Sonradan gəldi?</span><input type="text" inputmode="decimal" autocomplete="off" id="lr-'+key+'" value="'+(rest||"")+'" placeholder="neçə gəldi" aria-label="Neçə gəldi"><button class="okb" data-lrecv="'+key+'">Qəbul et</button><button class="sm" data-other="'+key+'">🔄 Başqa firma gətirdi</button>'+(openAct[key]==="other"?otherBox(key):"")+
       '<span class="meta">Gəlməyən: '+fmtN(rest)+' — gələn qədərini yazın, qalanı siyahıda qalacaq</span></div>' : "";
   const lb = i.byFirm ? '<div class="spn">🔄 '+esc(i.byFirm.firm)+' təmin etdi · '+fmtN(i.byFirm.qty)+' · '+fmtD(i.byFirm.at.slice(0,10)).slice(0,5)+'</div>' : "";
   const lh = (i.lateRecv||[]).length ? '<div class="spn">📦 Sonradan gəldi: '+i.lateRecv.map(x=>fmtN(x.qty)+" · "+fmtD(x.at.slice(0,10)).slice(0,5)+" ("+x.days+" gün gec)").join(", ")+'</div>' : "";
@@ -2246,7 +2246,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v79 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v80 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2374,7 +2374,7 @@ function itemRow(o,i,k,st){
   // Anbar / İnqilab
   const canWh = role===o.wh && (o.status==="anbar" || o.status==="yolda");   // bir addımda: gəldi + miqdar + bağla
   if (canWh && i.qc!=="bad" && i.qc!=="none" && i.techRes!=="bad"){
-    cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><div class="whin"><input type="number" min="0" step="any" data-got="'+key+'" data-q="'+esc(i.qty)+'" id="got-'+key+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+key+'" data-q="'+num(i.qty)+'">Tam</button><button class="sm badb" data-gnone="'+key+'">Gəlmədi</button><button class="sm" data-other="'+key+'">🔄 Başqa firma</button><button class="sm badb" data-retb="'+key+'">↩ Qaytarıldı</button>'+(openAct[key]==="other"?otherBox(key):"")+(openAct[key]==="ret"?retBox(key,i):"")+(i.ret?'<span class="pill p-bad">↩ '+fmtN(i.ret.qty)+' qaytarıldı'+(i.ret.why?': '+esc(i.ret.why):"")+'</span> <button class="sm linkb" data-retundo="'+key+'">geri al</button>':"")+(i.byFirm?'<span class="pill p-info">🔄 '+esc(i.byFirm.firm)+' gətirdi</span>':"")+
+    cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><div class="whin"><input type="text" inputmode="decimal" autocomplete="off" data-got="'+key+'" data-q="'+esc(i.qty)+'" id="got-'+key+'" placeholder="gələn" value="'+(i.got!=null?i.got:"")+'"><button class="sm" data-full="'+key+'" data-q="'+num(i.qty)+'">Tam</button><button class="sm badb" data-gnone="'+key+'">Gəlmədi</button><button class="sm" data-other="'+key+'">🔄 Başqa firma</button><button class="sm badb" data-retb="'+key+'">↩ Qaytarıldı</button>'+(openAct[key]==="other"?otherBox(key):"")+(openAct[key]==="ret"?retBox(key,i):"")+(i.ret?'<span class="pill p-bad">↩ '+fmtN(i.ret.qty)+' qaytarıldı'+(i.ret.why?': '+esc(i.ret.why):"")+'</span> <button class="sm linkb" data-retundo="'+key+'">geri al</button>':"")+(i.byFirm?'<span class="pill p-info">🔄 '+esc(i.byFirm.firm)+' gətirdi</span>':"")+
 '</div></div>');
   } else if (canWh){
     cells.push('<div class="cell"><span class="cl">'+esc(o.wh)+'</span><span class="pill p-bad">qəbul olunmadı</span></div>');
@@ -2657,7 +2657,7 @@ function answerNone(key){
 // 🔄 Mal sifariş verilən firmadan yox, başqa firmadan gəlib — "təmin edildi" sayılır, əsas firmaya "gəlmədi" yazılmır
 function otherBox(key){ return '<div class="dt other"><input list="oflist" id="of-'+key+'" placeholder="Hansı firma gətirdi?"><datalist id="oflist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist><button class="pri" data-otherok="'+key+'">✓ Təmin edildi</button></div>'; }
 // ↩ Mal gəldi, amma qəbulda geri qaytarıldı (zədəli, səhv mal, keyfiyyətsiz...) — "Gəlmədi"dən ayrı qeyd
-function retBox(key, i){ return '<div class="dt other"><input type="number" min="0" step="any" id="rq-'+key+'" value="'+esc(num(i.qty))+'" aria-label="Neçəsi qaytarıldı" style="flex:0 0 110px"><input id="rw-'+key+'" placeholder="Səbəb (məs. zədəli, səhv mal, vaxtı keçib)"><button class="badb" data-retok="'+key+'">↩ Qaytarıldı</button></div>'; }
+function retBox(key, i){ return '<div class="dt other"><input type="text" inputmode="decimal" autocomplete="off" id="rq-'+key+'" value="'+esc(num(i.qty))+'" aria-label="Neçəsi qaytarıldı" style="flex:0 0 110px"><input id="rw-'+key+'" placeholder="Səbəb (məs. zədəli, səhv mal, vaxtı keçib)"><button class="badb" data-retok="'+key+'">↩ Qaytarıldı</button></div>'; }
 function retItem(key){
   const [o,i] = itemOf(key); if (!o || !i) return;
   const q = num(i.qty), rq = Math.max(0, num(($("rq-"+key)||{}).value)), why = (($("rw-"+key)||{}).value||"").trim();

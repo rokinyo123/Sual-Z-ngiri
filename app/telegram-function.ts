@@ -94,6 +94,7 @@ function problem(o: any, i: any) {
   if (!o.recvDone) return "";
   if (i.ret && (i.got || 0) < num(i.qty)) return "Qaytarıldı" + (i.ret.why ? " — " + i.ret.why : "");
   if (i.qc === "none" || !i.got) return "Gəlmədi";
+  if (i.got0 === 0 && (i.got || 0) < num(i.qty)) return "Gəlmədi";
   if ((i.got || 0) < num(i.qty)) return "Az gəldi";
   return "";
 }
@@ -279,6 +280,18 @@ async function onAlert(req: Request, body: any) {
   return json({ ok: true, sent });
 }
 
+// Gəlməyən mallar (proqramdakı "Gəlməyən" siyahısı): gəlmədi / az gəldi / qaytarıldı / tapılmadı — sonradan tam gələnlər çıxır
+const MISS_RE = /^(Gəlmədi|Az gəldi|Qaytarıldı|Satınalma: mal yoxdur|Təchizatçı tapmadı)/;
+function openMissing(d: Awaited<ReturnType<typeof load>>, wh?: string) {
+  return d.orders.filter((o) => o.recvDone && (!wh || o.wh === wh)).flatMap((o) => o.items.filter((i: any) => MISS_RE.test(problem(o, i)) && !laterArrived(i, 0, o) && !(i.ans && i.ans.closed)).map((i: any) => ({ o, i })));
+}
+function missLine(d: Awaited<ReturnType<typeof load>>, o: any, i: any) {
+  const pr = problem(o, i), rest = Math.max(0, Math.round((num(i.qty) - (i.got || 0)) * 1000) / 1000), u = String(i.qty ?? "").replace(/^[\d.,\s]+/, "").trim();
+  const ans = i.ans ? (i.ans.none ? " · Satınalma: tapılmır" : i.ans.date ? ` · Satınalma: ${fmtD(i.ans.date)} gələcək` : "") : " · <b>cavab yoxdur</b>";
+  return `${link(o.id)} ${esc(d.pname(i.pid))} — ${/^Az/.test(pr) || (i.got || 0) > 0 ? esc(rest + (u ? " " + u : "")) + " gəlmədi" : esc(pr)} · ${esc(o.supplier || "Firmasız")} → ${esc(o.wh)}${ans}`;
+}
+const listN = (title: string, lines: string[], n = 10) => lines.length ? `${title} · ${lines.length}\n` + lines.slice(0, n).join("\n") + (lines.length > n ? `\n… və daha ${lines.length - n}` : "") : "";
+
 // ---------- Şöbələrin siyahısı: səhər "bu gün nə etməlisiniz", axşam "nə edilmədi" ----------
 const PLAN_DEPTS = ["Satınalma", "Keyfiyyət", "Anbar", "Anbar (İnqilab)", "Texnoloq", "Satış", "Üzeyir", "Elçin", "İstehsalat", "Çeşidləmə", "Rəhbərlik"];
 const PLAN_ICON: Record<string, string> = { "Satınalma": "🛒", "Keyfiyyət": "🔍", "Anbar": "🏬", "Anbar (İnqilab)": "🏪", "Texnoloq": "🧪", "Satış": "💼", "Üzeyir": "👤", "Elçin": "👤", "İstehsalat": "🏭", "Çeşidləmə": "🧺", "Rəhbərlik": "📋" };
@@ -306,6 +319,7 @@ function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
     add(wh, eve ? "Qəbulunu bitirmədiyiniz sifarişlər" : "Qəbulu bitirin", O.filter((o) => o.wh === wh && o.status === "anbar" && !held(o) && (!hasQC(o) || o.qcAt || qcLateP(o))).map(oLine));
     add(wh, eve ? "Qəbul etmədiyiniz istəklər" : "Satışın istəklərinə baxın", O.filter((o) => o.req && o.wh === wh && o.status === "istek").map((o) => `${link(o.id)} ${esc(o.from)} · ${o.items.length} mal`));
     if (!eve) add(wh, "Bu gün gələcək", O.filter((o) => o.wh === wh && o.status === "yolda" && o.eta === t).map(oLine));
+    if (eve) add(wh, "Gəlməyən mallar (məlumat üçün)", openMissing(d, wh).map(({ o, i }) => missLine(d, o, i)));
   }
   // Texnoloq
   add("Texnoloq", eve ? "Nəticə vermədiyiniz mallar" : "Nəticə verin", O.flatMap((o) => o.items.filter((i: any) => techReady(o, i)).map((i: any) => `${link(o.id)} ${esc(d.pname(i.pid))}${i.techDue ? " · nəticə günü " + fmtD(i.techDue) : " · nəticə günü seçilməyib"}`)));
@@ -410,7 +424,7 @@ async function evening(force: boolean) {
     ((pg) => pg.length ? `⚠️ <b>Bu gün qəbul olunanlarda problem · ${pg.length} sifariş</b>\n` + pg.map(line).join("\n") : `✅ Bu gün qəbul olunanlarda problem yoxdur`)(got.filter((o) => o.items.some((i: any) => problem(o, i)))) + "\n\n" +
     `⛔ <b>Bu gün gəlməli idi, gəlmədi · ${miss.length}</b>\n` + (miss.length ? miss.map((o) => `${link(o.id)} <b>${esc(o.supplier || "Firmasız")}</b> · ${route(o)} · ${o.items.length} mal`).join("\n") : "—") + "\n\n" +
     (rej.length ? `🔍 <b>Keyfiyyət bu gün qəbul etmədi · ${rej.length}</b>\n` + rej.map(({ o, i }) => `• ${esc(d.pname(i.pid))} — ${esc(i.qcWhy || "uyğun deyil")} · ${link(o.id)} ${esc(o.supplier || "")}`).join("\n") + "\n\n" : "") +
-    cmdProblemler(d));
+    cmdProblemler(d) + ((x) => x ? "\n\n" + x : "")(listN("⛔ <b>Gəlməyən mallar (hamısı)</b>", openMissing(d).map(({ o, i }) => missLine(d, o, i)), 15)));
   const head = `🌙 <b>Günün sonu · ${fmtD(t)}</b>\n<i>Bu gün nə edilmədi</i>`;
   const sent = await sendPlan(d, true, head, summary);
   return json({ ok: true, sent });
@@ -518,6 +532,34 @@ async function reportBuild(kind: string, ref: string) {
   return { buf, name, caption };
 }
 // Avtomatik: bazar günü — həftəlik, ayın son günü — aylıq; Rəhbərlik və "hamısı" söhbətlərinə, hər dövr üçün bir dəfə
+// Həftəlik (bazar) / aylıq yazılı statistika: gəlmədi, az gəldi, qaytarıldı, gec baxılan mövzular, qaiməsiz, xəbərsiz
+function reportText(d: Awaited<ReturnType<typeof load>>, kind: string, ref: string) {
+  const a = kind === "month" ? ref.slice(0, 8) + "01" : monday(ref);
+  const b = kind === "month" ? addD(addD(ref.slice(0, 8) + "01", 32).slice(0, 8) + "01", -1) : addD(a, 6);
+  const inR = (x?: string) => !!x && x >= a && x <= b;
+  const day = (x?: string) => String(x || "").slice(0, 10);
+  const os = d.orders.filter((o) => inR(o.eta || day(o.created)));
+  const rows = os.flatMap((o) => o.items.map((i: any) => ({ o, i, pr: problem(o, i) }))).filter((r) => !laterArrived(r.i, 0, r.o));
+  const nm = (r: any) => `${esc(d.pname(r.i.pid))} ${esc(r.i.qty)} · ${esc(r.o.supplier || "Firmasız")} → ${esc(r.o.wh)} · ${fmtD(r.o.eta || day(r.o.created))}`;
+  const miss = rows.filter((r) => /^(Gəlmədi|Satınalma: mal yoxdur|Təchizatçı tapmadı)/.test(r.pr)).map((r) => "• " + nm(r));
+  const part = rows.filter((r) => /^Az/.test(r.pr)).map((r) => `• ${nm(r)} — ${esc(r.i.got)} gəldi`);
+  const ret = d.orders.flatMap((o) => o.items.filter((i: any) => i.ret && inR(day(i.ret.at))).map((i: any) => `• ${esc(d.pname(i.pid))} ${esc(i.ret.qty)} — ${esc(i.ret.why || "")} · ${esc(o.supplier || "")} · ${fmtD(day(i.ret.at))}`));
+  const slow = d.orders.flatMap((o) => o.items.filter((i: any) => i.ans && !i.ans.closed && inR(day(i.ans.at)) && Number(hrs(ansSince(o, i), i.ans.at)) > ANS_H)
+    .map((i: any) => `• Satınalma ${hrs(ansSince(o, i), i.ans.at)} saata cavab verdi — ${esc(d.pname(i.pid))} · ${link(o.id)}`));
+  const unans = d.orders.flatMap((o) => o.items.filter((i: any) => canAnswer(o, i) && ansLeftH(o, i) < 0).map((i: any) => `• Satınalma cavab verməyib (${hTxt(-ansLeftH(o, i))}) — ${esc(d.pname(i.pid))} · ${link(o.id)}`));
+  const lateNote = d.orders.flatMap((o) => (o.lates || []).filter((e: any) => inR(e.eta) && !e.note).map((e: any) => `• Gecikməyə açıqlama yazılmayıb — ${esc(e.firm || "")} · ${fmtD(e.eta)} · ${link(o.id)}`));
+  const holdSlow = d.orders.filter((o) => o.rep === "noinv" && o.holdDone && o.hold && inR(day(o.hold.at)) && Number(hrs(o.hold.at, o.holdDone.at)) > ANS_H)
+    .map((o) => `• Qaiməsiz mala ${hrs(o.hold.at, o.holdDone.at)} saata cavab verildi · ${link(o.id)}`);
+  const noinv = d.orders.filter((o) => o.rep === "noinv" && inR(day(o.created))).map((o) => `• ${fmtD(day(o.created))} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} — ${esc(o.hold?.desc || "")}${o.holdDone ? "" : " · <b>cavab yoxdur</b>"}`);
+  const noorder = d.orders.filter((o) => o.rep === "noorder" && inR(day(o.created))).map((o) => `• ${fmtD(day(o.created))} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} — ${esc(o.hold?.desc || "")}`);
+  const title = kind === "month" ? `📊 <b>Aylıq statistika · ${dmy(a)} – ${dmy(b)}</b>` : `📊 <b>Həftəlik statistika · ${dmy(a)} – ${dmy(b)}</b>`;
+  const parts = [
+    listN("⛔ <b>Gəlmədi</b>", miss), listN("🟡 <b>Az gəldi</b>", part), listN("↩ <b>Qaytarıldı</b>", ret),
+    listN("⏰ <b>Gec baxılan mövzular</b>", [...slow, ...unans, ...lateNote, ...holdSlow]),
+    listN("📄 <b>Qaiməsiz gələn mallar</b>", noinv), listN("📦 <b>Xəbərsiz gələn mallar</b>", noorder),
+  ].filter(Boolean);
+  return cut(title + "\n\n" + (parts.length ? parts.join("\n\n") : "✅ Bu dövrdə problem olmayıb") + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
+}
 async function reportRun(mode: string, force: boolean) {
   const t = today(), kinds: string[] = [];
   if (mode === "week" || mode === "month") kinds.push(mode);
@@ -530,7 +572,8 @@ async function reportRun(mode: string, force: boolean) {
     const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: force ? `report-test-${k}-${Date.now()}` : `report-${k}-${k === "month" ? t.slice(0, 7) : monday(t)}` }) });
     if (s.status === 409) { out.push({ k, skip: "göndərilib" }); continue; }
     const r = await reportBuild(k, t);
-    let sent = 0; for (const c of chats) { const x = await sendDoc(c, r.buf, r.name, r.caption); if (x.ok) sent++; }
+    const txt = reportText(await load(), k, t);
+    let sent = 0; for (const c of chats) { await say(c, txt); const x = await sendDoc(c, r.buf, r.name, r.caption); if (x.ok) sent++; }
     out.push({ k, sent });
   }
   return json({ ok: true, out });
