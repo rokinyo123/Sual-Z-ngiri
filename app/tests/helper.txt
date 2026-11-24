@@ -1,0 +1,28 @@
+const HELPER = () => {
+  window.V = {
+    reset(){
+      try { loginClose(); } catch(e){}
+      const x = document.getElementById("inst"); if (x) x.remove();
+      try { localStorage.setItem("almond-inst-hide", today()); } catch(e){}
+      S.orders = []; S.alerts = []; S.tasks = []; S.meets = []; S.mtasks = []; S.qas = []; S.exps = []; S.trash = []; S.seq = 104;
+      draft = newDraft(); sDraft = null; qDraft = null; mDraft = null; mAdd = null;
+      tkDraft = { title:"", to:"", due:"" }; xDraft = { date:"", what:"", amt:"", photo:"" };
+    },
+    pid(n){ const p = S.products.find(p=>p.name.toLowerCase()===n.toLowerCase()); return p ? p.id : ensureProd(n, ""); },
+    firm(n, f){ const p = S.products.find(p=>p.id===Number(V.pid(n))); if (p) p.firm = f; if (!S.firms.includes(f)) S.firms.push(f); },
+    order(o){ const now = new Date().toISOString();
+      const x = Object.assign({ id:nextId(), from:"Anbar", wh:"Anbar", created:now, last_move:now, status:"acik", note:"", photos:[], files:[], comments:[], history:[] }, o);
+      x.items = (o.items||[]).map(([n,q,extra])=>Object.assign({ pid:Number(V.pid(n)), qty:q }, extra||{}));
+      if (x.status==="yolda" && !x.acceptedAt) x.acceptedAt = now;
+      S.orders.unshift(x); return x; },
+    hold(t, desc){ const now = new Date().toISOString();
+      S.orders.unshift({ id:nextId(), from:"Anbar", wh:"Anbar", rep:t, hold:{ t, at:new Date(Date.now()-3*3600000).toISOString(), desc, by:"Anbar" }, created:now, items:[], status:"anbar", eta:today(), supplier:"", last_move:now, arrivedAt:now, note:"", photos:[], files:[], comments:[], history:[] }); },
+    qa(o){ const now = new Date(Date.now()-2*3600000).toISOString();
+      (S.qas = S.qas||[]).push(Object.assign({ id:"q"+Math.random().toString(36).slice(2,7), kind:"ncr", product:"", ptype:"", desc:"", qty:"", sev:"mid", exp:"", wh:"Anbar", by:"Keyfiyyət", at:now, since:now, status:"open" }, o)); },
+    newDraft(r, rows){ role = r; tab = "new"; draft = newDraft();
+      draft.items = rows.length ? rows.map(([n,q,l])=>({ pid:V.pid(n), pname:n, qty:q, left:l||"" })) : [{ pid:"", qty:"" }];
+      render(); window.scrollTo(0,0); },
+    go(r, t){ role = r; tab = t; render(); window.scrollTo(0,0); },
+    login(){ V.reset(); nlLogin("", '<select id="lu" aria-label="Şöbə"><option>Anbar</option></select>'); const p = document.getElementById("lp"); if (p) p.value = "1234"; const c = document.getElementById("lrem"); if (c) c.checked = true; },
+  };
+};

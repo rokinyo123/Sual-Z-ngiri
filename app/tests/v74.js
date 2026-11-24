@@ -1,0 +1,21 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const r = {};
+  await p.evaluate(()=>{ V.reset(); const o = V.order({ status:"yolda", eta:today(), supplier:"Rofruit", items:[["Kakao","100 kq"],["Lahmacun kağızı","60 kq"],["Moloko sadə","120 kq"]] }); window.O=o.id; role="Anbar"; tab="home"; render(); window.scrollTo(0,0); });
+  await p.click('[data-full="105-0"]'); await p.fill('#got-105-1','25'); await p.dispatchEvent('#got-105-1','change'); await p.click('[data-gnone="105-2"]'); await p.waitForTimeout(200);
+  const card = await p.$('#o-105'); if (card) await card.screenshot({path:path.join(require('os').tmpdir(),'v74-card.png')});
+  await p.click('[data-act="receive"][data-id="105"]'); await p.waitForTimeout(300);
+  r.after = await p.evaluate(()=>{ const all = S.orders.filter(x=>x.supplier==="Rofruit");
+    return { orders: all.map(o=>({id:o.id,status:o.status,stage:stage(o).t,items:o.items.map(i=>pname(i.pid)+":"+i.got+":"+(problem(o,i)||"ok"))})), prob:probCount(), alerts:(S.alerts||[]).map(a=>a.to.join("/")+" "+a.title) }; });
+  r.kf = await p.evaluate(()=>{ role="Keyfiyyət"; tab="qc"; render(); const ids=S.orders.filter(qcPend).map(o=>o.id);
+    const id = ids[0]; const bad=document.querySelector('#o-'+id+' [data-qc][data-v="bad"]'); if (bad) bad.click();
+    const o=S.orders.find(x=>x.id===id); o.items[0].qcWhy="nəm"; document.querySelector('[data-act="qcok"][data-id="'+id+'"]').click();
+    return { ids, qc:o.items.map(i=>i.qc), probAfter:o.items.map(i=>problem(o,i)), probCount:probCount(), lastAlert:(S.alerts||[])[0].to.join("/")+" "+S.alerts[0].title }; });
+  console.log(JSON.stringify(r,null,1)); console.log('JS', errs); await br.close();
+})();

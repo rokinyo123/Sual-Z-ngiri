@@ -1,0 +1,22 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const lists = () => p.evaluate(()=>{ role="Anbar"; const rows=resultRows().filter(x=>x.cat==="miss"); return { gelmeyen: rows.filter(x=>/^Gəlmədi/.test(x.pr)).map(x=>pname(x.i.pid)), az: rows.filter(x=>/^Az/.test(x.pr)).map(x=>pname(x.i.pid)+" "+x.pr) }; });
+  await p.evaluate(()=>{ V.reset(); const y=new Date(Date.now()-48*3600000).toISOString();
+    V.order({ status:"bagli", from:"bazar", supplier:"bazar", eta:plusDays(-2), recvDone:true, recvAt:y, arrivedAt:y, items:[["Vinil","3",{got:0,qc:"none"}],["Şanti","250 kq",{got:250,qc:"ok"}]] });
+    role="Anbar"; tab="orders"; osec="gelmeyen"; render(); window.scrollTo(0,0); });
+  const r = { before: await lists() };
+  await p.screenshot({path:path.join(require('os').tmpdir(),'lr-1.png'), fullPage:false});
+  await p.fill('#lr-105-0','1'); await p.click('[data-lrecv="105-0"]'); await p.waitForTimeout(200);
+  r.after1 = await lists();
+  await p.evaluate(()=>{ osec="az"; render(); });
+  await p.fill('#lr-105-0','2'); await p.click('[data-lrecv="105-0"]'); await p.waitForTimeout(200);
+  r.after2 = await lists();
+  r.state = await p.evaluate(()=>{ const o=S.orders[0]; const st=stats(plusDays(-7),today()); return { stage:stage(o).t, full:isFull(o), lr:o.items[0].lateRecv.map(x=>x.qty+"/"+x.days), stat:st.lateRecv.length, alerts:(S.alerts||[]).slice(0,2).map(a=>a.title) }; });
+  console.log(JSON.stringify(r,null,1)); console.log('JS', errs); await br.close();
+})();

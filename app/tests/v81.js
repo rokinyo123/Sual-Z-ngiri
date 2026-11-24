@@ -1,0 +1,20 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const r = await p.evaluate(()=>{ V.reset(); const y=new Date(Date.now()-50*3600000).toISOString(), n=new Date().toISOString();
+    const late = V.order({ status:"yolda", created:y, eta:plusDays(-1), supplier:"Hicaz", items:[["Ağ qoz","2 kq"]] }); late.lates=[{eta:late.eta, firm:"Hicaz", at:n}];
+    const A = V.order({ status:"bagli", created:y, eta:plusDays(-2), supplier:"A Agro", recvDone:true, recvAt:y, arrivedAt:y, items:[["Badam ağ","10 kq",{got:0}]] });
+    const B = V.order({ status:"bagli", created:n, eta:today(), supplier:"Rofruit", recvDone:true, recvAt:n, arrivedAt:n, items:[["Badam ağ","5 kq",{got:5}]] });
+    role="Anbar"; tab="orders"; osec="aktiv"; oq=""; render();
+    const aktiv=[...document.querySelectorAll('#main article.oc')].map(a=>a.id);
+    osec="gelmeyen"; render(); const gel=[...document.querySelectorAll('#main .irow .rmeta button')].map(b=>b.textContent);
+    oq="badam"; render(); const search=[...document.querySelectorAll('#main article.oc')].map(a=>a.id+" "+a.querySelector('.pill').textContent);
+    return { lateId:late.id, aktiv, gelmeyen:gel, search, A_problem:problem(A,A.items[0]) }; });
+  await p.screenshot({path:path.join(require('os').tmpdir(),'v81-search.png'), fullPage:false});
+  console.log(JSON.stringify(r,null,1)); console.log('JS', errs); await br.close();
+})();

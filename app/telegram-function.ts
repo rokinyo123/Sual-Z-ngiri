@@ -94,7 +94,6 @@ function problem(o: any, i: any) {
   if (!o.recvDone) return "";
   if (i.ret && (i.got || 0) < num(i.qty)) return "Qaytarıldı" + (i.ret.why ? " — " + i.ret.why : "");
   if (i.qc === "none" || !i.got) return "Gəlmədi";
-  if (i.got0 === 0 && (i.got || 0) < num(i.qty)) return "Gəlmədi";
   if ((i.got || 0) < num(i.qty)) return "Az gəldi";
   return "";
 }
