@@ -343,7 +343,13 @@ function planText(P: Record<string, string[]>, depts: string[], eve: boolean, al
   return depts.map((k) => `${PLAN_ICON[k] ?? "▫️"} <b>${esc(k)}</b>\n` + (P[k].length ? P[k].join("\n") : eve ? "✅ hamısı edilib" : "✅ açıq işiniz yoxdur")).join("\n\n");
 }
 // hər söhbətə öz şöbəsinin siyahısı; "hamısı", Rəhbərlik və Admin — bütün şöbələr
-async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head: string, tail: string) {
+// İş saatından kənar (18:00–08:00) yaranan bildirişlər: anlıq getmir, səhər mesajına yığılır
+async function nightAlerts() {
+  const b = bakuNow(), to = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(), 8 - 4)), from = new Date(to.getTime() - 14 * H);
+  const r: any[] = await db(`records?kind=eq.alert&select=data&order=updated_at.desc&limit=400`).then((x) => x.json()).catch(() => []);
+  return r.map((x) => x.data).filter((a) => a && a.at && new Date(a.at) >= from && new Date(a.at) < to);
+}
+async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head: string, tail: string, night: any[] = []) {
   const P = plan(d, eve);
   const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
   const byChat = new Map<number, Set<string>>();
@@ -353,7 +359,9 @@ async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head:
     const all = ds.has("*") || ds.has("Rəhbərlik") || ds.has("Admin");
     const depts = all ? PLAN_DEPTS.filter((k) => k !== "Rəhbərlik" || P[k].length) : PLAN_DEPTS.filter((k) => ds.has(k));
     if (!depts.length) continue;
-    const text = cut(head + "\n\n" + planText(P, depts, eve, all) + (all && tail ? "\n\n" + tail : "") + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
+    const na = night.filter((a) => all || (Array.isArray(a.to) && a.to.some((x: string) => ds.has(x))));
+    const nt = na.length ? `🌙 <b>Axşam və gecə gələn bildirişlər · ${na.length}</b>\n` + na.slice(0, 12).map((a) => `• ${esc(a.title)}${a.sub ? " — <i>" + esc(String(a.sub).slice(0, 90)) + "</i>" : ""}`).join("\n") + (na.length > 12 ? `\n… və daha ${na.length - 12} (proqramda 🔔)` : "") + "\n\n" : "";
+    const text = cut(head + "\n\n" + nt + planText(P, depts, eve, all) + (all && tail ? "\n\n" + tail : "") + `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
     const r = await say(chat, text); if (r.ok) sent++;
   }
   return sent;
@@ -369,7 +377,7 @@ async function morning(force: boolean) {
   const WD = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
   const head = `☀️ <b>Sabahınız xeyir! ${fmtD(t)} · ${WD[b.getUTCDay()]}</b>\n<i>Bu gün nə etməlisiniz</i>`;
   const tail = cmdBugun(d) + ((x) => x ? "\n\n" + x : "")(cmdExpiry(d));
-  const sent = await sendPlan(d, false, head, tail);
+  const sent = await sendPlan(d, false, head, tail, await nightAlerts());
   return json({ ok: true, sent });
 }
 
