@@ -6,7 +6,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
   await p.evaluate(HELPER);
-  await p.evaluate(()=>{ V.reset(); const o = V.order({ status:"yolda", eta:today(), supplier:"Təchizatçı", items:[["Kakos xirda","15 kq"],["falga kariçnivi(şokolad)","1"]] }); role="Anbar"; render(); });
+  await p.evaluate(()=>{ V.reset(); const o = V.order({ status:"yolda", eta:today(), supplier:"Təchizatçı", items:[["Kakos xirda","15 kq"],["falga kariçnivi(şokolad)","1"]] }); role="Anbar"; S.orders.forEach(o=>homeOpen.add(o.id)); render(); });
   await p.click('[data-other="105-0"]'); await p.waitForTimeout(150);
   await p.fill('#of-105-0','Rofruit'); await p.click('[data-otherok="105-0"]'); await p.waitForTimeout(150);
   await p.click('[data-gnone="105-1"]');

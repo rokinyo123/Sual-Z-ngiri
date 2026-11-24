@@ -561,6 +561,16 @@ details.mini.rep>.row{padding:0 10px 6px}
 .ic.bad{background:var(--bad-bg);color:var(--bad)}
 
 .cell.cover{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--ok-bg);border-radius:10px;padding:8px}
+
+.mcard{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--arch);border-radius:12px;padding:10px 12px;margin:6px 0;color:var(--fg)}
+.mcard.s-wait{border-left-color:var(--wait)} .mcard.s-chk{border-left-color:var(--qc)} .mcard.s-bad{border-left-color:var(--bad)} .mcard.s-buy{border-left-color:var(--buy)}
+.mcard .mh{display:flex;justify-content:space-between;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:0}
+.mcard .mh .pill{white-space:normal;max-width:100%;text-align:left}
+.mcard{overflow:hidden}
+.mcard .mh b{font-size:16px}
+.mcard .mi{font-size:14px;color:var(--fg);margin-top:4px;line-height:1.4}
+.mcard .mf{font-size:12.5px;color:var(--muted);margin-top:4px;display:flex;gap:6px;align-items:center}
+.mcard .mf i{margin-left:auto;font-style:normal;color:var(--accent);font-weight:600}
 </style>
 
 </head>
@@ -1299,6 +1309,7 @@ function stage(o){
   if (o.rep==="noorder") return {k:"done", t:"📦 Xəbərsiz mal · Rəhbərliyə bildirildi"};
   if (o.rep) return {k:"done", t:holdOf(o).ic+" "+holdOf(o).n+" · Satınalma cavab verdi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
+  if (o.status==="yolda" && o.items.some(i=>i.got!=null)) return {k:"wait", t:"Qismən gəldi · "+o.items.filter(i=>i.got==null).length+" mal gözlənilir"+(lateOpen(o)?" · gecikir":"")};
   if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=16 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? {k:"chk", t:"Keyfiyyət gecikir · "+o.wh+" şərti qəbul edə bilər"} : {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"}) : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
@@ -2253,10 +2264,18 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v84 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v85 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
+// Yığcam kart: firma + mallar bir-iki sətirdə; "Ətraflı / qəbul et" basanda tam kart açılır
+const homeOpen = new Set();
+function miniCard(o){
+  if (homeOpen.has(o.id)) return '<div class="mini-open">'+orderCard(o)+'<button class="sm linkb" data-hopen="'+o.id+'">▴ Yığ</button></div>';
+  const st = stage(o), names = o.items.map(i=>pname(i.pid)+(i.got!=null?" ✓":"")), more = names.length>6 ? " +"+(names.length-6) : "";
+  return '<button class="mcard s-'+st.k+'" data-hopen="'+o.id+'"><div class="mh"><b>'+esc(o.supplier||o.from||"Firmasız")+'</b><span class="pill c-'+st.k+'">'+esc(st.t)+'</span></div>'+
+    '<div class="mi">'+esc(names.slice(0,6).join(" · "))+more+'</div><div class="mf">#'+o.id+' · '+o.items.length+' mal · '+(o.eta?fmtD(o.eta).slice(0,5):"")+' <i>Ətraflı / qəbul et ▾</i></div></button>';
+}
 const qcWaitNow = o => o.status==="anbar" && hasQC(o) && !o.qcAt && !qcLate(o);
 function whHome(work){
   const act = work, wait = work.filter(o=>o.status==="anbar" && hasQC(o) && !o.qcAt);   // Anbar Keyfiyyəti gözləmir
@@ -2266,7 +2285,7 @@ function whHome(work){
   const tile = (n, l, cls, go) => '<button class="'+cls+'" data-jump="'+go+'"><b>'+n+'</b><span>'+l+'</span></button>';
   let h = '<div class="pipe wh3">'+tile(act.length,"İndi edin","buy","whact")+tile(today0.length,"Bu gün gələcək","wait","whact")+tile(late.length,"Gecikir","bad","whact")+'</div>';
   h += '<h2 id="whact">✅ İndi edin <span class="cnt">'+act.length+'</span></h2>'+
-    (act.length ? act.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Hazırda sizdən gözlənilən iş yoxdur</div>');
+    (act.length ? act.map(o=>miniCard(o)).join("") : '<div class="empty">✓ Hazırda sizdən gözlənilən iş yoxdur</div>');
   const fo = firmsOpen(role), fk = Object.keys(fo).sort((x,y)=>fo[y]-fo[x]);
   if (fk.length) h += '<h2>🏭 Firma üzrə qəbul</h2><div class="meta">Mal gələndə firmanı seçin — onun bütün açıq sifarişləri bir yerdə açılır.</div><div class="chips">'+fk.map(f=>'<button class="ic" data-firmgo="'+esc(f)+'">'+esc(f)+' <b>'+fo[f]+'</b></button>').join("")+'</div>';
   h += '<details class="mini rep"'+(sDraft?" open":"")+'><summary>⚠ Xəbərsiz nümunə, qaiməsiz və ya xəbərsiz mal gəldi?</summary><div class="row wrap">'+sampleBox("surprise")+sampleBox("noinv")+sampleBox("noorder")+'</div></details>';
@@ -2315,7 +2334,8 @@ function itemCat(st){ return st[1]==="p-ok"?"ok":st[1]==="p-warn"?"warn":st[1]==
 let onlyProb = false;
 function routeTxt(o){ return '<span class="route">'+(o.from===o.wh ? esc(o.from) : esc(o.from)+' <i>→</i> '+esc(o.wh))+'</span>'; }
 function ownBtns(o, wrap){
-  const b = (canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+
+  const ro = o.recvDone && (role===o.wh || adminView()) && o.items.some(i=>(i.got||0)===0 && !i.ans && !(i.lateRecv||[]).length && !i.cover && !i.byFirm && !i.ret && i.qc!=="bad");
+  const b = (ro ? '<button class="sm" data-act="reopen" data-id="'+o.id+'" title="Gəlməyən mallar yenidən Gözlənilir olsun">↺ Gəlməyənləri gözlənilənə qaytar</button>' : "")+(canOwnEdit(o)&&!editDraft[o.id]?'<button class="sm" data-editopen="'+o.id+'">✏️ Düzəlt</button>':"")+
     (canAdminClose(o)?'<button class="sm" data-act="aclose" data-id="'+o.id+'" title="Arxivə keçir">🔒 Bağla</button>':"")+
     (canDelete(o)?'<button class="sm badb" data-act="del" data-id="'+o.id+'">🗑 Sil</button>':"");
   return b && wrap ? '<div class="ocb">'+b+'</div>' : b;
@@ -2457,7 +2477,8 @@ function footActions(o){
       (o.supplier && firmLines(o.supplier,o.wh).some(r=>r.o.id!==o.id) ? '<button class="sm" data-firmrecv="'+o.id+'">🏭 '+esc(o.supplier)+' — bütün açıq malları ('+firmLines(o.supplier,o.wh).length+')</button>' : "")+
       '<button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
       '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(tw?" disabled":"")+'>'+(tw?"Texnoloqun qərarını gözləyir…":"✓ Qəbul et → Satınalmaya göndər")+'</button>'+
-      '<div class="hint">Mal gələndə hər malın yanında yazın: <b>Tam</b>, gələn miqdar və ya <b>Gəlmədi</b>. Bir dəfə basırsınız — sifariş bağlanır, gəlməyən və az gələnlər Satınalmaya gedir. Boş qalan mal “gəlmədi” sayılır.</div></div>';
+      '<div class="hint">Gələn malın yanında yazın: <b>Tam</b> və ya miqdar. Hələ gəlməyən malı <b>boş saxlayın</b> — o “Gözlənilir”də qalır. Gəlməyəcəyi bəllidirsə <b>Gəlmədi</b> basın. Hamısı yazılanda sifariş bağlanır.</div>'+
+      (o.items.some(i=>i.got!=null) && o.items.some(i=>i.got==null) ? '<button class="sm badb" data-act="restnone" data-id="'+o.id+'">Qalanları “gəlmədi” say və bağla</button>' : "")+'</div>';
   }
   if (role==="Satınalma" && o.status==="acik") return acceptBox(o);
   if (role==="Satınalma" && lateOpen(o)){
@@ -3598,6 +3619,7 @@ $("main").addEventListener("click", e => {
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   if (d.lrecv){ lateRecv(d.lrecv); return; }
+  if (d.hopen){ const id = Number(d.hopen); homeOpen.has(id) ? homeOpen.delete(id) : homeOpen.add(id); keep(()=>{}); return; }
   if (d.cover){ const [key, xid] = d.cover.split("|"); coverItem(key, xid); return; }
   if (d.firmrecv){ const o = S.orders.find(x=>x.id===Number(d.firmrecv)); if (o){ frF = o.supplier; frW = o.wh; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); } return; }
   if (d.firmgo){ frF = d.firmgo; frW = role; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); return; }
@@ -3712,6 +3734,7 @@ $("main").addEventListener("click", e => {
   if (d.adel){ const [oid,k] = d.adel.split("-").map(Number), o = S.orders.find(x=>x.id===oid); if (o) return sure(t, ()=>adminDelItem(o,k)); return; }
   if (d.restore) return sure(t, ()=>restoreOrder(Number(d.restore)));
   if (d.arrit){ const [oid,k] = d.arrit.split("|").map(Number), S0 = arrSel[oid]; if (S0){ S0.has(k) ? S0.delete(k) : S0.add(k); keep(()=>{}); } return; }
+  if (d.act==="reopen" || d.act==="restnone") return sure(t, ()=>orderAct(d.act, Number(d.id)));
   if (d.act) orderAct(d.act, Number(d.id));
 });
 $("main").addEventListener("change", async e => {
@@ -3883,16 +3906,40 @@ function orderAct(act, id){
     toast("Anbara OK verildi · "+o.wh+" xəbər tutdu");
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
+  else if (act==="restnone"){ o.items.forEach(i=>{ if (i.got==null) i.got = 0; }); const n = receiveDone(o, v("rn")); toast(n ? n+" mal üçün Satınalma cavab verəcək" : "Bağlandı ✓"); }
+  else if (act==="reopen"){
+    const its = o.items.filter(i=>o.recvDone && (i.got||0)===0 && !i.ans && !(i.lateRecv||[]).length && !i.cover && !i.byFirm && !i.ret && i.qc!=="bad");
+    if (!its.length) return toast("Qaytarılacaq mal yoxdur");
+    its.forEach(i=>{ i.got = null; if (i.qc==="none") delete i.qc; });
+    o.status = "yolda"; o.recvDone = false; o.reopened = { at:new Date().toISOString(), by:role, n:its.length };
+    addLog(o, "Gəlməyən mallar yenidən gözlənilənə qaytarıldı", its.map(i=>pname(i.pid)).join(", "));
+    notify(["Satınalma"], "note", "↺ #"+o.id+" · "+its.length+" mal yenidən gözlənilir", (o.supplier||"Firmasız")+" → "+o.wh, its.map(i=>pname(i.pid)+" "+i.qty), o.id);
+    toast(its.length+" mal “Gözlənilir”ə qaytarıldı");
+  }
   else if (act==="receive"){
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
+    if (!o.items.some(i=>i.got!=null)) return toast("Gələn malların miqdarını yazın (Tam / rəqəm), gəlməyənə “Gəlmədi” basın");
     const n = receiveDone(o, v("rn"));
-    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
+    toast(n===-1 ? "Gələnlər qəbul olundu · qalanı “Gözlənilir”də qalır" : n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
 }
 // Qəbulu bitirir (adi qəbul və firma üzrə qəbul eyni qaydanı işlədir): gəldi → miqdar → bağla → xəbərlər
 function receiveDone(o, note){
+  // v85: miqdarı yazılmayan (boş) mal hələ GÖZLƏNİLİR — sifariş açıq qalır; yalnız "Gəlmədi" (0) gəlməyən sayılır
+  const open = o.items.filter(i=>i.got==null && i.qc!=="bad" && i.qc!=="none" && i.techRes!=="bad");
+  if (open.length && open.length < o.items.length){
+    const now = new Date().toISOString(), came = o.items.filter(i=>i.got!=null);
+    came.forEach(i=>{ if (!i.rcvAt) i.rcvAt = now; });
+    if (o.status==="acik") o.status = "yolda";
+    o.partAt = now; o.last_move = now;
+    const le = lateOpen(o) ? lateEntry(o) : null; if (le && !le.part) le.part = today();
+    addLog(o, "Qismən gəldi", came.map(i=>pname(i.pid)+" "+fmtN(i.got)).join(", ")+" · "+open.length+" mal gözlənilir"+(note?" · "+note:""));
+    notify(["Satınalma",o.from].filter(x=>x!==o.wh), "arr", "📦 #"+o.id+" qismən gəldi · "+open.length+" mal hələ gözlənilir", (o.supplier||"Firmasız")+" → "+o.wh, came.map(i=>pname(i.pid)+" "+fmtN(i.got)+" gəldi"), o.id);
+    if (hasQC(o) && !o.qcAt){ o.qcSkip = o.qcSkip || { at:now, by:role, min:0, live:true }; notify(["Keyfiyyət"], "arr", "#"+o.id+" qismən gəldi · yoxlamaq üçün", came.map(i=>pname(i.pid)).join(", "), [], o.id); }
+    return -1;   // sifariş açıq qaldı
+  }
   if (o.status==="yolda" || o.status==="acik"){
     const le = lateOpen(o) ? lateEntry(o) : null; if (le) le.arrived = today();
     o.status = "anbar"; o.arrivedAt = new Date().toISOString(); addLog(o, "Mal gəldi", "");

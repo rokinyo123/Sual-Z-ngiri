@@ -7,7 +7,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
   await p.evaluate(HELPER);
   const r = {};
-  await p.evaluate(()=>{ V.reset(); const o = V.order({ status:"yolda", eta:today(), supplier:"Rofruit", items:[["Kakao","100 kq"],["Lahmacun kağızı","60 kq"],["Moloko sadə","120 kq"]] }); window.O=o.id; role="Anbar"; tab="home"; render(); window.scrollTo(0,0); });
+  await p.evaluate(()=>{ V.reset(); const o = V.order({ status:"yolda", eta:today(), supplier:"Rofruit", items:[["Kakao","100 kq"],["Lahmacun kağızı","60 kq"],["Moloko sadə","120 kq"]] }); window.O=o.id; role="Anbar"; tab="home"; S.orders.forEach(o=>homeOpen.add(o.id)); render(); window.scrollTo(0,0); });
   await p.click('[data-full="105-0"]'); await p.fill('#got-105-1','25'); await p.dispatchEvent('#got-105-1','change'); await p.click('[data-gnone="105-2"]'); await p.waitForTimeout(200);
   const card = await p.$('#o-105'); if (card) await card.screenshot({path:path.join(require('os').tmpdir(),'v74-card.png')});
   await p.click('[data-act="receive"][data-id="105"]'); await p.waitForTimeout(300);

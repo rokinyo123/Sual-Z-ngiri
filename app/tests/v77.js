@@ -8,7 +8,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   await p.evaluate(HELPER);
   // sifariş 2 gün əvvəl verilib, bu gün gəlməli idi; 3 Vinildən 1-i gəldi; Pomidor 5 kq 2 kq gəldi
   await p.evaluate(()=>{ V.reset(); const c=new Date(Date.now()-48*3600000).toISOString();
-    const o = V.order({ status:"yolda", created:c, eta:today(), supplier:"bazar", items:[["Vinil","3"],["Pomidor çeri","5 kq"],["Şanti","250 kq"]] }); window.O=o.id; role="Anbar"; render(); });
+    const o = V.order({ status:"yolda", created:c, eta:today(), supplier:"bazar", items:[["Vinil","3"],["Pomidor çeri","5 kq"],["Şanti","250 kq"]] }); window.O=o.id; role="Anbar"; S.orders.forEach(o=>homeOpen.add(o.id)); render(); });
   await p.fill('#got-105-0','1'); await p.dispatchEvent('#got-105-0','change'); await p.fill('#got-105-1','2'); await p.dispatchEvent('#got-105-1','change'); await p.click('[data-full="105-2"]');
   await p.click('[data-act="receive"][data-id="105"]'); await p.waitForTimeout(200);
   const r = {};
