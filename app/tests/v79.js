@@ -6,7 +6,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
   await p.evaluate(HELPER);
-  await p.evaluate(()=>{ V.reset(); V.order({ status:"yolda", eta:today(), supplier:"Hicaz", items:[["Toyuq file","10 kq"],["Banan","15 kq"]] }); role="Anbar"; render(); });
+  await p.evaluate(()=>{ V.reset(); V.order({ status:"yolda", eta:today(), supplier:"Hicaz", items:[["Toyuq file","10 kq"],["Banan","15 kq"]] }); role="Anbar"; S.orders.forEach(o=>homeOpen.add(o.id)); render(); });
   await p.click('[data-retb="105-0"]'); await p.fill('#rq-105-0','4'); await p.fill('#rw-105-0','zədəli qablaşdırma'); await p.click('[data-retok="105-0"]'); await p.waitForTimeout(150);
   await p.click('[data-full="105-1"]');
   const c = await p.$('#o-105'); if (c) await c.screenshot({path:path.join(require('os').tmpdir(),'v79-card.png')});
