@@ -92,6 +92,7 @@ function problem(o: any, i: any) {
   if (i.qc === "bad" && !o.qcSkip) return "Keyfiyyət: " + (i.qcWhy || "uyğun deyil");
   if (i.techRes === "bad") return o.sample ? "" : "Texnoloq qəbul etmədi";
   if (!o.recvDone) return "";
+  if (i.ret && (i.got || 0) < num(i.qty)) return "Qaytarıldı" + (i.ret.why ? " — " + i.ret.why : "");
   if (i.qc === "none" || !i.got) return "Gəlmədi";
   if ((i.got || 0) < num(i.qty)) return "Az gəldi";
   return "";
