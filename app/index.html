@@ -559,6 +559,8 @@ details.mini.rep>.row{padding:0 10px 6px}
 
 .srow{width:100%;text-align:left;display:block;cursor:pointer}
 .ic.bad{background:var(--bad-bg);color:var(--bad)}
+
+.cell.cover{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--ok-bg);border-radius:10px;padding:8px}
 </style>
 
 </head>
@@ -1340,6 +1342,7 @@ const RCAT = { miss:["⛔","Gəlməyən / əskik"], qc:["🔍","Keyfiyyət qəbu
 // artıq "Az gələn", "Gəlməyən", "Gəlməyənlər" siyahılarında göstərilmir (tarixçədə və statistikada qalır).
 function laterArrived(i, d, o){
   d = d || 0;
+  if (i.cover) return true;   // anbar/Satınalma təsdiqlədi: bu mal sonradan başqa sifarişdə qəbul olunub
   // Satınalma cavab yazmayıbsa: həmin anbara eyni mal sonradan başqa sifarişlə tam gəlibsə — o da sayılır
   // v81: başqa sifarişlə eyni malın gəlməsi artıq avtomatik "gəldi" sayılmır (səhvən gəlməyən malı gizlədirdi) — sonradan gələni anbar özü qəbul edir
   if (!i.ans || !i.ans.follow || d>5) return false;
@@ -1376,11 +1379,14 @@ function resRow(r){
   const lr = r.cat==="miss" && role===o.wh && !(i.ans && i.ans.follow) && !i.unav && !i.notFound
     ? '<div class="cell lrecv"><span class="cl">📦 Sonradan gəldi?</span><input type="text" inputmode="decimal" autocomplete="off" id="lr-'+key+'" value="'+(rest||"")+'" placeholder="neçə gəldi" aria-label="Neçə gəldi"><button class="okb" data-lrecv="'+key+'">Qəbul et</button><button class="sm" data-other="'+key+'">🔄 Başqa firma gətirdi</button>'+(openAct[key]==="other"?otherBox(key):"")+
       '<span class="meta">Gəlməyən: '+fmtN(rest)+' — gələn qədərini yazın, qalanı siyahıda qalacaq</span></div>' : "";
+  const cc = r.cat!=="ok" && (WAREHOUSES.includes(role) || role==="Satınalma" || adminView()) ? coverCands(o,i) : [];
+  const cv = cc.length ? '<div class="cell cover"><span class="cl">✓ Sonradan başqa sifarişdə qəbul olunub?</span>'+cc.map(x=>{ const y = x.items.find(z=>Number(z.pid)===Number(i.pid));
+      return '<button class="okb" data-cover="'+key+'|'+x.id+'">#'+x.id+' · '+esc(x.supplier||"Firmasız")+' · '+fmtD(sentDay(x)).slice(0,5)+' · '+fmtN(y?y.got:0)+' gəlib — bununla bağla</button>'; }).join("")+'</div>' : "";
   const lb = i.byFirm ? '<div class="spn">🔄 '+esc(i.byFirm.firm)+' təmin etdi · '+fmtN(i.byFirm.qty)+' · '+fmtD(i.byFirm.at.slice(0,10)).slice(0,5)+'</div>' : "";
   const lh = (i.lateRecv||[]).length ? '<div class="spn">📦 Sonradan gəldi: '+i.lateRecv.map(x=>fmtN(x.qty)+" · "+fmtD(x.at.slice(0,10)).slice(0,5)+" ("+x.days+" gün gec)").join(", ")+'</div>' : "";
   return '<div class="irow '+cls+'"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b>'+(psize(i.pid)?' <span class="sz">'+esc(psize(i.pid))+'</span>':"")+' <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill '+(r.cat==="ok"?"p-ok":i.ans?"p-warn":"p-bad")+' st">'+esc(label)+'</span></div>'+
     '<div class="rmeta"><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · '+fmtD(rDate(r))+'</div>'+
-    (r.pr?'<div class="rs">'+esc(/^Az/.test(r.pr) ? "Gəlmədi · "+fmtN(rest)+" (gələn: "+fmtN(i.got||0)+")" : r.pr)+'</div>':"")+lb+lh+lr+due+ans+form+(r.cat!=="ok" && !i.ans ? adminBar(o,k) : "")+'</div>';
+    (r.pr?'<div class="rs">'+esc(/^Az/.test(r.pr) ? "Gəlmədi · "+fmtN(rest)+" (gələn: "+fmtN(i.got||0)+")" : r.pr)+'</div>':"")+cv+lb+lh+lr+due+ans+form+(r.cat!=="ok" && !i.ans ? adminBar(o,k) : "")+'</div>';
 }
 // Cavab gözləyən mallar üç qrupda (Satınalma cavab verir, Anbar və Rəhbərlik görür)
 function waitingBlock(title){
@@ -2247,7 +2253,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v83 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v84 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2691,6 +2697,22 @@ function otherFirm(key){
   save(); render(); toast(pname(i.pid)+" · "+f+" tərəfindən təmin edildi ✓");
 }
 // Gəlməyən / az gələn mal bir neçə gün sonra gəlib: anbar siyahıdan qəbul edir; gecikmə günü statistikaya düşür
+// Gəlməyən malın sonradan BAŞQA sifarişdə qəbul olunduğu hallar: eyni anbar, eyni mal, sonra yazılıb, qəbul olunub
+function coverCands(o, i){
+  if (!o.recvDone || i.cover || (i.ans && i.ans.follow)) return [];
+  return S.orders.filter(x=>x!==o && !x.deleted && x.status!=="redd" && x.wh===o.wh && x.recvDone && String(x.created)>String(o.created) &&
+      x.items.some(y=>Number(y.pid)===Number(i.pid) && (y.got||0)>0 && !y.coverFor))
+    .sort((a,b)=>(fnorm(b.supplier)===fnorm(o.supplier)) - (fnorm(a.supplier)===fnorm(o.supplier)) || String(a.created).localeCompare(String(b.created))).slice(0,3);
+}
+function coverItem(key, xid){
+  const [o,i] = itemOf(key), x = S.orders.find(z=>z.id===Number(xid)); if (!o || !i || !x) return;
+  const y = x.items.find(z=>Number(z.pid)===Number(i.pid) && (z.got||0)>0 && !z.coverFor);
+  i.cover = { by:x.id, at:new Date().toISOString(), who:role }; if (y) y.coverFor = o.id;
+  addLog(o, "Sonradan başqa sifarişdə qəbul olunub", pname(i.pid)+" → #"+x.id+" ("+(x.supplier||"Firmasız")+")");
+  addLog(x, "#"+o.id+" sifarişinin gəlməyən malını bağladı", pname(i.pid));
+  notify(["Satınalma"], "ok", "✓ #"+o.id+" · "+pname(i.pid)+" sonradan #"+x.id+"-də qəbul olunub", (x.supplier||"Firmasız")+" · "+fmtD(sentDay(x)).slice(0,5)+" — artıq cavab lazım deyil", [], o.id);
+  save(); render(); toast(pname(i.pid)+" bağlandı ✓");
+}
 function lateRecv(key){
   const [o,i] = itemOf(key), el = $("lr-"+key), v = el ? Math.max(0, num(el.value)) : 0;
   if (!o || !i) return;
@@ -3576,6 +3598,7 @@ $("main").addEventListener("click", e => {
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   if (d.lrecv){ lateRecv(d.lrecv); return; }
+  if (d.cover){ const [key, xid] = d.cover.split("|"); coverItem(key, xid); return; }
   if (d.firmrecv){ const o = S.orders.find(x=>x.id===Number(d.firmrecv)); if (o){ frF = o.supplier; frW = o.wh; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); } return; }
   if (d.firmgo){ frF = d.firmgo; frW = role; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); return; }
   if (d.frfull){ frQ[d.frfull] = String(d.q); keep(()=>{}); return; }
