@@ -1,0 +1,36 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const r = {};
+  await p.evaluate(()=>{ V.reset(); const d3=new Date(Date.now()-72*3600000).toISOString(), d1=new Date(Date.now()-24*3600000).toISOString();
+    window.A = V.order({ status:"bagli", created:d3, eta:plusDays(-2), supplier:"Altınoğlu", recvDone:true, recvAt:d3, arrivedAt:d3, items:[["Lahmacun kağızı","60 kq",{got:0}],["Qlükoza","69 kq",{got:46}]] });
+    window.B = V.order({ status:"yolda", created:d1, eta:today(), supplier:"Altınoğlu", items:[["Lahmacun kağızı","60 kq"],["Kakao","100 kq"]] });
+    V.order({ status:"acik", items:[["Ağ qoz","2 kq"]] });
+    role="Anbar"; tab="orders"; osec="yeni"; oq=""; RF=RT=""; render(); });
+  r.tabs = await p.evaluate(()=>[...document.querySelectorAll('[data-osec]')].map(b=>b.textContent));
+  r.az = await p.evaluate(()=>{ osec="az"; render(); return [...document.querySelectorAll('#main .irow b')].map(b=>b.textContent); });
+  r.gel = await p.evaluate(()=>{ osec="gelmeyen"; render(); return [...document.querySelectorAll('#main .irow b')].map(b=>b.textContent); });
+  r.search = await p.evaluate(()=>{ oq="lahmacun"; render(); return [...document.querySelectorAll('#main .srow')].map(b=>b.querySelector('.rmeta').textContent+" | "+b.querySelector('.st').textContent); });
+  await p.screenshot({path:path.join(require('os').tmpdir(),'v83-search.png'), fullPage:false});
+  r.home = await p.evaluate(()=>{ oq=""; tab="home"; render(); return [...document.querySelectorAll('[data-firmgo]')].map(b=>b.textContent); });
+  await p.click('[data-firmgo="Altınoğlu"]'); await p.waitForTimeout(200);
+  await p.screenshot({path:path.join(require('os').tmpdir(),'v83-firm.png'), fullPage:true});
+  const pid = await p.evaluate(()=>[...document.querySelectorAll('[data-frq]')].map(x=>x.dataset.frq));
+  await p.fill('[data-frq="'+pid[0]+'"]','120'); await p.dispatchEvent('[data-frq="'+pid[0]+'"]','change');
+  await p.click('[data-frfull="'+pid[2]+'"]').catch(()=>{});
+  r.pids = await p.evaluate(ids=>ids.map(x=>pname(Number(x))), pid);
+  await p.click('[data-frgo="1"]'); await p.waitForTimeout(300);
+  r.after = await p.evaluate(()=>[A,B].map(o=>({id:o.id,status:o.status,stage:stage(o).t,items:o.items.map(i=>pname(i.pid)+":"+i.got+":"+(problem(o,i)||"ok"))})));
+  // reconcile
+  r.recon = await p.evaluate(()=>{ const n=new Date().toISOString();
+    const C = V.order({ status:"bagli", created:new Date(Date.now()-50*3600000).toISOString(), supplier:"Hicaz", recvDone:true, recvAt:n, items:[["Badam ağ","10 kq",{got:0}]] });
+    const D = V.order({ status:"bagli", created:n, supplier:"Hicaz", recvDone:true, recvAt:n, items:[["Badam ağ","10 kq",{got:20}]] });
+    role="Admin"; reconcile("Hicaz"); return [C.items[0].got, D.items[0].got, problem(C,C.items[0])||"ok"]; });
+  r.stats = await p.evaluate(()=>{ role="Rəhbərlik"; tab="arch"; arM="week"; render(); return !!document.querySelector('[data-frs]'); });
+  console.log(JSON.stringify(r,null,1)); console.log('JS', errs); await br.close();
+})();

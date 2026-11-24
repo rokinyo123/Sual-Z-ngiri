@@ -556,6 +556,9 @@ details.mini.rep>.row{padding:0 10px 6px}
 
 .dt.other{flex:1 1 100%;display:flex;gap:8px;flex-wrap:wrap}
 .dt.other input{flex:1 1 180px}
+
+.srow{width:100%;text-align:left;display:block;cursor:pointer}
+.ic.bad{background:var(--bad-bg);color:var(--bad)}
 </style>
 
 </head>
@@ -1092,7 +1095,6 @@ function problem(o,i){
   if (!o.recvDone) return "";
   if (i.ret && (i.got||0) < num(i.qty)) return "Qaytarıldı"+(num(i.ret.qty)<num(i.qty)?" · "+fmtN(i.ret.qty):"")+(i.ret.why?" — "+i.ret.why:"");   // gəldi, qəbulda geri qaytarıldı
   if (i.qc==="none" || !i.got) return "Gəlmədi";
-  if (i.got0===0 && itemMissing(i)) return "Gəlmədi · "+fmtN(num(i.qty)-i.got)+" hələ gəlməyib";   // heç gəlməmişdi, bir hissəsi sonra gəldi — "Gəlməyən"də qalır
   if (itemMissing(i)) return "Az gəldi · "+fmtN(num(i.qty)-i.got)+" əskik";
   return "";
 }
@@ -1505,7 +1507,7 @@ function renderRole(){
 }
 let moreOpen = false;
 function renderTabs(){
-  const T = tabsFor(role); if (tab!=="notif" && !T.some(t=>t[0]===tab)) tab = T[0][0];
+  const T = tabsFor(role); if (tab!=="notif" && tab!=="firm" && !T.some(t=>t[0]===tab)) tab = T[0][0];
   const nb = myAlerts().length, bl = $("bell");
   if (bl){ bl.querySelector(".bn").textContent = nb ? (nb>99?"99+":nb) : ""; bl.classList.toggle("on", tab==="notif"); bl.classList.toggle("has", nb>0); }
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
@@ -1527,7 +1529,7 @@ function render(){
   noorderFix(); arrSplitFix(); autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, notif:vNotif, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
   if (tab==="new" && role!=="Satınalma") bindNew();
   if ($("qPhoto")) $("qPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); qDraft.photo = sm; render(); };
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
@@ -2245,7 +2247,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v82 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v83 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2259,6 +2261,8 @@ function whHome(work){
   let h = '<div class="pipe wh3">'+tile(act.length,"İndi edin","buy","whact")+tile(today0.length,"Bu gün gələcək","wait","whact")+tile(late.length,"Gecikir","bad","whact")+'</div>';
   h += '<h2 id="whact">✅ İndi edin <span class="cnt">'+act.length+'</span></h2>'+
     (act.length ? act.map(o=>orderCard(o)).join("") : '<div class="empty">✓ Hazırda sizdən gözlənilən iş yoxdur</div>');
+  const fo = firmsOpen(role), fk = Object.keys(fo).sort((x,y)=>fo[y]-fo[x]);
+  if (fk.length) h += '<h2>🏭 Firma üzrə qəbul</h2><div class="meta">Mal gələndə firmanı seçin — onun bütün açıq sifarişləri bir yerdə açılır.</div><div class="chips">'+fk.map(f=>'<button class="ic" data-firmgo="'+esc(f)+'">'+esc(f)+' <b>'+fo[f]+'</b></button>').join("")+'</div>';
   h += '<details class="mini rep"'+(sDraft?" open":"")+'><summary>⚠ Xəbərsiz nümunə, qaiməsiz və ya xəbərsiz mal gəldi?</summary><div class="row wrap">'+sampleBox("surprise")+sampleBox("noinv")+sampleBox("noorder")+'</div></details>';
   h += '<button class="nline" data-go="orders"><b>📦 Bütün sifarişləriniz</b><span>'+open.length+' açıq sifariş</span><i>Sifarişlər →</i></button>';
   return h;
@@ -2444,6 +2448,7 @@ function footActions(o){
     const late = qcLate(o), wait = false, noqc = hasQC(o) && !o.qcAt, tw = false;
     return '<div class="box'+(late?" late":"")+'">'+
 
+      (o.supplier && firmLines(o.supplier,o.wh).some(r=>r.o.id!==o.id) ? '<button class="sm" data-firmrecv="'+o.id+'">🏭 '+esc(o.supplier)+' — bütün açıq malları ('+firmLines(o.supplier,o.wh).length+')</button>' : "")+
       '<button class="sm" data-act="allfull" data-id="'+o.id+'">Hamısı tam gəldi</button><input id="rn-'+o.id+'" placeholder="Qeyd (istəyə görə)">'+
       '<button class="pri big" data-act="receive" data-id="'+o.id+'"'+(tw?" disabled":"")+'>'+(tw?"Texnoloqun qərarını gözləyir…":"✓ Qəbul et → Satınalmaya göndər")+'</button>'+
       '<div class="hint">Mal gələndə hər malın yanında yazın: <b>Tam</b>, gələn miqdar və ya <b>Gəlmədi</b>. Bir dəfə basırsınız — sifariş bağlanır, gəlməyən və az gələnlər Satınalmaya gedir. Boş qalan mal “gəlmədi” sayılır.</div></div>';
@@ -2905,7 +2910,7 @@ function statsHtml(a,b){
     list("⛔ Gəlməli idi, gəlmədi / az gəldi", s.late, r=>'<tr><td>'+esc(pname(r.i.pid))+' <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(problem(r.o,r.i))+'</td><td>'+(r.i.ans?(r.i.ans.none?'✗ tapılmır':'→ '+fmtD(r.i.ans.date).slice(0,5)):'<span class="pill p-bad">cavabsız</span>')+'</td></tr>')+
     list("🔍 Keyfiyyət bəyənmədi", s.qc, r=>'<tr><td>'+esc(pname(r.i.pid))+'<div class="meta">'+esc(r.o.supplier||"Firmasız")+'</div></td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.qcWhy||"")+'</td></tr>')+
     list("🧪 Texnoloq qəbul etmədi", s.tech, r=>'<tr><td>'+esc(pname(r.i.pid))+'</td><td>'+fmtD(iDate(r.o)).slice(0,5)+'</td><td class="rs">'+esc(r.i.techNote||"")+'</td></tr>')+
-    (s.newp.length?'<h3>🆕 Kataloqa yeni mallar · '+s.newp.length+'</h3><div class="chips">'+s.newp.map(n=>'<span class="ic">'+esc(n)+'</span>').join("")+'</div>':"");
+    (s.newp.length?'<h3>🆕 Kataloqa yeni mallar · '+s.newp.length+'</h3><div class="chips">'+s.newp.map(n=>'<span class="ic">'+esc(n)+'</span>').join("")+'</div>':"")+firmCompare(a,b);
 }
 // Bazar günü — həftəlik, ayın son günü — aylıq hesabat Rəhbərliyə (bir dəfə). Keçmiş, göndərilməmiş dövr də göndərilir.
 function reportSignals(){
@@ -2958,11 +2963,11 @@ function orderBrief(o){
     '<div class="ocb"><button class="sm linkb" data-full="'+o.id+'">▾ Ətraflı</button>'+ownBtns(o)+'</div></article>';
 }
 let ofrom = "all";
-let osec = "aktiv";
+let osec = "yeni";
 function vOrders(){
   const W = WAREHOUSES.includes(role);                 // tam gələnləri yalnız Anbar və İnqilab görür
   if (osec==="tam" && !W) osec = "aktiv";
-  if (osec==="az") osec = "gelmeyen";   // v77: az gələn qalığı da "Gəlməyən"dədir
+
   const byNum = /^#\d+$/.test((oq||"").trim());
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
   const fit = k => k==="all" ? (REQ.includes(role) ? (o=>o.from===role) : ()=>true) : (o=>o.from===k);
@@ -2979,8 +2984,8 @@ function vOrders(){
   active.splice(0, active.length, ...active.filter(o=>o.status!=="anbar"));
   // qismən gələn mallar: gələn hissəsi "Gələnlər"də, qalığı "Gəlməyən"də
   const partIn = W ? short.filter(r=>r.o.wh===role).concat(notCame.filter(r=>r.o.wh===role && (r.i.got||0)>0)) : [];
-  const missAll = notCame.concat(short);
-  const SEC = [["aktiv","📦 Gözlənilir",active.length],["geldi","📥 Gəldi · yoxlanır",came.length]].concat(W?[["tam","✅ Gələnlər",full.length+partIn.length]]:[]).concat([["gelmeyen","⛔ Gəlməyən",missAll.length]]);
+  const todayO = S.orders.filter(o=>!o.deleted && o.status!=="redd" && sentDay(o)===today() && fit("all")(o));
+  const SEC = [["yeni","🆕 Bu gün yazılan",todayO.length],["aktiv","📦 Gözlənilir",active.length],["geldi","📥 Gəldi · yoxlanır",came.length]].concat(W?[["tam","✅ Gələnlər",full.length+partIn.length]]:[]).concat([["gelmeyen","⛔ Gəlməyən",notCame.length],["az","🟡 Az gələn",short.length]]);
   const F = REQ.includes(role) ? [["all","Mənim sifarişlərim"]] : [["all","Hamısı"],["Anbar","Anbar"],["Anbar (İnqilab)","İnqilab"],["Texnoloq","Texnoloq"],["Satış","Satış"],["Üzeyir","Üzeyir"],["Elçin","Elçin"],["İstehsalat","İstehsalat"],["Çeşidləmə","Çeşidləmə"]];
   const sortR = rs => rs.sort((a,b)=> (!!a.i.ans - !!b.i.ans) || rDate(b).localeCompare(rDate(a)) || b.o.id-a.o.id);
   let body;
@@ -2995,18 +3000,29 @@ function vOrders(){
         return '<div class="irow okr"><div class="in pn">'+thumb(i.pid,1)+'<span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span></span><span class="pill p-ok st">'+fmtN(i.got||0)+' gəldi</span></div>'+
           '<div class="rmeta"><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> · '+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · '+fmtD(rDate(r))+'</div><div class="meta">⛔ '+fmtN(rest)+' hələ gəlməyib — “Gəlməyən”də</div></div>'; }).join("")+'</div>' : "")+
       '<h3>✅ Tam gələn sifarişlər · '+list.length+'</h3><div class="meta">Hamısı tam gəlib və qəbul olunub. Bu siyahını yalnız '+esc(role)+' görür.</div>'+(list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə tam gələn sifariş yoxdur</div>'); }
-  else { const rs = sortR(missAll.filter(r=>hit(r.o)));
-    body = '<div class="meta">Gəlməyən mallar və qismən gələnlərin <b>gəlməyən hissəsi</b> — Satınalma '+ANS_H+' saat ərzində nə vaxt gələcəyini yazmalıdır. Sonra gəlsə, buradan qəbul edin.</div>'+(rs.length ? '<div class="irows">'+rs.map(resRow).join("")+'</div>' : '<div class="empty">✓ Yoxdur</div>'); }
+  else if (osec==="yeni"){ const list = todayO.filter(hit).sort((a,b)=>b.created.localeCompare(a.created)||b.id-a.id);
+    body = '<div class="meta">Bu gün yazılan bütün sifarişlər — hansı mərhələdə olmasından asılı olmayaraq.</div>'+(list.length ? list.map(o=>orderBrief(o)).join("") : '<div class="empty">Bu gün sifariş yazılmayıb</div>'); }
+  else { const rs = sortR((osec==="az"?short:notCame).filter(r=>hit(r.o)));
+    body = '<div class="meta">'+(osec==="az"?"Bir hissəsi gələn mallar — əskik hissə":"Heç gəlməyən mallar")+' — Satınalma '+ANS_H+' saat ərzində nə vaxt gələcəyini yazmalıdır. Sonra gəlsə, buradan qəbul edin.</div>'+(rs.length ? '<div class="irows">'+rs.map(resRow).join("")+'</div>' : '<div class="empty">✓ Yoxdur</div>'); }
   if ((oq||"").trim()){
-    const all = S.orders.filter(o=>!o.deleted && o.status!=="redd" && (REQ.includes(role) ? o.from===role : true) && hit(o)).sort((a,b)=>b.created.localeCompare(a.created)||b.id-a.id);
+    const q = oq.trim().toLowerCase(), one = /^#\d+$/.test(q) ? S.orders.find(o=>"#"+o.id===q) : null;
+    const mine = o => !o.deleted && o.status!=="redd" && (REQ.includes(role) ? o.from===role : true);
     const gone = adminView() ? (S.trash||[]).filter(hit) : [];
-    body = '<div class="meta">🔎 Bütün sifarişlərdə axtarış — gözlənilən, gələn, gəlməyən, bağlanmış: hamısı. Hər kartın yuxarısında vəziyyəti yazılıb.</div>'+
-      (all.length ? all.slice(0,60).map(o=>orderBrief(o)).join("")+(all.length>60?'<div class="meta">… və daha '+(all.length-60)+' — axtarışı dəqiqləşdirin</div>':"") : '<div class="empty">Tapılmadı. Malın adını qısa yazın (məs. “badam”) və ya #nömrə.</div>')+
+    if (one) body = orderCard(one);
+    else {
+      const its = S.orders.filter(mine).flatMap(o=>o.items.map((i,k)=>({o,i,k}))).filter(({o,i})=>(pname(i.pid)+" "+(o.supplier||"")+" "+o.wh+" "+o.from).toLowerCase().includes(q))
+        .sort((x,y)=>y.o.created.localeCompare(x.o.created)||y.o.id-x.o.id);
+      body = '<div class="meta">🔎 Bütün sifarişlərdə — '+its.length+' mal tapıldı. Sətrə basın — sifariş açılır.</div>'+
+        (its.length ? '<div class="irows">'+its.slice(0,80).map(({o,i})=>{ const st = itemState(o,i), sg = stage(o);
+          return '<button class="irow srow '+rowCls(st)+'" data-goorder="'+o.id+'"><div class="in pn"><span><b>'+esc(pname(i.pid))+'</b> <span class="mono q">'+esc(i.qty)+'</span>'+(i.got!=null?' <span class="meta">gəlib: '+fmtN(i.got)+'</span>':"")+'</span><span class="pill '+st[1]+' st">'+esc(st[0])+'</span></div>'+
+            '<div class="rmeta">#'+o.id+' · '+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · yazılıb '+fmtD(sentDay(o)).slice(0,5)+' · <b>'+esc(sg.t)+'</b></div></button>'; }).join("")+'</div>'+(its.length>80?'<div class="meta">… və daha '+(its.length-80)+'</div>':"") : '<div class="empty">Tapılmadı. Malın adını qısa yazın (məs. “lahmacun”) və ya #nömrə.</div>');
+    }
+    body = body+
       (gone.length ? '<h3>🗑 Silinənlər · '+gone.length+'</h3>'+gone.map(o=>'<div class="nline"><b>#'+o.id+' '+esc(o.supplier||"")+'</b><span>'+esc(o.items.map(i=>pname(i.pid)).join(", "))+' · silən: '+esc((o.deleted&&o.deleted.by)||"")+'</span></div>').join("") : "");
   }
   return '<h2>Sifarişlər</h2>'+
-    '<input id="oQ" placeholder="🔍 Hər yerdə axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
-    '<div class="seg osec">'+SEC.map(([k,l,n])=>'<button class="'+(osec===k?"on":"")+'" data-osec="'+k+'">'+l+'<span class="k">'+n+'</span></button>').join("")+'</div>'+
+    '<input id="oQ" type="search" placeholder="🔍 Hər yerdə axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
+    '<div class="seg osec">'+SEC.map(([k,l,n])=>'<button class="'+(osec===k && !(oq||"").trim()?"on":"")+'" data-osec="'+k+'">'+l+'<span class="k">'+n+'</span></button>').join("")+'</div>'+
     rangeBar() + body;
 }
 
@@ -3520,7 +3536,7 @@ $("main").addEventListener("click", e => {
   if (d.ofrom){ ofrom=d.ofrom; render(); return; }
   if (d.qcall2){ qcAll = !qcAll; render(); return; }
   if (d.expdone){ const [o,i] = itemOf(d.expdone); return sure(t, ()=>{ i.expDone = { at:new Date().toISOString(), by:role }; addLog(o, "Son istifadə xəbərdarlığı bağlandı", pname(i.pid)+" · "+i.exp); save(); render(); toast("Bağlandı"); }); }
-  if (d.osec){ osec=d.osec; render(); return; }
+  if (d.osec){ osec=d.osec; oq=""; render(); return; }   // bölməyə basanda axtarış təmizlənir
   if (d.resf){ resF=d.resf; render(); return; }
   if (d.arm){ arM=d.arm; render(); return; }
   if (d.gostat){ tab="arch"; arM=d.gostat; if (d.gostat==="week") arW = today()===addD(monday(today()),6) ? monday(today()) : addD(monday(today()),-7); else arMon = today()===dstr(new Date(Number(today().slice(0,4)),Number(today().slice(5,7)),0)) ? today().slice(0,7) : dstr(new Date(Number(today().slice(0,4)),Number(today().slice(5,7))-2,1)).slice(0,7); render(); window.scrollTo(0,0); return; }
@@ -3544,7 +3560,7 @@ $("main").addEventListener("click", e => {
     const firstRed = S.orders.filter(o=>o.status==="yolda" && o.eta && o.eta.startsWith(mk)).map(o=>o.eta).sort()[0];
     dSel = today().startsWith(mk) ? today() : firstRed || dstr(x); render(); return; }
   if (d.jf){ jf=d.jf; render(); return; }
-  if (d.goorder){ tab="orders"; osec="aktiv"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); fullSet.add(Number(d.goorder)); render(); window.scrollTo(0,0); return; }
+  if (d.goorder){ tab="orders"; filter="all"; oq="#"+d.goorder; RF=RT=""; openMore.add(Number(d.goorder)); fullSet.add(Number(d.goorder)); render(); window.scrollTo(0,0); return; }
   if (d.full && d.q==null){ const id = Number(d.full); fullSet.has(id) ? fullSet.delete(id) : fullSet.add(id); render(); const el=$("o-"+id); if (el) el.scrollIntoView({block:"start"}); return; }
   if (d.seenall){ myAlerts().forEach(a=>{ if (role!=="Texnoloq" || !techDecide(a).includes("data-techres")) a.seen.push(role); }); alAll=false; save(); render(); return; }
   if (d.alall){ alAll=!alAll; render(); return; }
@@ -3560,6 +3576,12 @@ $("main").addEventListener("click", e => {
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   if (d.lrecv){ lateRecv(d.lrecv); return; }
+  if (d.firmrecv){ const o = S.orders.find(x=>x.id===Number(d.firmrecv)); if (o){ frF = o.supplier; frW = o.wh; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); } return; }
+  if (d.firmgo){ frF = d.firmgo; frW = role; frQ = {}; frBack = tab; tab = "firm"; render(); window.scrollTo(0,0); return; }
+  if (d.frfull){ frQ[d.frfull] = String(d.q); keep(()=>{}); return; }
+  if (d.frgo){ firmRecvGo(); return; }
+  if (d.frback){ tab = frBack || "home"; render(); window.scrollTo(0,0); return; }
+  if (d.recon){ return sure(t, ()=>reconcile(d.recon)); }
   if (d.other){ openAct[d.other] = openAct[d.other]==="other" ? null : "other"; keep(()=>{}); const x = $("of-"+d.other); if (x) x.focus(); return; }
   if (d.otherok){ otherFirm(d.otherok); return; }
   if (d.retb){ openAct[d.retb] = openAct[d.retb]==="ret" ? null : "ret"; keep(()=>{}); return; }
@@ -3675,6 +3697,8 @@ $("main").addEventListener("change", async e => {
   if (el.id==="rTo"){ RT=el.value; render(); return; }
   if (el.id==="dPick"){ if (el.value){ dSel=el.value; render(); } return; }
   if (el.dataset.got){ saveGot(el); return; }
+  if (el.dataset.frq){ frQ[el.dataset.frq] = el.value; return; }
+  if (el.dataset.frs){ frS = el.value; render(); return; }
   if (el.dataset.eta){ etaDraft[el.dataset.eta] = el.value; return; }
   if (el.dataset.etaall){ const id = el.dataset.etaall; etaDraft[id+"|*"] = el.value;
     document.querySelectorAll('[data-eta^="'+CSS.escape(id+"|")+'"]').forEach(x=>{ x.value = el.value; etaDraft[x.dataset.eta] = el.value; }); return; }
@@ -3718,6 +3742,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.ed){ const [id,k,f]=el.dataset.ed.split("-"); editDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.ad){ const [id,k,f]=el.dataset.ad.split("-"); addDraft[id][Number(k)][f]=el.value; }
   if (el.dataset.got) paintGot(el);
+  if (el.dataset.frq) frQ[el.dataset.frq] = el.value;
   if (el.dataset.ii!=null) setItem(el);
   if (el.id==="cQ"){ catQ=el.value; filterRows(el); }
   if (el.id==="oQ"){ oq=el.value; clearTimeout(window.__oq); window.__oq=setTimeout(()=>{ render(); const q=$("oQ"); q.focus(); q.setSelectionRange(q.value.length,q.value.length); },250); }
@@ -3836,31 +3861,125 @@ function orderAct(act, id){
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
   else if (act==="receive"){
-    if (o.status==="yolda"){   // bir addımda gəldi + qəbul
-      const le = lateOpen(o) ? lateEntry(o) : null; if (le) le.arrived = today();
-      o.status = "anbar"; o.arrivedAt = new Date().toISOString(); addLog(o, "Mal gəldi", "");
-      if (o.noteTo && o.noteTo.length) notify(o.noteTo.filter(r=>r!==o.wh && r!=="Keyfiyyət" && !(r==="Texnoloq" && o.items.some(i=>i.tech))), "arr", "#"+o.id+" gəldi · baxın", [o.spNote].filter(Boolean).join(" · "), [], o.id);
-    }
-    const skip = hasQC(o) && !o.qcAt, onSite = true;   // Keyfiyyət ayrıca, öz qeydi üçün yoxlayır
-    if (skip){ o.qcSkip = { at:new Date().toISOString(), by:role, min:Math.round((Date.now()-new Date(o.arrivedAt||o.last_move).getTime())/60000), live:onSite||undefined };
-      }
     o.items.forEach((i,k)=>{ const el=$("got-"+id+"-"+k); if (el && el.value!=="") i.got = Math.max(0,num(el.value)); });
-    const n = finishReceive(o, role, v("rn"));
-    const kid = null, P = o;   // v74: sifariş bölünmür — nə gəlib, nə gəlməyib, nə az gəlib, hamısı eyni sifarişdə qeyd olunur           // P — problemli malların sifarişi (ayrılıbsa yeni nömrə)
-    const both = kid ? [o, kid] : [o];
-    const tr = both.flatMap(x=>x.items.filter(i=>techReady(x,i)).map(i=>({x,i})));
-    if (tr.length) (S.alerts||[]).forEach(a=>{ if (a.oid===o.id && a.to && a.to.includes("Texnoloq") && !a.seen.includes("Texnoloq")) a.seen.push("Texnoloq"); });
-    if (tr.length) notify(["Texnoloq"], "arr", "#"+o.id+" Anbara qəbul olundu · baxın", (o.supplier||"Firmasız")+" → "+o.wh, tr.map(r=>pname(r.i.pid)+" "+r.i.qty), o.id);
-    const pr = P.items.filter(i=>problem(P,i));
-    // tam gələnlər üçün başqa şöbələrə bildiriş getmir — yalnız problem olanda
-    if (pr.length) notify(["Satınalma",o.from,"Rəhbərlik"], "late", "#"+P.id+" · "+pr.length+" mal gəlmədi / az gəldi"+(kid?" (#"+o.id+"-dən ayrıldı)":""),
-      (o.supplier||"Firmasız")+" → "+o.wh+(kid?" · qalan "+o.items.length+" mal tam gəldi":"")+" · Satınalma cavab verməlidir", pr.map(i=>pname(i.pid)+": "+problem(P,i)), P.id);
-    if (skip) notify(["Keyfiyyət"], "arr", "#"+o.id+" "+o.wh+"a qəbul olundu · yoxlamaq üçün", (o.supplier||"Firmasız")+" · "+o.items.filter(i=>(i.got||0)>0).length+" mal gəlib — nəticə Keyfiyyətin öz qeydlərinə düşür", [], o.id, "qc-skip-"+o.id);
-    toast(kid ? "Qəbul bitdi · "+o.items.length+" mal tam · "+pr.length+" problemli mal #"+kid.id+"-ə ayrıldı" : n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
+    const n = receiveDone(o, v("rn"));
+    toast(n ? n+" mal üçün Satınalma cavab verəcək" : techPending(o) ? "Qəbul olundu · Texnoloq yoxlayacaq" : "Hamısı tam qəbul olundu ✓");
   }
   else if (act==="cancel"){ o.status="redd"; addLog(o,"Rəhbərlik ləğv etdi",""); }
   save(); render();
 }
+// Qəbulu bitirir (adi qəbul və firma üzrə qəbul eyni qaydanı işlədir): gəldi → miqdar → bağla → xəbərlər
+function receiveDone(o, note){
+  if (o.status==="yolda" || o.status==="acik"){
+    const le = lateOpen(o) ? lateEntry(o) : null; if (le) le.arrived = today();
+    o.status = "anbar"; o.arrivedAt = new Date().toISOString(); addLog(o, "Mal gəldi", "");
+    if (o.noteTo && o.noteTo.length) notify(o.noteTo.filter(r=>r!==o.wh && r!=="Keyfiyyət" && !(r==="Texnoloq" && o.items.some(i=>i.tech))), "arr", "#"+o.id+" gəldi · baxın", [o.spNote].filter(Boolean).join(" · "), [], o.id);
+  }
+  const skip = hasQC(o) && !o.qcAt;
+  if (skip) o.qcSkip = { at:new Date().toISOString(), by:role, min:Math.round((Date.now()-new Date(o.arrivedAt||o.last_move).getTime())/60000), live:true };
+  const n = finishReceive(o, role, note||"");
+  const tr = o.items.filter(i=>techReady(o,i));
+  if (tr.length){ (S.alerts||[]).forEach(a=>{ if (a.oid===o.id && a.to && a.to.includes("Texnoloq") && !a.seen.includes("Texnoloq")) a.seen.push("Texnoloq"); });
+    notify(["Texnoloq"], "arr", "#"+o.id+" Anbara qəbul olundu · baxın", (o.supplier||"Firmasız")+" → "+o.wh, tr.map(i=>pname(i.pid)+" "+i.qty), o.id); }
+  const pr = o.items.filter(i=>problem(o,i));
+  if (pr.length) notify(["Satınalma",o.from,"Rəhbərlik"], "late", "#"+o.id+" · "+pr.length+" mal gəlmədi / az gəldi", (o.supplier||"Firmasız")+" → "+o.wh+" · Satınalma cavab verməlidir", pr.map(i=>pname(i.pid)+": "+problem(o,i)), o.id);
+  if (skip) notify(["Keyfiyyət"], "arr", "#"+o.id+" "+o.wh+"a qəbul olundu · yoxlamaq üçün", (o.supplier||"Firmasız")+" · "+o.items.filter(i=>(i.got||0)>0).length+" mal gəlib — nəticə Keyfiyyətin öz qeydlərinə düşür", [], o.id, "qc-skip-"+o.id);
+  return n;
+}
+
+// ===================== 🏭 Firma üzrə qəbul =====================
+// Mal sifarişə yox, firmanın BÜTÜN açıq mallarına qəbul olunur: köhnə sifariş əvvəl bağlanır (FIFO), artığı növbətiyə keçir.
+let frF = "", frW = "", frQ = {}, frBack = "home";
+const fnorm = x => String(x||"").trim().toLowerCase();
+function firmLines(F, W){
+  const out = [];
+  S.orders.filter(o=>!o.deleted && o.status!=="redd" && o.wh===W && fnorm(o.supplier)===fnorm(F) && !o.req && !o.rep)
+    .sort((a,b)=>String(a.created).localeCompare(String(b.created))||a.id-b.id)
+    .forEach(o=>o.items.forEach((i,k)=>{
+      const rem = Math.max(0, num(i.qty)-(i.got||0));
+      const pending = ["acik","yolda","anbar"].includes(o.status) && !o.recvDone;
+      const owed = o.recvDone && rem>0 && !(i.ans && (i.ans.follow || i.ans.closed)) && !i.unav && !i.notFound && i.qc!=="bad";
+      if ((pending && rem>0) || owed) out.push({ o, i, k, rem, pending });
+    }));
+  return out;
+}
+function firmsOpen(W){
+  const m = {};
+  S.orders.filter(o=>!o.deleted && o.wh===W && o.supplier && !o.req && !o.rep).forEach(o=>{ const L = firmLines(o.supplier, W); if (L.length) m[o.supplier] = L.length; });
+  return m;
+}
+function vFirm(){
+  if (!frF || !frW) return '<div class="empty">Firma seçilməyib</div>';
+  const L = firmLines(frF, frW), by = {};
+  L.forEach(r=>{ (by[r.i.pid] = by[r.i.pid] || []).push(r); });
+  const pids = [...new Set(L.map(r=>String(r.i.pid)))];   // köhnə sifarişin malları əvvəl
+  return '<h2>🏭 '+esc(frF)+' → '+esc(frW)+'</h2>'+
+    '<div class="meta">Bu firmanın <b>bütün açıq malları</b> — köhnə sifarişdən yeniyə. Gələn miqdarı bir dəfə yazın: əvvəl ən köhnə sifariş bağlanır, artığı növbətiyə yazılır. Yazmadığınız mal: bu gün qəbul olunan sifarişdə “gəlmədi” sayılır, başqa sifarişlərdə gözləməyə davam edir.</div>'+
+    (pids.length ? pids.map(pid=>{ const rs = by[pid], tot = rs.reduce((a,r)=>a+r.rem,0), u = String(rs[0].i.qty||"").replace(/^[\d.,\s]+/,"").trim();
+      return '<div class="irow"><div class="in pn">'+thumb(Number(pid),1)+'<span><b>'+esc(pname(Number(pid)))+'</b> <span class="mono q">'+fmtN(tot)+(u?" "+esc(u):"")+'</span></span></div>'+
+        '<div class="chips">'+rs.map(r=>'<span class="ic'+(r.pending?"":" bad")+'">#'+r.o.id+' · '+fmtN(r.rem)+(u?" "+esc(u):"")+' · '+fmtD(sentDay(r.o)).slice(0,5)+(r.pending?"":" · gəlməyib")+'</span>').join("")+'</div>'+
+        '<div class="whin"><input type="text" inputmode="decimal" autocomplete="off" data-frq="'+pid+'" placeholder="gələn" value="'+esc(frQ[pid]||"")+'"><button class="sm" data-frfull="'+pid+'" data-q="'+tot+'">Hamısı ('+fmtN(tot)+')</button></div></div>'; }).join("") : '<div class="empty">✓ Bu firmadan gözlənilən mal yoxdur</div>')+
+    (pids.length ? '<div class="box"><input id="frNote" placeholder="Qeyd (istəyə görə)"><button class="pri big" data-frgo="1">✓ Qəbul et → Satınalmaya göndər</button></div>' : "")+
+    '<button class="sm linkb" data-frback="1">← Geri</button>';
+}
+function firmRecvGo(){
+  const L = firmLines(frF, frW), by = {}, now = new Date().toISOString(), pend = new Set(), late = [];
+  L.forEach(r=>{ (by[r.i.pid] = by[r.i.pid] || []).push(r); });
+  let any = false;
+  Object.keys(by).forEach(pid=>{
+    let left = Math.max(0, num(frQ[pid]||0)); if (!(left>0)) return; any = true;
+    const rs = by[pid];
+    rs.forEach((r,idx)=>{
+      if (!(left>0)) return;
+      const add = idx===rs.length-1 ? left : Math.min(r.rem, left); left -= add;
+      if (r.pending){ r.i.got = (r.i.got||0)+add; pend.add(r.o); }
+      else { const days = Math.max(0, Math.round((new Date(today()+"T00:00:00") - new Date((r.o.eta||sentDay(r.o))+"T00:00:00"))/DAY));
+        if (r.i.got0==null) r.i.got0 = r.i.got||0; (r.i.lateRecv = r.i.lateRecv||[]).push({ at:now, qty:add, days, by:role });
+        r.i.got = (r.i.got||0)+add; if (r.i.qc==="none") delete r.i.qc; r.o.last_move = now;
+        addLog(r.o, "Sonradan gəldi (firma üzrə qəbul)", pname(r.i.pid)+" "+fmtN(add)+" · "+days+" gün gec"); late.push("#"+r.o.id+" "+pname(r.i.pid)+" "+fmtN(add)); }
+    });
+  });
+  if (!any) return toast("Gələn miqdarı yazın");
+  const note = (($("frNote")||{}).value||"").trim();
+  pend.forEach(o=>receiveDone(o, note));
+  if (late.length) notify(["Satınalma"], "ok", "📦 "+frF+" → "+frW+" · köhnə sifarişlərin malı gəldi", "Firma üzrə qəbul: gəlməyən mallar bağlandı", late, null);
+  frQ = {}; tab = frBack || "home"; save(); render(); window.scrollTo(0,0);
+  toast("Qəbul olundu · "+pend.size+" sifariş bağlandı"+(late.length?" · "+late.length+" köhnə mal tamamlandı":""));
+}
+
+// ===================== 🔁 Firmanın sifarişlərini tutuşdur (Admin) =====================
+// Eyni firmanın eyni malı bir sifarişdə artıq, o birində əskik qəbul olunubsa — faktiki gələni köhnədən yeniyə yenidən paylayır.
+function reconcile(F){
+  if (!adminView()) return toast("Yalnız Admin");
+  const os = S.orders.filter(o=>!o.deleted && o.status!=="redd" && o.recvDone && fnorm(o.supplier)===fnorm(F) && !o.req && !o.rep)
+    .sort((a,b)=>String(a.created).localeCompare(String(b.created))||a.id-b.id);
+  const groups = {}; os.forEach(o=>o.items.forEach(i=>{ if (i.qc==="bad" || (i.ans && i.ans.follow)) return; const k = o.wh+"|"+i.pid; (groups[k] = groups[k]||[]).push({o,i}); }));
+  let ch = 0;
+  Object.values(groups).forEach(rs=>{
+    if (rs.length<2) return;
+    let pool = rs.reduce((a,r)=>a+(r.i.got||0),0);
+    rs.forEach((r,idx)=>{ const want = idx===rs.length-1 ? pool : Math.min(num(r.i.qty), pool); pool -= want;
+      if (Math.abs((r.i.got||0)-want)>1e-9){ addLog(r.o, "Admin: firma üzrə tutuşdurma", pname(r.i.pid)+" "+fmtN(r.i.got||0)+" → "+fmtN(want)); r.i.got = want; if (want>0 && r.i.qc==="none") delete r.i.qc; ch++; } });
+  });
+  save(); render(); toast(ch ? ch+" sətir düzəldi — faktiki gələn köhnə sifarişlərə paylandı" : "Düzəliş lazım deyil — hər şey uyğundur");
+}
+// Statistikada: firma üzrə sifariş və faktiki gələn
+let frS = "";
+function firmCompare(a,b){
+  const os = S.orders.filter(o=>!o.deleted && o.status!=="redd" && !o.req && !o.rep && o.supplier && inR2(sentDay(o),a,b));
+  const firms = [...new Set(os.map(o=>o.supplier))].sort((x,y)=>x.localeCompare(y,"az"));
+  if (!firms.length) return "";
+  if (!firms.includes(frS)) frS = firms[0];
+  const rows = {}; os.filter(o=>o.supplier===frS).forEach(o=>o.items.forEach(i=>{ const r = rows[i.pid] = rows[i.pid] || { ord:0, got:0, n:0, u:String(i.qty||"").replace(/^[\d.,\s]+/,"").trim() }; r.ord += num(i.qty); r.got += (i.got||0); r.n++; }));
+  const ks = Object.keys(rows);
+  return '<h3>🏭 Firma üzrə: sifariş və faktiki gələn</h3><div class="row"><select data-frs="1" style="width:auto">'+firms.map(f=>'<option'+(f===frS?" selected":"")+'>'+esc(f)+'</option>').join("")+'</select>'+
+    (adminView()?'<button class="sm" data-recon="'+esc(frS)+'">🔁 Sifarişləri tutuşdur</button>':"")+'</div>'+
+    '<div class="tbl card"><table><thead><tr><th>Mal</th><th class="num">Sifariş</th><th class="num">Faktiki gələn</th><th class="num">Fərq</th></tr></thead><tbody>'+
+    ks.map(k=>{ const r = rows[k], d = Math.round((r.got-r.ord)*1000)/1000; return '<tr><td>'+esc(pname(Number(k)))+(r.n>1?' <span class="meta">('+r.n+' sifariş)</span>':"")+'</td><td class="num">'+fmtN(r.ord)+(r.u?" "+esc(r.u):"")+'</td><td class="num">'+fmtN(r.got)+'</td><td class="num"><span class="pill '+(d<0?"p-bad":d>0?"p-warn":"p-ok")+'">'+(d>0?"+":"")+fmtN(d)+'</span></td></tr>'; }).join("")+
+    '</tbody></table></div>'+(adminView()?'<div class="hint">“Tutuşdur”: eyni malı bir sifarişdə artıq, o birində əskik qəbul olunubsa, faktiki gələni köhnə sifarişdən başlayaraq yenidən paylayır.</div>':"");
+}
+const inR2 = (d,a,b) => (!a || d>=a) && (!b || d<=b);
+
 // Telefonda və kompüterdə tətbiq kimi quraşdırmaq
 let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (tab==="home") render(); });
