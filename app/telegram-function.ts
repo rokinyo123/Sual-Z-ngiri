@@ -124,7 +124,7 @@ function stageTxt(o: any) {
   if (o.status === "yolda") return lateOpen(o) ? `Gecikir · ${fmtD(o.eta)} gəlməli idi` : o.eta === today() ? "Bu gün gəlməlidir" : `Gözlənilir · ${fmtD(o.eta)}`;
   if (o.status === "anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? `Keyfiyyət 1 saatda yoxlamadı · ${o.wh} şərti qəbul edə bilər` : "Gəldi · Keyfiyyət yoxlamayıb") : `Gəldi · ${o.wh} qəbulu bitirməyib`;
   if (qcSkipOpen(o)) return "⚠ Keyfiyyət yoxlamadan şərti qəbul olunub — Keyfiyyət yoxlamalıdır";
-  if (o.items.some((i: any) => problem(o, i) && !i.ans)) return "Satınalmanın cavabı gözlənilir";
+  if (o.items.some((i: any) => problem(o, i) && !i.ans && !(o.recvDone && laterArrived(i, 0, o)))) return "Satınalmanın cavabı gözlənilir";
   if (o.items.some((i: any) => techReady(o, i))) return "Texnoloqda";
   return "Bağlanıb ✓";
 }
