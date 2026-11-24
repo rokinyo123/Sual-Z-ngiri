@@ -2245,7 +2245,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v81 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v82 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2930,15 +2930,15 @@ let RF = "", RT = "", rangeOpen = false;
 document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("rangebar")) rangeOpen = e.target.open; }, true);
 const inRange = d => (!RF || d>=RF) && (!RT || d<=RT);
 function rangeBar(){
-  const q = [["today","Bu gün"],["tmr","Sabah"],["week","Son 7 gün"],["month","Bu ay"],["all","Hamısı"]];
+  const q = [["today","Bu gün"],["yest","Dünən"],["week","Son 7 gün"],["month","Bu ay"],["all","Hamısı"]];
   const label = !RF && !RT ? "bütün tarixlər" : RF===RT ? fmtD(RF)+(RF===today()?" (bu gün)":"") : (RF?fmtD(RF):"…")+" – "+(RT?fmtD(RT):"…");
-  return '<details class="rangebar"'+(rangeOpen?" open":"")+'><summary>📅 Tarix: <b>'+label+'</b></summary>'+
+  return '<details class="rangebar"'+(rangeOpen?" open":"")+'><summary>📅 Sifariş yazılan gün: <b>'+label+'</b></summary>'+
     '<div class="seg">'+q.map(([k,l])=>'<button data-range="'+k+'">'+l+'</button>').join("")+'</div>'+
     '<div class="row"><div class="grow"><div class="lbl">Tarixdən</div><input type="date" id="rFrom" value="'+RF+'"></div><div class="grow"><div class="lbl">Tarixədək</div><input type="date" id="rTo" value="'+RT+'"></div></div></details>';
 }
 function setRange(k){
   const t = today();
-  if (k==="today"){ RF=RT=t; } else if (k==="tmr"){ RF=RT=plusDays(1); }
+  if (k==="today"){ RF=RT=t; } else if (k==="yest"){ RF=RT=plusDays(-1); }
   else if (k==="week"){ RF=plusDays(-6); RT=t; } else if (k==="month"){ RF=t.slice(0,8)+"01"; RT=t; } else { RF=RT=""; }
 }
 
@@ -2968,9 +2968,10 @@ function vOrders(){
   const fit = k => k==="all" ? (REQ.includes(role) ? (o=>o.from===role) : ()=>true) : (o=>o.from===k);
   // gözlənilən / yolda / yoxlanan — problemli və tam bağlanmışlar öz bölmələrindədir
   // v81: gəlməmiş HƏR sifariş burada (gecikən və Satınalma açıqlama yazmayanlar da) — heç nə siyahıdan düşmür
-  const active = S.orders.filter(o=>!o.deleted && ["acik","yolda","istek","anbar"].includes(o.status) && inRange(odate(o)));
-  const full = W ? S.orders.filter(o=>o.wh===role && isFull(o) && inRange(odate(o))) : [];
-  const rows = resultRows().filter(r=>r.cat==="miss" && (!r.i.ans || rDate(r)>=plusDays(-7)) && inRange(rDate(r)));
+  // v82: tarix filtri sifarişin YAZILDIĞI günə görədir (gəliş gününə görə yox)
+  const active = S.orders.filter(o=>!o.deleted && ["acik","yolda","istek","anbar"].includes(o.status) && inRange(sentDay(o)));
+  const full = W ? S.orders.filter(o=>o.wh===role && isFull(o) && inRange(sentDay(o))) : [];
+  const rows = resultRows().filter(r=>r.cat==="miss" && (!r.i.ans || rDate(r)>=plusDays(-7) || RF) && inRange(sentDay(r.o)));
   if (REQ.includes(role)) rows.splice(0, rows.length, ...rows.filter(r=>r.o.from===role));
   const notCame = rows.filter(r=>/^(Gəlmədi|Satınalma: mal yoxdur|Təchizatçı tapmadı)/.test(r.pr)), short = rows.filter(r=>/^Az/.test(r.pr));
   // "Gözlənilir" — hələ gəlməyənlər; mal gəlib, qəbul/yoxlama bitməyibsə — "Gəldi · yoxlanır"
