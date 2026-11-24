@@ -2230,7 +2230,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v74 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v75 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2415,7 +2415,7 @@ function footActions(o){
   }
   if (held(o)) return holdBox(o);
   if (role==="Keyfiyyət" && qcPend(o)){
-    const left = o.items.filter(i=>!i.qc).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
+    const left = o.items.filter(i=>!i.qc && i.got!==0).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
     if (o.qcSkip) return '<div class="box'+(o.qcSkip.live?"":" late")+'"><div class="lbl">'+(o.qcSkip.live?"📝 "+esc(o.wh)+" qəbulu bitirib — yoxlasanız nəticəni qeyd edin":"⚠ Gecikmiş yoxlama — "+esc(o.wh)+" malı artıq qəbul edib")+'</div><button class="okb big" data-act="qcok" data-id="'+o.id+'">✓ Yoxladım · nəticəni qeyd et</button>'+
       '<div class="hint">Uyğun olmayan mala ✗ qoyub səbəbini yazın — Satınalma və '+esc(o.wh)+' dərhal xəbər tutacaq, mal ayrılmalıdır.'+(left?" Qalan "+left+" mal uyğun sayılacaq.":"")+'</div>'+
       (noWhy?'<div class="hint rs">'+noWhy+' “uyğun deyil” malın şərhi yazılmayıb.</div>':"")+'</div>';
