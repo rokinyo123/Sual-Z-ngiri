@@ -82,7 +82,7 @@ async function load() {
   return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
 const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype !== "office" && o.stype !== "cargo";
-const held = (o: any) => !!(o.hold && !o.holdDone);
+const held = (o: any) => !!(o.hold && !o.holdDone && o.rep !== "noorder");   // xəbərsiz mal Satınalmanı gözləmir — yalnız Rəhbərliyə və statistikaya
 const HOLDN: Record<string, string> = { sample: "🧪 xəbərsiz nümunə", noinv: "📄 qaiməsiz mal", noorder: "📦 xəbərsiz mal" };
 const holdLine = (o: any) => `⛔ ${link(o.id)} ${HOLDN[o.hold?.t || "sample"]} → ${esc(o.wh)}${o.supplier ? " · " + esc(o.supplier) : ""} · ${hTxt((Date.now() - new Date(o.hold.at).getTime()) / H)} — Satınalma ${o.rep ? "cavab verməyib" : "yazmayıb"}` + (o.hold?.desc ? `\n   ${esc(String(o.hold.desc).slice(0, 120))}` : "");
 function problem(o: any, i: any) {
@@ -445,6 +445,7 @@ async function reportBuild(kind: string, ref: string) {
   const tech = rows.filter((r) => r.i.techRes);
   const lates = d.orders.flatMap((o) => (o.lates || []).filter((e: any) => inR(e.eta)).map((e: any) => ({ o, e })));
   const samples = d.orders.filter((o) => o.sample && inR(String(o.created || "").slice(0, 10)));
+  const noorder = d.orders.filter((o) => o.rep === "noorder" && inR(String(o.created || "").slice(0, 10)));
   const unans = rows.filter((r) => r.pr && !r.i.ans);
   const slowAns = rows.filter((r) => r.i.ans && Number(hrs(ansSince(r.o, r.i), r.i.ans.at)) > ANS_H);
   const recv = os.filter((o) => o.recvAt && o.eta);
@@ -467,6 +468,8 @@ async function reportBuild(kind: string, ref: string) {
     ["Cavabsız qalan problem", unans.length],
     ["Nümunə", samples.length],
     ["  — xəbərsiz gələn (Satınalma yazmayıb)", samples.filter((o) => o.unannounced).length],
+    ["Xəbərsiz mal (anbara xəbər verilmədən göndərilib)", noorder.length],
+    ["  — Anbar / İnqilab", noorder.filter((o) => o.wh === "Anbar").length + " / " + noorder.filter((o) => o.wh === "Anbar (İnqilab)").length],
     [], ["Hazırlandı", dmy(today())],
   ], [42, 14]), "Xülasə");
 
@@ -505,10 +508,12 @@ async function reportBuild(kind: string, ref: string) {
     ...os.sort((x, y) => iDate(x).localeCompare(iDate(y))).map((o) => [dmy(iDate(o)), "#" + o.id, o.from, o.wh, o.supplier || "", o.items.length, stageTxt(o)])],
     [11, 9, 16, 16, 22, 9, 40]), "Sifarişlər");
 
+  XLSX.utils.book_append_sheet(wb, sheet([["Tarix", "Sifariş", "Anbar", "Firma / kim gətirib", "Nə gəlib", "Qeyd edən"],
+    ...noorder.map((o) => [dmy(String(o.created).slice(0, 10)), "#" + o.id, o.wh, o.supplier || "", o.hold?.desc || "", o.hold?.by || ""])], [12, 9, 16, 22, 40, 12]), "Xəbərsiz mal");
   const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
   const name = `Almond_${kind === "month" ? "ayliq_" + a.slice(0, 7) : "heftelik_" + a + "_" + b}.xlsx`;
   const caption = `📊 <b>${title}</b>\n${rows.length} mal · ${full} tam · ${part} az · ${miss.length} gəlmədi · Keyfiyyət ✗ ${qc.length}\n` +
-    `⏰ ${lates.length} gecikmə (${lates.filter((x) => !x.e.note).length}-nə açıqlama yoxdur) · 🧪 ${samples.length} nümunə (${samples.filter((o) => o.unannounced).length} xəbərsiz)` +
+    `⏰ ${lates.length} gecikmə (${lates.filter((x) => !x.e.note).length}-nə açıqlama yoxdur) · 🧪 ${samples.length} nümunə (${samples.filter((o) => o.unannounced).length} xəbərsiz) · 📦 ${noorder.length} xəbərsiz mal` +
     (unans.length ? `\n⚠️ ${unans.length} problem cavabsız` : "");
   return { buf, name, caption };
 }
