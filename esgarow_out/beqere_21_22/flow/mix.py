@@ -1,6 +1,6 @@
 import json, subprocess, numpy as np, soundfile as sf, librosa, os
 W='/tmp/claude-0/-home-user-Sual-Z-ngiri/082ffc7a-b076-5133-a44d-2027c5a445c7/scratchpad/b2122'
-SR=48000; DUR=168.5; N=int(DUR*SR)
+SR=48000; DUR=168.0; N=int(DUR*SR)
 segs=json.load(open(f'{W}/segs.json'))
 MUSIC={f'k{i:02d}' for i in range(1,19)}
 os.makedirs(f'{W}/nat',exist_ok=True)
@@ -69,24 +69,24 @@ put(rustle(1.0),17.6,-20)                                         # Quran opens
 pass                                    # gentle sparkle during recitation
 for at in (49.6,51.3,53.0,54.6): put(sand(0.9),at,-24); put(thud(),at+0.1,-26)              # generations rise
 put(swish(1.2,300,4000),55.9,-22); put(sand(1.5),56.0,-26)                                # sand -> grass
-put(shimmer(2.0),57.3,-22); put(wav('whoosh'),57.4,-24)                                   # dome
-put(rain(6.5),58.7,-26)                                                                   # rain (clip quiet)
-put(rustle(1.6),60.0,-22); put(rustle(1.2),61.4,-24)                                      # tree grows
+put(shimmer(2.0),57.6,-22); put(wav('whoosh'),57.7,-24)                                   # dome
+put(rain(2.6),59.3,-26)                                                                   # rain (clip quiet)
+put(rustle(1.6),60.8,-22)                                      # tree grows
 for at in (62.9,63.3,63.8): put(thud(),at,-22)                                            # fruits into basket
 put(clink(0.5),65.6,-24)                                                                  # coins on the pan
 for i,at in enumerate(np.arange(67.5,74.0,0.55)): put(ignite(),at+rng.uniform(-.1,.1),-30+(i%3)*-2)   # lanterns light
 put(swish(1.4,120,1500),75.4,-20)                                                         # rug unrolls
 put(swish(1.0,200,3000),84.4,-28); put(rain(1.4),87.6,-26); put(rustle(1.2),89.0,-26)     # reprise
-put(crackle(1.6),99.2,-20); put(crackle(1.4),100.8,-22); put(crackle(1.4),103.2,-20); put(crackle(1.2),104.6,-22)   # meteors burn
-put(wav('boom'),106.3,-18)                                                                # sunrise
-put(wav('boom'),119.9,-16); put(sand(1.2),120.0,-22)                                      # idols rise
+put(crackle(1.6),97.3,-20); put(crackle(1.4),98.7,-22); put(crackle(1.4),101.5,-20); put(crackle(1.2),103.0,-22)   # meteors burn
+put(wav('boom'),104.2,-18)                                                                # sunrise
+put(wav('boom'),116.8,-16); put(sand(1.2),116.9,-22)                                      # idols rise
 put(wav('crack'),123.4,-16); put(sand(1.6),123.6,-20)                                     # idols crumble
 put(puff(),136.5,-16)                                                                     # candle goes out
-put(clink(0.6),143.2,-22); put(clink(0.6,(1900,3100,4700)),145.0,-22)                     # phone / crown on the pan
-put(wav('crack'),153.3,-18); put(sand(1.6),153.5,-20)                                     # objects crumble
-put(wav('boom'),154.2,-18); put(shimmer(2.5),154.3,-20)                                   # light fills
-put(pop(),165.7,-24)                                                                      # ink drop
-put(wav('boom'),165.55,-16)                                                               # end card
+pass                     # phone / crown on the pan
+put(wav('crack'),150.7,-18); put(sand(1.6),150.9,-20)                                     # objects crumble
+put(wav('boom'),152.1,-18); put(shimmer(2.5),152.2,-20)                                   # light fills
+put(pop(),161.8,-24)                                                                      # ink drop
+pass                                                               # end card
 # --- ducking under voice ---
 v,_=librosa.load(f'{W}/ses.mp3',sr=SR); v=np.pad(v,(0,max(0,N-len(v))))[:N]
 hop=480; rms=np.sqrt(np.convolve(v**2,np.ones(hop*4)/(hop*4),'same'))[::hop]
