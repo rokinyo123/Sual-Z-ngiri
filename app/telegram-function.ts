@@ -89,7 +89,7 @@ function problem(o: any, i: any) {
   if (o.req) return "";
   if (i.unav) return "Satınalma: mal yoxdur";
   if (i.notFound) return "Təchizatçı tapmadı";
-  if (i.qc === "bad") return "Keyfiyyət: " + (i.qcWhy || "uyğun deyil");
+  if (i.qc === "bad" && !o.qcSkip) return "Keyfiyyət: " + (i.qcWhy || "uyğun deyil");
   if (i.techRes === "bad") return o.sample ? "" : "Texnoloq qəbul etmədi";
   if (!o.recvDone) return "";
   if (i.qc === "none" || !i.got) return "Gəlmədi";
@@ -123,7 +123,6 @@ function stageTxt(o: any) {
   if (o.status === "acik") return "Satınalmada (gəliş günü təyin olunmayıb)";
   if (o.status === "yolda") return lateOpen(o) ? `Gecikir · ${fmtD(o.eta)} gəlməli idi` : o.eta === today() ? "Bu gün gəlməlidir" : `Gözlənilir · ${fmtD(o.eta)}`;
   if (o.status === "anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? `Keyfiyyət 1 saatda yoxlamadı · ${o.wh} şərti qəbul edə bilər` : "Gəldi · Keyfiyyət yoxlamayıb") : `Gəldi · ${o.wh} qəbulu bitirməyib`;
-  if (qcSkipOpen(o)) return "⚠ Keyfiyyət yoxlamadan şərti qəbul olunub — Keyfiyyət yoxlamalıdır";
   if (o.items.some((i: any) => problem(o, i) && !i.ans && !(o.recvDone && laterArrived(i, 0, o)))) return "Satınalmanın cavabı gözlənilir";
   if (o.items.some((i: any) => techReady(o, i))) return "Texnoloqda";
   return "Bağlanıb ✓";
@@ -140,7 +139,7 @@ function board(orders: any[]) {
   const L = (name: string, parts: string[]) => `${parts.length ? "🔸" : "✅"} <b>${name}</b>: ${parts.length ? parts.join(", ") : "işi yoxdur"}`;
   return [
     L("Satınalma", [hl.length ? `⛔ ${hl.length} xəbərsiz / qaiməsiz mala cavab verməyib` : "", acc.length ? `${acc.length} sifariş qəbul edilməyib` : "", late.length ? `${late.length} gecikməyə açıqlama yoxdur` : "", un.length ? `${un.length} mala cavab yoxdur` + (unLate ? ` (⚠ ${unLate}-i 12 saatı keçib)` : "") : ""].filter(Boolean)),
-    L("Keyfiyyət", [qc.length ? `${qc.length} sifarişi yoxlamayıb` : "", qs ? `⚠ ${qs} sifariş yoxlanmadan şərti qəbul olunub` : ""].filter(Boolean)),
+    L("Keyfiyyət", [qc.length ? `${qc.length} sifarişi yoxlamayıb` : ""].filter(Boolean)),
     L("Anbar", wh("Anbar") ? [`${wh("Anbar")} sifarişin qəbulunu bitirməyib`] : []),
     L("İnqilab", wh("Anbar (İnqilab)") ? [`${wh("Anbar (İnqilab)")} sifarişin qəbulunu bitirməyib`] : []),
     L("Texnoloq", tp ? [`${tp} sifarişdə cavab verməyib`] : []),
@@ -299,8 +298,8 @@ function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
     O.flatMap((o) => o.items.filter((i: any) => canAnswer(o, i)).map((i: any) => `${link(o.id)} ${esc(d.pname(i.pid))} — ${esc(problem(o, i))}${ansLeftH(o, i) < 0 ? " · <b>vaxtı keçib</b>" : ""}`)));
   add("Satınalma", eve ? "Bu gün gəlməli idi, gəlmədi — sabah firmaya zəng edin" : "Bu gün gələcək — izləyin", O.filter((o) => o.status === "yolda" && o.eta === t).map(oLine));
   // Keyfiyyət
-  add("Keyfiyyət", eve ? "Yoxlamadığınız mallar" : "Gələn malları yoxlayın (1 saat ərzində)", O.filter((o) => o.status === "anbar" && hasQC(o) && !o.qcAt).map(oLine));
-  add("Keyfiyyət", eve ? "Şərti qəbul olunub, hələ yoxlamadınız" : "Şərti qəbul olunan malları yoxlayın", O.filter((o) => o.qcSkip && !o.qcAt).map(oLine));
+  add("Keyfiyyət", eve ? "Yoxlamadığınız mallar" : "Gələn malları yoxlayın", O.filter((o) => o.status === "anbar" && hasQC(o) && !o.qcAt).map(oLine));
+  if (!eve) add("Keyfiyyət", "Anbar qəbul edib — yoxlamaq üçün", O.filter((o) => o.qcSkip && !o.qcAt && o.items.some((i: any) => (i.got || 0) > 0)).map(oLine));
   // Anbarlar
   for (const wh of ["Anbar", "Anbar (İnqilab)"]) {
     add(wh, eve ? "Qəbulunu bitirmədiyiniz sifarişlər" : "Qəbulu bitirin", O.filter((o) => o.wh === wh && o.status === "anbar" && !held(o) && (!hasQC(o) || o.qcAt || qcLateP(o))).map(oLine));
