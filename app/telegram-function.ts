@@ -101,8 +101,6 @@ function problem(o: any, i: any) {
 // az gələn / gəlməyən mal sonradan tam gəlibsə (davam sifarişi və ya eyni anbara eyni mal) — artıq cavab gözlənilmir
 let ALL: any[] = [];
 function laterArrived(i: any, d = 0, o?: any): boolean {
-  if (!i.ans && o && o.recvAt) return ALL.some((x) => x !== o && x.wh === o.wh && x.recvDone && (x.recvAt || "") > o.recvAt &&
-    x.items.some((y: any) => Number(y.pid) === Number(i.pid) && (y.got || 0) > 0 && !problem(x, y)));
   if (!i.ans || !i.ans.follow || d > 5) return false;
   const f = ALL.find((x) => x.id === Number(i.ans.follow)); if (!f || !f.recvDone) return false;
   const pid = Number(i.ans.sub || i.pid);

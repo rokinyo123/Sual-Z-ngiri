@@ -1339,8 +1339,7 @@ const RCAT = { miss:["⛔","Gəlməyən / əskik"], qc:["🔍","Keyfiyyət qəbu
 function laterArrived(i, d, o){
   d = d || 0;
   // Satınalma cavab yazmayıbsa: həmin anbara eyni mal sonradan başqa sifarişlə tam gəlibsə — o da sayılır
-  if (!i.ans && o && o.recvAt) return S.orders.some(x=>x!==o && x.wh===o.wh && x.recvDone && x.status!=="redd" && !x.deleted && (x.recvAt||"")>o.recvAt &&
-    x.items.some(y=>Number(y.pid)===Number(i.pid) && (y.got||0)>0 && !problem(x,y)));
+  // v81: başqa sifarişlə eyni malın gəlməsi artıq avtomatik "gəldi" sayılmır (səhvən gəlməyən malı gizlədirdi) — sonradan gələni anbar özü qəbul edir
   if (!i.ans || !i.ans.follow || d>5) return false;
   const f = S.orders.find(x=>x.id===Number(i.ans.follow)); if (!f || !f.recvDone || f.status==="redd") return false;
   const pid = Number(i.ans.sub || i.pid);
@@ -2246,7 +2245,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v80 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v81 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2968,7 +2967,8 @@ function vOrders(){
   const hit = o => !oq || ("#"+o.id+" "+o.from+" "+o.wh+" "+(o.supplier||"")+" "+o.items.map(i=>pname(i.pid)).join(" ")).toLowerCase().includes(oq.toLowerCase());
   const fit = k => k==="all" ? (REQ.includes(role) ? (o=>o.from===role) : ()=>true) : (o=>o.from===k);
   // gözlənilən / yolda / yoxlanan — problemli və tam bağlanmışlar öz bölmələrindədir
-  const active = S.orders.filter(o=>o.status!=="redd" && (byNum || (!isFull(o) && !needsAnswer(o) && !lateNeedsAns(o))) && inRange(odate(o)) && (byNum || !archived(o)));
+  // v81: gəlməmiş HƏR sifariş burada (gecikən və Satınalma açıqlama yazmayanlar da) — heç nə siyahıdan düşmür
+  const active = S.orders.filter(o=>!o.deleted && ["acik","yolda","istek","anbar"].includes(o.status) && inRange(odate(o)));
   const full = W ? S.orders.filter(o=>o.wh===role && isFull(o) && inRange(odate(o))) : [];
   const rows = resultRows().filter(r=>r.cat==="miss" && (!r.i.ans || rDate(r)>=plusDays(-7)) && inRange(rDate(r)));
   if (REQ.includes(role)) rows.splice(0, rows.length, ...rows.filter(r=>r.o.from===role));
@@ -2996,8 +2996,15 @@ function vOrders(){
       '<h3>✅ Tam gələn sifarişlər · '+list.length+'</h3><div class="meta">Hamısı tam gəlib və qəbul olunub. Bu siyahını yalnız '+esc(role)+' görür.</div>'+(list.length ? bySent(list, null, orderBrief) : '<div class="empty">Bu seçimdə tam gələn sifariş yoxdur</div>'); }
   else { const rs = sortR(missAll.filter(r=>hit(r.o)));
     body = '<div class="meta">Gəlməyən mallar və qismən gələnlərin <b>gəlməyən hissəsi</b> — Satınalma '+ANS_H+' saat ərzində nə vaxt gələcəyini yazmalıdır. Sonra gəlsə, buradan qəbul edin.</div>'+(rs.length ? '<div class="irows">'+rs.map(resRow).join("")+'</div>' : '<div class="empty">✓ Yoxdur</div>'); }
+  if ((oq||"").trim()){
+    const all = S.orders.filter(o=>!o.deleted && o.status!=="redd" && (REQ.includes(role) ? o.from===role : true) && hit(o)).sort((a,b)=>b.created.localeCompare(a.created)||b.id-a.id);
+    const gone = adminView() ? (S.trash||[]).filter(hit) : [];
+    body = '<div class="meta">🔎 Bütün sifarişlərdə axtarış — gözlənilən, gələn, gəlməyən, bağlanmış: hamısı. Hər kartın yuxarısında vəziyyəti yazılıb.</div>'+
+      (all.length ? all.slice(0,60).map(o=>orderBrief(o)).join("")+(all.length>60?'<div class="meta">… və daha '+(all.length-60)+' — axtarışı dəqiqləşdirin</div>':"") : '<div class="empty">Tapılmadı. Malın adını qısa yazın (məs. “badam”) və ya #nömrə.</div>')+
+      (gone.length ? '<h3>🗑 Silinənlər · '+gone.length+'</h3>'+gone.map(o=>'<div class="nline"><b>#'+o.id+' '+esc(o.supplier||"")+'</b><span>'+esc(o.items.map(i=>pname(i.pid)).join(", "))+' · silən: '+esc((o.deleted&&o.deleted.by)||"")+'</span></div>').join("") : "");
+  }
   return '<h2>Sifarişlər</h2>'+
-    '<input id="oQ" placeholder="🔍 Axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
+    '<input id="oQ" placeholder="🔍 Hər yerdə axtar: məhsul, firma, #nömrə..." value="'+esc(oq)+'">'+
     '<div class="seg osec">'+SEC.map(([k,l,n])=>'<button class="'+(osec===k?"on":"")+'" data-osec="'+k+'">'+l+'<span class="k">'+n+'</span></button>').join("")+'</div>'+
     rangeBar() + body;
 }
