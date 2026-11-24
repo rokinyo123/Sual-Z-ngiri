@@ -1092,7 +1092,7 @@ const ANS_H = 12;
 const ansSince = (o,i) => (i.unav&&i.unav.at) || (i.notFound&&i.notFound.at) || (i.qc==="bad" ? o.qcAt : "") || (i.techRes==="bad" ? (i.techAt||o.last_move) : "") || o.recvAt || o.last_move || o.created;
 const ansLeftH = (o,i) => ANS_H - (Date.now()-new Date(ansSince(o,i)).getTime())/HOUR;
 const ansLate = (o,i) => !i.ans && !!problem(o,i) && canAnswer(o,i) && ansLeftH(o,i) < 0;
-const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans);
+const needsAnswer = o => o.items.some(i=>problem(o,i) && !i.ans && !(o.recvDone && laterArrived(i,0,o)));
 // Sifariş indi kimdə gözləyir və nə qədərdir; vaxt həddini keçibsə — "ilişib"
 function waitOn(o){
   if (o.status==="redd" || o.deleted) return null;
@@ -1151,6 +1151,7 @@ function itemState(o,i){
   if (o.req) return i.rq==="give" && (o.reqBuy || o.status!=="istek") ? ["Anbardan verildi","p-ok"] : i.rq==="buy" && o.reqBuy ? (o.status==="istek" ? ["🛒 Satınalmada","p-wait"] : ["Gəldi · verildi","p-ok"])
     : o.status==="istek" ? ["Gözləyir","p-qc"] : o.reqDone && o.reqDone.full ? ["Verildi","p-ok"] : ["Bax: qeyd","p-warn"];
   const pr = problem(o,i);
+  if (pr && o.recvDone && laterArrived(i,0,o)) return ["✓ Sonra tam gəldi","p-ok"];
   if (pr) return [pr, pr.startsWith("Az") ? "p-warn" : "p-bad"];
   if (techReady(o,i)) return ["Texnoloqda","p-qc"];
   if (i.got!=null) return gotState(i.qty,i.got);
@@ -1175,7 +1176,7 @@ function splitProblems(o){
   S.orders.unshift(kid);
   return kid;
 }
-const isFull = o => archived(o) && o.items.every(i=>!problem(o,i));   // hər şey tam gəlib, hamı qəbul edib
+const isFull = o => archived(o) && o.items.every(i=>!problem(o,i) || laterArrived(i,0,o));   // sonradan tam gələn mal da "tam" sayılır   // hər şey tam gəlib, hamı qəbul edib
 function finishReceive(o, by, note){
   o.items.forEach(i=>{ if (i.qc==="bad"||i.qc==="none"||i.techRes==="bad") i.got = 0; else if (i.got==null) i.got = 0; });
   o.recvDone = true; o.status = "bagli"; o.last_move = o.recvAt = new Date().toISOString();
@@ -1285,8 +1286,8 @@ function stage(o){
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? {k:"chk", t:"Keyfiyyət gecikir · "+o.wh+" şərti qəbul edə bilər"} : {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"}) : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
   if (techPending(o)){ const d = o.items.filter(i=>techReady(o,i)).map(i=>i.techDue).filter(Boolean).sort()[0]; return {k: d && daysTo(d)<0 ? "bad" : "chk", t:"Texnoloqda"+(d?" · cavab "+fmtD(d).slice(0,5)+(daysTo(d)<0?" keçib":""):"")}; }
-  if (o.items.some(i=>problem(o,i))) return {k:"bad", t:"Natamam · cavablandı"};
-  return {k:"ok", t:"Tam qəbul olundu"};
+  if (o.items.some(i=>problem(o,i) && !laterArrived(i,0,o))) return {k:"bad", t:"Natamam · cavablandı"};
+  return {k:"ok", t: o.items.some(i=>problem(o,i)) ? "Tam qəbul olundu · qalanı sonra gəldi" : "Tam qəbul olundu"};
 }
 const STAGES = [["buy","Satınalmada"],["wait","Gözlənilir"],["chk","Yoxlanır"],["bad","Problem"],["ok","Tam"]];
 const etaTxt = o => o.eta ? fmtD(o.eta) : "";
@@ -2200,7 +2201,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v69 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v70 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
