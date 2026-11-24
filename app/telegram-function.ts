@@ -100,6 +100,7 @@ function problem(o: any, i: any) {
 // az gələn / gəlməyən mal sonradan tam gəlibsə (davam sifarişi və ya eyni anbara eyni mal) — artıq cavab gözlənilmir
 let ALL: any[] = [];
 function laterArrived(i: any, d = 0, o?: any): boolean {
+  if (i.cover) return true;
   if (!i.ans || !i.ans.follow || d > 5) return false;
   const f = ALL.find((x) => x.id === Number(i.ans.follow)); if (!f || !f.recvDone) return false;
   const pid = Number(i.ans.sub || i.pid);
