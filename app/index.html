@@ -2213,7 +2213,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v71 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v72 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2307,6 +2307,7 @@ function orderCard(o){
     (o.comments.length?'<div class="spn c">💬 <b>'+esc(o.comments[o.comments.length-1].by)+':</b> '+esc(o.comments[o.comments.length-1].text)+toLine(o.comments[o.comments.length-1].to)+(o.comments.length>1?' <span class="meta">(+'+(o.comments.length-1)+')</span>':"")+'</div>':"") + (editDraft[o.id]?editBox(o):rows) + footActions(o) + (editDraft[o.id]?"":addBox(o)) + more(o) + (fullSet.has(o.id)?'':ownBtns(o,1))+'</article>';
 }
 const openAct = {};
+const arrSel = {};   // "Bir hissəsi gəldi": sifariş → gələn malların indeksləri
 // Bir malın sətri: adı, miqdarı və Keyfiyyət · Anbar · Texnoloq · Satınalma xanaları
 function itemRow(o,i,k,st){
   const key = o.id+"-"+k, accepted = !!o.eta && o.status!=="acik";
@@ -2407,8 +2408,16 @@ function footActions(o){
   }
   if (role==="Keyfiyyət" && o.qcOpen)
     return '<div class="box"><div class="hint">Dərəcə, tarixlər və yoxlayan istəyə görədir — boş qala bilər.</div><button class="pri big" data-act="qcfin" data-id="'+o.id+'">✓ Sifarişi tamamla</button></div>';
-  if (role===o.wh && o.status==="yolda")
-    return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 Gəldi</button><div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.</div></div>';
+  if (role===o.wh && o.status==="yolda"){
+    const sel = arrSel[o.id];
+    if (sel) return '<div class="box"><div class="lbl">Hansı mallar gəldi? Gəlməyənlərin işarəsini götürün</div><div class="chips">'+
+      o.items.map((i,k)=>'<button class="ic who'+(sel.has(k)?" on":"")+'" data-arrit="'+o.id+'|'+k+'">'+(sel.has(k)?"✓ ":"✗ ")+esc(pname(i.pid))+' <b>'+esc(i.qty)+'</b></button>').join("")+'</div>'+
+      '<div class="hint">'+sel.size+' mal gəldi · '+(o.items.length-sel.size)+' mal gəlməyib. Gəlməyənlər ayrıca sifarişə keçir və <b>gözlənilir</b> qalır — Keyfiyyət yalnız gələnləri yoxlayır.</div>'+
+      '<div class="row"><button class="okb big" data-act="arrivedsel" data-id="'+o.id+'">📦 Seçilənlər gəldi</button><button data-act="arrcancel" data-id="'+o.id+'">Ləğv</button></div></div>';
+    return '<div class="box"><button class="okb big" data-act="arrived" data-id="'+o.id+'">📦 '+(o.items.length>1?"Hamısı gəldi":"Gəldi")+'</button>'+
+      (o.items.length>1?'<button class="sm" data-act="arrpart" data-id="'+o.id+'">Bir hissəsi gəldi — seç</button>':"")+
+      '<div class="hint">Mal anbara çatanda basın'+(hasQC(o)?" — Keyfiyyət də xəbər tutacaq":"")+'.'+(o.items.length>1?" Hamısı gəlməyibsə, “Bir hissəsi gəldi” ilə gələnləri seçin.":"")+'</div></div>';
+  }
   if (role===o.wh && o.status==="anbar"){
     const late = qcLate(o), wait = hasQC(o) && !o.qcAt && !late, tw = false;
     return '<div class="box'+(late?" late":"")+'">'+
@@ -3537,6 +3546,7 @@ $("main").addEventListener("click", e => {
   if (d.aclose){ const [o,i] = itemOf(d.aclose); return sure(t, ()=>{ adminCloseItem(o,i); save(); render(); toast(pname(i.pid)+" bağlandı"); }); }
   if (d.adel){ const [oid,k] = d.adel.split("-").map(Number), o = S.orders.find(x=>x.id===oid); if (o) return sure(t, ()=>adminDelItem(o,k)); return; }
   if (d.restore) return sure(t, ()=>restoreOrder(Number(d.restore)));
+  if (d.arrit){ const [oid,k] = d.arrit.split("|").map(Number), S0 = arrSel[oid]; if (S0){ S0.has(k) ? S0.delete(k) : S0.add(k); keep(()=>{}); } return; }
   if (d.act) orderAct(d.act, Number(d.id));
 });
 $("main").addEventListener("change", async e => {
@@ -3645,7 +3655,25 @@ function orderAct(act, id){
       toast("Bildirildi → "+o.wh+" və Rəhbərlik");
     }
   }
-  else if (act==="arrived"){
+  else if (act==="arrpart"){ arrSel[o.id] = new Set(o.items.map((_,k)=>k)); return render(); }
+  else if (act==="arrcancel"){ delete arrSel[o.id]; return render(); }
+  else if (act==="arrivedsel"){
+    const sel = arrSel[o.id] || new Set(o.items.map((_,k)=>k));
+    if (!sel.size) return toast("Heç olmasa bir gələn malı seçin");
+    if (sel.size < o.items.length){
+      const rest = o.items.filter((_,k)=>!sel.has(k)), came = o.items.filter((_,k)=>sel.has(k));
+      const kid = JSON.parse(JSON.stringify(Object.assign({}, o, { photos:[], files:[], history:[], comments:[] })));
+      Object.assign(kid, { id:nextId(), items:rest, parent:o.id, splitFrom:o.id, status:"yolda", note:"#"+o.id+" sifarişinin hələ gəlməyən malları" });
+      ["split","arrSplit","lates","stuckN","arrivedAt"].forEach(k=>delete kid[k]);
+      o.items = came; o.arrSplit = kid.id; S.orders.unshift(kid);
+      const names = rest.map(i=>pname(i.pid)+" "+i.qty);
+      addLog(o, "Qismən gəldi — gəlməyənlər #"+kid.id+"-ə ayrıldı", names.join(", "));
+      addLog(kid, "#"+o.id+" sifarişindən ayrıldı — hələ gəlməyib", names.join(", "));
+      notify(["Satınalma"], "late", "📦 #"+o.id+" qismən gəldi · "+rest.length+" mal gəlmədi → #"+kid.id+" gözlənilir", (o.supplier||"Firmasız")+" → "+o.wh+" · gecikirsə proqramda yeni tarix yazın", names, kid.id);
+    }
+    delete arrSel[o.id]; act = "arrived";
+  }
+  if (act==="arrived"){
     const le = lateOpen(o) ? lateEntry(o) : null; if (le) le.arrived = today();
     o.status = "anbar"; o.arrivedAt = o.last_move = new Date().toISOString();
     addLog(o,"Mal gəldi","");
