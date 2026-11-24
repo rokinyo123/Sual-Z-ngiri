@@ -75,6 +75,7 @@ async function load() {
   const P = new Map<number, string>();
   out.filter((r) => r.kind === "product").forEach((r) => P.set(Number(r.data.id), r.data.name));
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
+  ALL = orders;
   // Satışın tapşırıqları, iclas öhdəlikləri, Aktlar (səhər / axşam şöbə siyahıları üçün)
   const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
   const pick = (pre: string) => meta.filter((r) => String(r.id).startsWith(pre)).map((r) => r.data).filter((x) => x && !x.deleted);
@@ -95,7 +96,18 @@ function problem(o: any, i: any) {
   if ((i.got || 0) < num(i.qty)) return "Az gəldi";
   return "";
 }
-const canAnswer = (o: any, i: any) => !i.ans && !!problem(o, i) && (o.recvDone || (i.qc === "bad" && !!o.qcAt) || i.techRes === "bad" || !!i.unav || !!i.notFound);
+// az gələn / gəlməyən mal sonradan tam gəlibsə (davam sifarişi və ya eyni anbara eyni mal) — artıq cavab gözlənilmir
+let ALL: any[] = [];
+function laterArrived(i: any, d = 0, o?: any): boolean {
+  if (!i.ans && o && o.recvAt) return ALL.some((x) => x !== o && x.wh === o.wh && x.recvDone && (x.recvAt || "") > o.recvAt &&
+    x.items.some((y: any) => Number(y.pid) === Number(i.pid) && (y.got || 0) > 0 && !problem(x, y)));
+  if (!i.ans || !i.ans.follow || d > 5) return false;
+  const f = ALL.find((x) => x.id === Number(i.ans.follow)); if (!f || !f.recvDone) return false;
+  const pid = Number(i.ans.sub || i.pid);
+  const fi = f.items.filter((x: any) => Number(x.pid) === pid && (i.ans.sub ? Number(x.was) === Number(i.pid) : !x.was || Number(x.was) === Number(i.pid)));
+  return fi.length > 0 && fi.every((x: any) => !problem(f, x) || laterArrived(x, d + 1));
+}
+const canAnswer = (o: any, i: any) => !i.ans && !!problem(o, i) && !(o.recvDone && laterArrived(i, 0, o)) && (o.recvDone || (i.qc === "bad" && !!o.qcAt) || i.techRes === "bad" || !!i.unav || !!i.notFound);
 const ansSince = (o: any, i: any) => (i.unav && i.unav.at) || (i.notFound && i.notFound.at) || (i.qc === "bad" ? o.qcAt : "") || (i.techRes === "bad" ? (i.techAt || o.last_move) : "") || o.recvAt || o.last_move || o.created;
 const ansLeftH = (o: any, i: any) => ANS_H - (Date.now() - new Date(ansSince(o, i)).getTime()) / H;
 const lateOpen = (o: any) => o.status === "yolda" && !!o.eta && o.eta < today();

@@ -1140,7 +1140,7 @@ function stuckSignals(){
 }
 // Satınalma nə vaxt cavab verə bilər: Keyfiyyət yoxlamanı bitirib malı bloklayıbsa — dərhal
 // (Anbarın qəbulu bitirməsini gözləmədən); Texnoloq rədd edibsə; və ya qəbul bitib (gəlmədi / az gəldi)
-const canAnswer = (o,i) => !i.ans && !!problem(o,i) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad" || !!i.unav || !!i.notFound);
+const canAnswer = (o,i) => !i.ans && !!problem(o,i) && !(o.recvDone && laterArrived(i,0,o)) && (o.recvDone || (i.qc==="bad" && !!o.qcAt) || i.techRes==="bad" || !!i.unav || !!i.notFound);
 const waitWhy = (o,i) => i.qc==="bad" && !o.qcAt ? "Keyfiyyət yoxlamanı bitirəndə cavab vermək olacaq" : "Anbar qəbulu bitirəndə cavab vermək olacaq";
 // Ardıcıllıq: mal gəlir → Keyfiyyət (etiket, tarix) → Anbar qəbul edir → Texnoloq dadına və bişirildikdən
 // sonrakı prosesə baxır. Texnoloqun öz sifarişi də eyni yolla gedir.
@@ -1320,6 +1320,19 @@ function guessFirm(o){
 // ✅ Gələnlər · ⛔ Gəlməyən / əskik · 🔍 Keyfiyyət qəbul etmədi · 🧪 Texnoloq qəbul etmədi
 // Gəlməyən və qəbul olunmayan hər mal Satınalmanın cavabını gözləyir (yeni gün və ya əvəzinə mal).
 const RCAT = { miss:["⛔","Gəlməyən / əskik"], qc:["🔍","Keyfiyyət qəbul etmədi"], tech:["🧪","Texnoloq qəbul etmədi"], ok:["✅","Gələnlər"] };
+// Az gələn / gəlməyən mal Satınalmanın yeni tarixi ilə (davam sifarişi i.ans.follow) sonradan TAM gəlibsə —
+// artıq "Az gələn", "Gəlməyən", "Gəlməyənlər" siyahılarında göstərilmir (tarixçədə və statistikada qalır).
+function laterArrived(i, d, o){
+  d = d || 0;
+  // Satınalma cavab yazmayıbsa: həmin anbara eyni mal sonradan başqa sifarişlə tam gəlibsə — o da sayılır
+  if (!i.ans && o && o.recvAt) return S.orders.some(x=>x!==o && x.wh===o.wh && x.recvDone && x.status!=="redd" && !x.deleted && (x.recvAt||"")>o.recvAt &&
+    x.items.some(y=>Number(y.pid)===Number(i.pid) && (y.got||0)>0 && !problem(x,y)));
+  if (!i.ans || !i.ans.follow || d>5) return false;
+  const f = S.orders.find(x=>x.id===Number(i.ans.follow)); if (!f || !f.recvDone || f.status==="redd") return false;
+  const pid = Number(i.ans.sub || i.pid);
+  const fi = f.items.filter(x=>Number(x.pid)===pid && (i.ans.sub ? Number(x.was)===Number(i.pid) : !x.was || Number(x.was)===Number(i.pid)));
+  return fi.length>0 && fi.every(x=>!problem(f,x) || laterArrived(x,d+1));
+}
 function resultRows(){
   const rows = [];
   S.orders.forEach(o=>{
@@ -1327,7 +1340,7 @@ function resultRows(){
     o.items.forEach((i,k)=>{
       const pr = problem(o,i);
       if ((i.got||0)>0 && i.qc!=="bad" && i.techRes!=="bad") rows.push({cat:"ok",o,i,k});
-      if (pr) rows.push({cat: i.qc==="bad" ? "qc" : i.techRes==="bad" ? "tech" : "miss", o,i,k,pr});
+      if (pr && !laterArrived(i,0,o)) rows.push({cat: i.qc==="bad" ? "qc" : i.techRes==="bad" ? "tech" : "miss", o,i,k,pr});
     });
   });
   return rows;
@@ -2187,7 +2200,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v68 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v69 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
