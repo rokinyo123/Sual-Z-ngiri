@@ -1,0 +1,25 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const r = await p.evaluate(()=>{ V.reset(); const d5=new Date(Date.now()-120*3600000).toISOString(), d2=new Date(Date.now()-48*3600000).toISOString();
+    V.order({ status:"bagli", created:d5, eta:plusDays(-4), supplier:"Altınoğlu", recvDone:true, recvAt:d5, items:[["Kakao","100 kq",{got:25}],["Ovaleks","50 kq",{got:0}]] });
+    V.order({ status:"bagli", created:d2, eta:plusDays(-1), supplier:"Rofruit", recvDone:true, recvAt:d2, items:[["Kakao","40 kq",{got:40}]] });
+    V.order({ status:"yolda", eta:today(), supplier:"Hicaz", items:[["Kakao","10 kq"]] });
+    V.order({ status:"yolda", wh:"Anbar (İnqilab)", from:"Anbar (İnqilab)", eta:today(), supplier:"Bal", items:[["Bal təbii","5 kq"]] });
+    role="Anbar"; tab="ledger"; lgQ="kakao"; render();
+    const head = document.querySelector('.lg .tt').textContent, rows=[...document.querySelectorAll('.lg tr[class^="lr-"]')].map(t=>t.className);
+    role="Anbar (İnqilab)"; tab="orders"; osec="aktiv"; oq=""; render();
+    const inq = [...document.querySelectorAll('#main article.oc')].map(a=>a.id);
+    role="Anbar"; render(); const anb = [...document.querySelectorAll('#main article.oc')].map(a=>a.id);
+    return { head, rows, inq, anb }; });
+  await p.evaluate(()=>{ role="Anbar"; tab="ledger"; lgQ="kakao"; render(); window.scrollTo(0,0); });
+  await p.waitForTimeout(700); await p.screenshot({path:path.join(require('os').tmpdir(),'v86-ledger.png'), fullPage:true});
+  console.log(JSON.stringify(r,null,1));
+  if (!/75 gəlməyib · 10 kq gözlənilir/.test(r.head) || r.rows.join()!=="lr-wait,lr-ok,lr-warn" || r.inq.join()!=="o-108" || r.anb.includes("o-108")) errs.push("ledger/visibility failed");
+  console.log('JS', errs); await br.close();
+})();
