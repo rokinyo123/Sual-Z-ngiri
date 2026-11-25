@@ -1,0 +1,22 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  await p.evaluate(()=>{ V.reset(); S.xms=[]; S.stops=[]; V.pid("Vetçina"); V.pid("Turşu xiyar"); role="Texnoloq"; tab="xam"; render(); });
+  await p.fill('#xmName','Vetçina'); await p.fill('#xmAlts','Toyuq vetçinası'); await p.click('[data-xmadd="1"]'); await p.waitForTimeout(150);
+  await p.fill('#stCes','Vetçina sendviç'); await p.selectOption('#stDept','İstehsalat');
+  await p.fill('#stInp','Vetçina'); await p.click('[data-stadd="1"]'); await p.waitForTimeout(100);
+  await p.fill('#stInp','Turşu xiyar'); await p.fill('#stWhy','menyudan çıxdı'); await p.click('[data-stgo="1"]'); await p.waitForTimeout(150);
+  await p.screenshot({path:path.join(require('os').tmpdir(),'v89-tex.png'), fullPage:true});
+  const r = await p.evaluate(()=>{ const out = { xms:S.xms.length, stop:S.stops[0] && S.stops[0].names, alert:(S.alerts||[])[0] && S.alerts[0].to };
+    role="Anbar"; tab="xam"; render(); out.anbarEdit = !!document.querySelector('[data-xmadd]'); out.anbarSees = document.querySelectorAll('.card.stopc').length;
+    tab="new"; draft=newDraft(); draft.items=[{ pid:V.pid("Vetçina"), qty:"5 kq" }]; render(); out.warn = (document.querySelector('.stopw')||{}).textContent||"";
+    return out; });
+  console.log(JSON.stringify(r,null,1));
+  if (r.xms!==1 || (r.stop||[]).length!==2 || r.anbarEdit || r.anbarSees!==1 || !/dayandırılıb/.test(r.warn)) errs.push("xam failed");
+  console.log('JS', errs); await br.close();
+})();
