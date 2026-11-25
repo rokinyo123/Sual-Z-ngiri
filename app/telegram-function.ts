@@ -35,7 +35,7 @@ const DEPTS: Record<string, string> = {
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
   rehberlik: "Rəhbərlik", satis: "Satış", uzeyir: "Üzeyir", elcin: "Elçin", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", ehtiyat: "Ehtiyat", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
-const ICON: Record<string, string> = { stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
+const ICON: Record<string, string> = { stop: "⛔", stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
 const fold = (s: string) => s.toLowerCase().replace(/ə/g, "e").replace(/ı/g, "i").replace(/i̇/g, "i").replace(/ş/g, "s")
   .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u").replace(/\s+/g, "");
@@ -259,7 +259,7 @@ async function onAlert(req: Request, body: any) {
   if (!u.ok) return json({ ok: false, error: "auth" }, 401);
   const a = body.alert ?? {};
   if (!a.id || !a.title) return json({ ok: false, error: "bad" }, 400);
-  if (!workTime()) return json({ ok: true, skip: "iş saatı deyil (08:00–18:00)" });
+  if (!workTime() && a.kind !== "stop") return json({ ok: true, skip: "iş saatı deyil (08:00–18:00)" });   // Texnoloqun dayandırma xəbəri — hər saatda, dərhal
   // eyni bildiriş iki dəfə getməsin
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: String(a.id) }) });
   if (s.status === 409) return json({ ok: true, dup: true });
@@ -268,7 +268,7 @@ async function onAlert(req: Request, body: any) {
   const chats = [...new Set(rows.filter((r) => r.dept === "*" || to.includes(r.dept)).map((r) => r.chat_id))];
   if (!chats.length) return json({ ok: true, sent: 0 });
   const items: string[] = Array.isArray(a.items) ? a.items.slice(0, 10) : [];
-  const text = (a.kind === "stuck" ? "🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n" : "") + `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>` +
+  const text = (a.kind === "stuck" ? "🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n" : a.kind === "stop" ? "⚠️⚠️ <b>DİQQƏT · TEXNOLOQ</b> ⚠️⚠️\n" : "") + `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>` +
     (a.sub ? `\n${esc(a.sub)}` : "") +
     (items.length ? "\n" + items.map((x) => "• " + esc(x)).join("\n") : "") +
     (to.length ? `\n<i>Kimə: ${esc(to.join(", "))}</i>` : "") +
@@ -303,7 +303,6 @@ function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
   const oLine = (o: any) => `${link(o.id)} ${esc(o.supplier || "Firmasız")} · ${o.from && o.from !== o.wh ? esc(o.from) + " → " : ""}${esc(o.wh)} · ${o.items.length} mal`;
   const O = d.orders;
   // ⛔ Texnoloqun dayandırdığı xammallar — Anbar, İnqilab, Satınalma hər səhər görür
-  if (!eve) for (const k of ["Anbar", "Anbar (İnqilab)", "Satınalma"]) add(k, "⛔ Sifariş olunmamalı xammallar (Texnoloq)", (d.stops || []).map((x: any) => `${esc(x.ces)}${x.dept ? " (" + esc(x.dept) + ")" : ""}: ${esc((x.names || []).join(", "))}`));
   // Satınalma
   add("Satınalma", eve ? "Qəbul etmədiyiniz sifarişlər" : "Qəbul edin, gəliş günü yazın", O.filter((o) => o.status === "acik").map(oLine));
   add("Satınalma", eve ? "Cavab vermədiyiniz xəbərsiz / qaiməsiz mallar" : "Xəbərsiz / qaiməsiz mallara cavab verin", O.filter(held).map((o) => holdLine(o).replace(/^⛔ /, "")));
@@ -350,7 +349,7 @@ function planText(P: Record<string, string[]>, depts: string[], eve: boolean, al
 async function nightAlerts() {
   const b = bakuNow(), to = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(), 8 - 4)), from = new Date(to.getTime() - 14 * H);
   const r: any[] = await db(`records?kind=eq.alert&select=data&order=updated_at.desc&limit=400`).then((x) => x.json()).catch(() => []);
-  return r.map((x) => x.data).filter((a) => a && a.at && new Date(a.at) >= from && new Date(a.at) < to);
+  return r.map((x) => x.data).filter((a) => a && a.at && a.kind !== "stop" && new Date(a.at) >= from && new Date(a.at) < to);
 }
 async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head: string, tail: string, night: any[] = []) {
   const P = plan(d, eve);

@@ -1265,7 +1265,7 @@ function notify(to, kind, title, sub, items, oid, fixId){
   if (ONLINE && kind!=="stuck") setTimeout(()=>Cloud.tg(a).then(r=>{ if (!r.ok && r.status!==404) console.warn("Telegram:", r); }), 0);   // "iş ilişib"i Telegrama bot özü hər saat göndərir (?stuck=1)
 }
 const myAlerts = () => (S.alerts||[]).filter(a=>!a.seen.includes(role) && (a.to ? a.to.includes(role) : [a.wh,a.from,"Satınalma","Rəhbərlik"].includes(role)));
-const ALK = { stuck:["🚨","alert"], late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
+const ALK = { stop:["⛔","alert"], stuck:["🚨","alert"], late:["⚠","alert"], ok:["✓","alert info"], arr:["📦","alert info"], res:["📋","alert res"], note:["📌","alert note"] };
 let alAll = false;
 // 🔔 Bildirişlər — ayrıca səhifə (yuxarıdakı zəng). "Bu gün"də yalnız qısa sətir qalır.
 function vNotif(){
@@ -2282,7 +2282,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v89 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v90 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -4121,11 +4121,11 @@ function xamAct(d, t){
     const pids = stD.names.map(n=>{ const pr = S.products.find(p=>fnorm(p.name)===fnorm(n)); return pr ? pr.id : null; }).filter(Boolean);
     const x = { id:nid(), ces:stD.ces, dept:stD.dept, names:stD.names.slice(), pids, why:stD.why, by:role, at:now };
     (S.stops = S.stops||[]).push(x);
-    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "late", "⛔ "+x.ces+" dayandırıldı — "+x.names.join(", ")+" sifariş olunmamalıdır", (x.dept?x.dept+" · ":"")+(x.why||"Texnoloq dayandırdı"), x.names, null);
+    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "stop", "⛔ "+x.ces+" dayandırıldı — "+x.names.join(", ")+" sifariş olunmamalıdır", (x.dept?x.dept+" · ":"")+(x.why||"Texnoloq dayandırdı"), x.names, null);
     stD = { ces:"", dept:"", names:[], why:"", inp:"" }; save(); render(); return toast("Dayandırıldı · hamı xəbər tutdu"); }
   if (d.stend){ const x = (S.stops||[]).find(z=>z.id===d.stend); if (!x) return;
     x.endAt = now; x.endBy = role;
-    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "ok", "▶ "+x.ces+" yenidən başladı — "+x.names.join(", ")+" sifariş oluna bilər", x.dept||"", [], null);
+    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "stop", "▶ "+x.ces+" yenidən başladı — "+x.names.join(", ")+" sifariş oluna bilər", x.dept||"", [], null);
     save(); render(); return toast("Bərpa olundu"); }
 }
 
