@@ -582,6 +582,9 @@ details.mini.rep>.row{padding:0 10px 6px}
 .d-ok{background:var(--ok)} .d-warn{background:var(--warn)} .d-bad{background:var(--bad)} .d-wait{background:var(--line)}
 .lg .tbl{padding:0 8px 8px} .lg td{vertical-align:top}
 tr.lr-ok td:first-child{box-shadow:inset 3px 0 var(--ok)} tr.lr-warn td:first-child{box-shadow:inset 3px 0 var(--warn)} tr.lr-bad td:first-child{box-shadow:inset 3px 0 var(--bad)}
+
+.stopw{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:6px 10px;font-size:13.5px;margin:-2px 0 8px}
+.card.stopc{border-left:5px solid var(--bad)}
 </style>
 
 </head>
@@ -765,6 +768,8 @@ const Cloud = (() => {
     (S.meets||[]).forEach(x=>out.push(["meta", "meet-"+x.id, x]));
     (S.mtasks||[]).forEach(x=>out.push(["meta", "mt-"+x.id, x]));
     (S.qas||[]).forEach(x=>out.push(["meta", "qa-"+x.id, x]));
+    (S.xms||[]).forEach(x=>out.push(["meta", "xm-"+x.id, x]));
+    (S.stops||[]).forEach(x=>out.push(["meta", "stop-"+x.id, x]));
     out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
     return out;
   }
@@ -798,6 +803,8 @@ const Cloud = (() => {
     else if (row.id.startsWith("meet-")) put(S.meets = S.meets||[], d, x=>"meet-"+x.id===row.id);
     else if (row.id.startsWith("mt-")) put(S.mtasks = S.mtasks||[], d, x=>"mt-"+x.id===row.id);
     else if (row.id.startsWith("qa-")) put(S.qas = S.qas||[], d, x=>"qa-"+x.id===row.id);
+    else if (row.id.startsWith("xm-")) put(S.xms = S.xms||[], d, x=>"xm-"+x.id===row.id);
+    else if (row.id.startsWith("stop-")) put(S.stops = S.stops||[], d, x=>"stop-"+x.id===row.id);
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
@@ -1447,20 +1454,20 @@ function myWork(){
 function tabsFor(r){
   // Hər şöbə yalnız öz işinə lazım olan bölmələri görür; Rəhbərlik və Admin hamısını
   const T = { home:["🏠","Bu gün"], new:["➕","Sifariş"], orders:["📦","Sifarişlər"], buy:["🛒","Satınalma"], qc:["🔍","Keyfiyyət"],
-    days:["🚚","Gələcək mallar"], ledger:["📊","Mal izləmə"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], meet:["📋","İclaslar"], qa:["🛡","Aktlar"], exp:["💰","Hesabat"] };
+    days:["🚚","Gələcək mallar"], ledger:["📊","Mal izləmə"], xam:["🧪","Xammallar"], res:["⛔","Gəlməyənlər"], prob:["⚠","Problemlər"], arch:["📊","Statistika"], catalog:["📚","Kataloq"], tasks:["📝","Tapşırıqlar"], tcal:["📅","Təqvim"], meet:["📋","İclaslar"], qa:["🛡","Aktlar"], exp:["💰","Hesabat"] };
   const BY = {
-    "Anbar":           ["home","new","orders","ledger","days","qa"],
-    "Anbar (İnqilab)": ["home","new","orders","ledger","days","qa"],
-    "Satınalma":       ["home","buy","new","qa","orders","ledger","days","prob","catalog"],
+    "Anbar":           ["home","new","orders","ledger","xam","days","qa"],
+    "Anbar (İnqilab)": ["home","new","orders","ledger","xam","days","qa"],
+    "Satınalma":       ["home","buy","new","qa","orders","ledger","xam","days","prob","catalog"],
     "Keyfiyyət":       ["home","qc","qa","orders","days"],
-    "Texnoloq":        ["home","new","orders","days"],
+    "Texnoloq":        ["home","xam","new","orders","days"],
     "Satış":           ["tasks","tcal","home","new","orders"],
     "Üzeyir":          ["tasks","tcal","home","new","orders"],
     "Elçin":           ["tasks","tcal","home","new","orders"],
     "İstehsalat":      ["home","new","orders","exp"],
     "Çeşidləmə":       ["home","new","orders","exp"],
-    "Rəhbərlik":       ["home","meet","tasks","qa","orders","ledger","buy","qc","days","res","prob","arch"],
-    "Admin":           ["home","meet","qa","orders","ledger","buy","qc","days","res","prob","arch","catalog"],
+    "Rəhbərlik":       ["home","meet","tasks","qa","orders","ledger","xam","buy","qc","days","res","prob","arch"],
+    "Admin":           ["home","meet","qa","orders","ledger","xam","buy","qc","days","res","prob","arch","catalog"],
   };
   return (BY[r] || ["home","orders","days"]).map(k=>[k, T[k][0], T[k][1]]);
 }
@@ -1557,7 +1564,7 @@ function render(){
   noorderFix(); arrSplitFix(); autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, ledger:vLedger, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, ledger:vLedger, xam:vXam, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
   if (tab==="new" && role!=="Satınalma") bindNew();
   if ($("qPhoto")) $("qPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); qDraft.photo = sm; render(); };
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
@@ -2275,7 +2282,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v88 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v89 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3361,7 +3368,7 @@ function vNew(){
   if (role==="Satınalma") return vBuyNew();
   const filled = draft.items.filter(i=>i.pid||i.pname).length;
   const nb = new Set(draft.items.map(i=>i.blk||0)).size;
-  const items = datalist() + draft.items.map((it,k)=>(nb>1 && (k===0 || (draft.items[k-1].blk||0)!==(it.blk||0)) ? '<div class="blkh">'+ord((it.blk||0)+1)+' dəstə · ayrıca sifariş</div>' : "")+'<div class="it wl'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><input class="lft-in" placeholder="qalıq" title="Anbarda nə qədər qalıb" data-ii="'+k+'" data-f="left" value="'+esc(it.left||"")+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>').join("");
+  const items = datalist() + draft.items.map((it,k)=>(nb>1 && (k===0 || (draft.items[k-1].blk||0)!==(it.blk||0)) ? '<div class="blkh">'+ord((it.blk||0)+1)+' dəstə · ayrıca sifariş</div>' : "")+'<div class="it wl'+(needDep()?" wdep":"")+(!it.pid&&it.imp&&it.pname?" newp":"")+'"><input list="plist" placeholder="Məhsul..." data-ii="'+k+'" data-f="pname" value="'+esc(it.pid?pname(it.pid):(it.pname||""))+'"><input placeholder="'+esc(it.pid&&punit(it.pid)?punit(it.pid):"15 kq")+'" data-ii="'+k+'" data-f="qty" value="'+esc(it.qty)+'"><input class="lft-in" placeholder="qalıq" title="Anbarda nə qədər qalıb" data-ii="'+k+'" data-f="left" value="'+esc(it.left||"")+'">'+(needDep()?depSel('data-ii="'+k+'" data-f="dep"', it.dep||""):"")+'<button class="sm" data-del="'+k+'" aria-label="Sil">×</button></div>'+((st=>st?'<div class="stopw">⛔ <b>'+esc(st.ces)+'</b> dayandırılıb'+(st.dept?' ('+esc(st.dept)+')':"")+' — bu xammal sifariş olunmamalıdır. Başqa iş üçün lazımdırsa, göndərə bilərsiniz.</div>':"")(it.pid?stopOf(it.pid):null))).join("");
   return '<div class="card">'+
     (role==="Texnoloq"?'<label class="row chk"><input type="checkbox" id="nSample"'+(draft.sample?" checked":"")+' style="width:auto"> <b>🧪 Nümunə</b> <span class="meta">— yeni mal sınağı (Keyfiyyətdən keçmir)</span></label>':"")+
     '<div class="meta">'+(role==="Texnoloq"?(draft.sample?'Texnoloq → Satınalma firma ilə danışıb gün təyin edir → Anbar qəbul edir → siz nəticə günü seçib nəticə verirsiniz':'Texnoloq → Satınalma → Anbar qəbul edir → siz dadına və bişirilməsinə baxırsınız'):REQ_W.includes(role)?esc(role)+' → '+esc(draft.wh||"Anbar")+' hazırlayıb verir → sizə xəbər gəlir · Satınalma yalnız görür':REQ.includes(role)?esc(role)+' → Satınalma → '+esc(draft.wh||"Anbar")+(draft.wh==="Anbar"||!draft.wh?' (Keyfiyyət yoxlayır)':'')+' → sizə xəbər gəlir':esc(role)+' → Satınalma'+(role==="Anbar"?' → Keyfiyyət → Anbar':' → '+esc(role)))+'</div>'+
@@ -3630,6 +3637,7 @@ $("main").addEventListener("click", e => {
   if (d.tech){ const [o,i]=itemOf(d.tech); return keep(()=>{ i.tech = !i.tech; }); }
   if (d.full){ const el=$("got-"+d.full); el.value = d.q; paintGot(el); saveGot(el); return; }
   if (d.lrecv){ lateRecv(d.lrecv); return; }
+  if (d.xmadd || d.xmdel || d.stadd || d.stdel!=null || d.stgo || d.stend){ xamAct(d, t); return; }
   if (d.lgo){ const id = Number(d.lgo); lgOpen.has(id) ? lgOpen.delete(id) : lgOpen.add(id); keep(()=>{}); return; }
   if (d.lgr!=null){ const [a,b] = d.lgr.split("|"); lgF = a; lgT = b; render(); return; }
   if (d.hopen){ const id = Number(d.hopen); homeOpen.has(id) ? homeOpen.delete(id) : homeOpen.add(id); keep(()=>{}); return; }
@@ -3807,6 +3815,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.frq) frQ[el.dataset.frq] = el.value;
   if (el.dataset.ii!=null) setItem(el);
   if (el.id==="cQ"){ catQ=el.value; filterRows(el); }
+  if (el.id==="xmQ"){ const q = el.value.trim().toLowerCase(); document.querySelectorAll("#xmBody tr").forEach(tr=>{ tr.style.display = !q || tr.dataset.s.includes(q) ? "" : "none"; }); return; }
   if (el.id==="lgQ"){ lgQ=el.value; clearTimeout(window.__lg); window.__lg=setTimeout(()=>{ render(); const q=$("lgQ"); q.focus(); q.setSelectionRange(q.value.length,q.value.length); },250); return; }
   if (el.id==="oQ"){ oq=el.value; clearTimeout(window.__oq); window.__oq=setTimeout(()=>{ render(); const q=$("oQ"); q.focus(); q.setSelectionRange(q.value.length,q.value.length); },250); }
 });
@@ -4072,6 +4081,54 @@ function firmCompare(a,b){
 }
 const inR2 = (d,a,b) => (!a || d>=a) && (!b || d<=b);
 
+// ===================== 🧪 Xammallar (Texnoloqun bölməsi) =====================
+// 1) Xammal və alternativləri — yalnız Texnoloq yazır/silir, Anbar və Satınalma baxır.
+// 2) Sifarişi dayandırılan xammallar — Texnoloq yazır (çeşid, şöbə, xammallar, səbəb); hamı xəbər alır, Anbar sifarişdə qırmızı xəbərdarlıq görür (göndərmək olur).
+let xmD = { name:"", alts:"", note:"" }, stD = { ces:"", dept:"", names:[], why:"", inp:"" };
+const canXam = () => role==="Texnoloq" || adminView();
+const stopsOn = () => (S.stops||[]).filter(x=>!x.deleted && !x.endAt);
+function stopOf(pid){ const nm = fnorm(pname(pid)); return stopsOn().find(x=>(x.pids||[]).some(q=>Number(q)===Number(pid)) || (x.names||[]).some(n=>fnorm(n)===nm)); }
+const PRODEPTS = ["İstehsalat","Çeşidləmə","Satış","Anbar","Anbar (İnqilab)"];
+function vXam(){
+  const ed = canXam(), xs = (S.xms||[]).filter(x=>!x.deleted).sort((a,b)=>a.name.localeCompare(b.name,"az")), st = stopsOn(), old = (S.stops||[]).filter(x=>!x.deleted && x.endAt).slice(-10).reverse();
+  return '<h2>🧪 Xammallar</h2><div class="meta">Bu bölməni Texnoloq aparır'+(ed?"":" — siz yalnız baxırsınız")+'.</div>'+
+    '<h3>⛔ Sifarişi dayandırılan xammallar · '+st.length+'</h3>'+
+    (ed ? '<div class="card mine"><div class="lbl">Hansı çeşidin satışı dayanıb?</div><input id="stCes" placeholder="Çeşid (məs. Vetçina sendviç)" value="'+esc(stD.ces)+'">'+
+      '<select id="stDept"><option value="">— hansı şöbə işlədir —</option>'+PRODEPTS.map(d=>'<option'+(stD.dept===d?" selected":"")+'>'+esc(d)+'</option>').join("")+'</select>'+
+      '<div class="lbl">Sifarişi dayanmalı xammallar</div><div class="chips">'+stD.names.map((n,k)=>'<span class="ic">'+esc(n)+' <button class="sm linkb" data-stdel="'+k+'">×</button></span>').join("")+'</div>'+
+      '<div class="row"><input class="grow" id="stInp" list="plist" placeholder="Xammalın adı (məs. vetçina)" value="'+esc(stD.inp)+'"><button class="sm" data-stadd="1">+ Əlavə et</button></div>'+datalist()+
+      '<input id="stWhy" placeholder="Səbəb (məs. menyudan çıxarıldı)" value="'+esc(stD.why)+'"><button class="badb big" data-stgo="1">⛔ Sifarişi dayandır — hamı xəbər tutsun</button></div>' : "")+
+    (st.length ? st.map(x=>'<div class="card stopc"><div class="row" style="justify-content:space-between"><b>⛔ '+esc(x.ces)+'</b>'+(x.dept?'<span class="pill p-info">'+esc(x.dept)+'</span>':"")+'</div>'+
+        '<div>Sifariş olunmamalıdır: <b>'+esc((x.names||[]).join(", "))+'</b></div>'+(x.why?'<div class="meta">Səbəb: '+esc(x.why)+'</div>':"")+'<div class="meta">'+esc(x.by)+' · '+shortT(new Date(x.at))+'</div>'+
+        (ed?'<button class="sm okb" data-stend="'+x.id+'">▶ Yenidən başlat</button>':"")+'</div>').join("") : '<div class="empty">Dayandırılmış xammal yoxdur</div>')+
+    (old.length ? '<details class="mini"><summary>Əvvəl dayandırılıb, sonra bərpa olunanlar · '+old.length+'</summary>'+old.map(x=>'<div class="meta" style="padding:4px 12px">'+esc(x.ces)+' — '+esc((x.names||[]).join(", "))+' · '+fmtD(x.at.slice(0,10)).slice(0,5)+' → '+fmtD(x.endAt.slice(0,10)).slice(0,5)+'</div>').join("")+'</details>' : "")+
+    '<h3>🔁 Xammallar və alternativləri · '+xs.length+'</h3>'+
+    (ed ? '<div class="card mine"><input id="xmName" list="plist" placeholder="Xammal (məs. Vetçina)" value="'+esc(xmD.name)+'"><input id="xmAlts" placeholder="Alternativləri (məs. Toyuq vetçinası, Hindtoyuğu vetçinası)" value="'+esc(xmD.alts)+'"><input id="xmNote" placeholder="Qeyd (istəyə görə)" value="'+esc(xmD.note)+'"><button class="pri" data-xmadd="1">+ Əlavə et</button></div>' : "")+
+    '<input id="xmQ" type="search" placeholder="🔍 Xammal axtar…">'+
+    (xs.length ? '<div class="tbl card"><table><thead><tr><th>Xammal</th><th>Alternativləri</th>'+(ed?'<th></th>':"")+'</tr></thead><tbody id="xmBody">'+xs.map(x=>'<tr data-s="'+esc((x.name+" "+x.alts).toLowerCase())+'"><td><b>'+esc(x.name)+'</b>'+(x.note?'<div class="meta">'+esc(x.note)+'</div>':"")+'</td><td>'+esc(x.alts||"—")+'</td>'+(ed?'<td><button class="sm badb" data-xmdel="'+x.id+'">Sil</button></td>':"")+'</tr>').join("")+'</tbody></table></div>' : '<div class="empty">Hələ yazılmayıb</div>');
+}
+function xamAct(d, t){
+  const nid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6), now = new Date().toISOString();
+  if (!canXam()) return toast("Bu bölməni yalnız Texnoloq dəyişir");
+  if (d.xmadd){ xmD = { name:$("xmName").value.trim(), alts:$("xmAlts").value.trim(), note:$("xmNote").value.trim() };
+    if (!xmD.name) return toast("Xammalın adını yazın");
+    (S.xms = S.xms||[]).push({ id:nid(), name:xmD.name, alts:xmD.alts, note:xmD.note, by:role, at:now }); xmD = { name:"", alts:"", note:"" }; save(); render(); return toast("Əlavə olundu"); }
+  if (d.xmdel){ const x = (S.xms||[]).find(z=>z.id===d.xmdel); if (x){ x.deleted = { by:role, at:now }; save(); render(); } return; }
+  if (d.stadd){ const v = $("stInp").value.trim(); if (!v) return; stD.ces = $("stCes").value; stD.dept = $("stDept").value; stD.why = $("stWhy").value; stD.names.push(v); stD.inp = ""; render(); const i = $("stInp"); if (i) i.focus(); return; }
+  if (d.stdel!=null){ stD.names.splice(Number(d.stdel),1); render(); return; }
+  if (d.stgo){ stD.ces = $("stCes").value.trim(); stD.dept = $("stDept").value; stD.why = $("stWhy").value.trim(); const extra = $("stInp").value.trim(); if (extra){ stD.names.push(extra); stD.inp = ""; }
+    if (!stD.ces) return toast("Çeşidin adını yazın"); if (!stD.names.length) return toast("Ən azı bir xammal əlavə edin");
+    const pids = stD.names.map(n=>{ const pr = S.products.find(p=>fnorm(p.name)===fnorm(n)); return pr ? pr.id : null; }).filter(Boolean);
+    const x = { id:nid(), ces:stD.ces, dept:stD.dept, names:stD.names.slice(), pids, why:stD.why, by:role, at:now };
+    (S.stops = S.stops||[]).push(x);
+    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "late", "⛔ "+x.ces+" dayandırıldı — "+x.names.join(", ")+" sifariş olunmamalıdır", (x.dept?x.dept+" · ":"")+(x.why||"Texnoloq dayandırdı"), x.names, null);
+    stD = { ces:"", dept:"", names:[], why:"", inp:"" }; save(); render(); return toast("Dayandırıldı · hamı xəbər tutdu"); }
+  if (d.stend){ const x = (S.stops||[]).find(z=>z.id===d.stend); if (!x) return;
+    x.endAt = now; x.endBy = role;
+    notify(["Anbar","Anbar (İnqilab)","Satınalma","Rəhbərlik"], "ok", "▶ "+x.ces+" yenidən başladı — "+x.names.join(", ")+" sifariş oluna bilər", x.dept||"", [], null);
+    save(); render(); return toast("Bərpa olundu"); }
+}
+
 // ===================== 📊 Mal izləmə =====================
 // Hər mal üçün: hansı gün nə qədər sifariş olunub, hansı gün nə qədər gəlib. Yaşıl — tam, sarı — az, qırmızı — gəlmədi, boz — gözlənilir.
 let lgQ = "", lgF = "", lgT = "", lgW = "", lgOpen = new Set();
@@ -4291,7 +4348,7 @@ function delFirm(f){
 }
 
 // Saat keçdikcə vaxt nişanlarını yenilə (yazı yazılarkən yox)
-setInterval(()=>{ const f=document.activeElement; if (tab!=="new" && tab!=="catalog" && tab!=="ledger" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))) render(); }, 60000);
+setInterval(()=>{ const f=document.activeElement; if (tab!=="new" && tab!=="catalog" && tab!=="ledger" && tab!=="xam" && !Object.keys(addDraft).length && !(f && f.closest && f.closest("#main input, #main textarea, #main select"))) render(); }, 60000);
 draft = newDraft();
 // Aşağıdakı xidməti sətir (versiya · çıxış · Telegram) menyunun altında sabit durur: hündürlüyü ölçülür, menyu onun üstünə qalxır
 (function footH(){

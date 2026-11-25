@@ -77,9 +77,9 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   ALL = orders;
   // Satışın tapşırıqları, iclas öhdəlikləri, Aktlar (səhər / axşam şöbə siyahıları üçün)
-  const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
+  const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*,id.like.stop-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
   const pick = (pre: string) => meta.filter((r) => String(r.id).startsWith(pre)).map((r) => r.data).filter((x) => x && !x.deleted);
-  return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
+  return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), stops: pick("stop-").filter((x: any) => !x.endAt), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
 const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype !== "office" && o.stype !== "cargo";
 const held = (o: any) => !!(o.hold && !o.holdDone && o.rep !== "noorder");   // xəbərsiz mal Satınalmanı gözləmir — yalnız Rəhbərliyə və statistikaya
@@ -302,6 +302,8 @@ function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
     P[dept].push(`• <b>${head}</b>` + list.slice(0, 6).map((x) => "\n   " + x).join("") + (list.length > 6 ? `\n   … və daha ${list.length - 6}` : "")); };
   const oLine = (o: any) => `${link(o.id)} ${esc(o.supplier || "Firmasız")} · ${o.from && o.from !== o.wh ? esc(o.from) + " → " : ""}${esc(o.wh)} · ${o.items.length} mal`;
   const O = d.orders;
+  // ⛔ Texnoloqun dayandırdığı xammallar — Anbar, İnqilab, Satınalma hər səhər görür
+  if (!eve) for (const k of ["Anbar", "Anbar (İnqilab)", "Satınalma"]) add(k, "⛔ Sifariş olunmamalı xammallar (Texnoloq)", (d.stops || []).map((x: any) => `${esc(x.ces)}${x.dept ? " (" + esc(x.dept) + ")" : ""}: ${esc((x.names || []).join(", "))}`));
   // Satınalma
   add("Satınalma", eve ? "Qəbul etmədiyiniz sifarişlər" : "Qəbul edin, gəliş günü yazın", O.filter((o) => o.status === "acik").map(oLine));
   add("Satınalma", eve ? "Cavab vermədiyiniz xəbərsiz / qaiməsiz mallar" : "Xəbərsiz / qaiməsiz mallara cavab verin", O.filter(held).map((o) => holdLine(o).replace(/^⛔ /, "")));
