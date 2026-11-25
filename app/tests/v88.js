@@ -1,0 +1,23 @@
+const { chromium, devices } = require('playwright');
+const fs = require('fs'), path = require('path');
+const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf8').replace(/^const HELPER = /,'').replace(/;\s*$/,'') + ')');
+(async () => {
+  const br = await chromium.launch(); const ctx = await br.newContext({ ...devices['Pixel 7'], locale:'az-AZ' });
+  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://127.0.0.1:8799/app/index.html'); await p.evaluate(()=>{localStorage.clear();localStorage.setItem("almond-theme","light");}); await p.reload(); await p.waitForTimeout(2700);
+  await p.evaluate(HELPER);
+  const r = await p.evaluate(()=>{ V.reset();
+    V.firm("Kakao","Altınoğlu"); V.firm("Ovaleks","Altınoğlu"); V.firm("Banan","Hicaz");
+    const o = V.order({ status:"acik", items:[["Kakao","100 kq"],["Ovaleks","50 kq"],["Banan","15 kq"]] });
+    role="Satınalma"; tab="buy"; render();
+    document.querySelectorAll('[data-eta]').forEach((el,k)=>{ el.value = plusDays(k+1); });
+    acceptOrder(o);
+    const n = S.orders.length;
+    role="Anbar"; tab="orders"; osec="aktiv"; oq="#"+o.id; render();
+    const pills = [...document.querySelectorAll('#o-'+o.id+' .irow .pill.p-info')].map(x=>x.textContent);
+    const fo = firmsOpen("Anbar");
+    return { orders:n, status:o.status, supplier:o.supplier, eta:o.eta, items:o.items.map(i=>pname(i.pid)+":"+i.sup+":"+i.eta), pills, firms:fo }; });
+  console.log(JSON.stringify(r,null,1));
+  if (r.orders!==1 || r.status!=="yolda" || r.items.some(x=>/undefined/.test(x)) || !r.firms["Altınoğlu"] || !r.firms["Hicaz"] || r.pills.length!==3) errs.push("no-split failed");
+  console.log('JS', errs); await br.close();
+})();
