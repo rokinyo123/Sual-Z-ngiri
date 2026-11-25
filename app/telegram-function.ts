@@ -368,6 +368,38 @@ async function sendPlan(d: Awaited<ReturnType<typeof load>>, eve: boolean, head:
   return sent;
 }
 
+// ---------- 🚨 İş ilişib: bot özü hər saat yoxlayır (08:00–18:00), proqramın açıq olmasından asılı deyil ----------
+// Hər hal üçün ilk xəbərdarlıq + hər 4 saatdan bir təkrar (ən çox 3 dəfə); tg_sent ilə təkrar göndərilmir.
+async function stuckRun(force: boolean) {
+  if (!force && !workTime()) return json({ ok: true, skip: "iş saatı deyil" });
+  const d = await load(), now = Date.now(), items: { id: string; to: string[]; text: string }[] = [];
+  const push = (key: string, overH: number, to: string[], title: string, sub: string, oid?: number) => {
+    if (overH < 0) return;
+    const n = Math.min(3, Math.floor(overH / 4));
+    items.push({ id: `stk-${key}-${n}`, to, text: `🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n${n ? `<i>Təkrar xəbərdarlıq (${n + 1})</i>\n` : ""}<b>${title}</b>\n${sub}\n<i>Kimə: ${to.map(esc).join(", ")}</i>\n\n<a href="${APP}${oid ? "#o=" + oid : ""}">👉 Proqramda aç</a>` });
+  };
+  for (const o of d.orders) {
+    const name = `${link(o.id)} ${o.from && o.from !== o.wh ? esc(o.from) + " → " : ""}${esc(o.wh)}`;
+    if (o.status === "acik" && !o.req) {
+      const due = o.ansBy ? new Date(o.ansBy).getTime() : new Date(o.created).getTime() + 24 * H;
+      push(`acik-${o.id}`, (now - due) / H, ["Satınalma", "Rəhbərlik", o.from], `#${o.id} · Satınalma sifarişi qəbul etməyib · ${hTxt((now - new Date(o.created).getTime()) / H)}`, `${name} · ${o.items.length} mal — firma və gəliş günü yazılmayıb`, o.id);
+    }
+    if (held(o) && o.hold?.at) push(`hold-${o.id}`, (now - new Date(o.hold.at).getTime()) / H - (o.rep ? ANS_H : 2), ["Satınalma", "Rəhbərlik"], `#${o.id} · ${HOLDN[o.hold.t || "sample"]} — Satınalma cavab verməyib`, `${esc(o.wh)} · ${esc(o.hold.desc || "")}`, o.id);
+    if (lateOpen(o) && !(lateEntry(o) || {}).note) push(`late-${o.id}`, (now - new Date(o.eta + "T23:59:00+04:00").getTime()) / H - ANS_H, ["Satınalma", "Rəhbərlik"], `#${o.id} · gəlmədi, Satınalma açıqlama yazmayıb`, `${esc(o.supplier || "Firmasız")} · ${fmtD(o.eta)} gəlməli idi → ${esc(o.wh)}`, o.id);
+    const un = o.items.filter((i: any) => canAnswer(o, i) && ansLeftH(o, i) < 0);
+    if (un.length) push(`ans-${o.id}`, -Math.max(...un.map((i: any) => ansLeftH(o, i))), ["Satınalma", "Rəhbərlik"], `#${o.id} · Satınalma ${ANS_H} saatda cavab verməyib · ${un.length} mal`, un.slice(0, 6).map((i: any) => esc(d.pname(i.pid)) + ": " + esc(problem(o, i))).join(", "), o.id);
+  }
+  if (!items.length) return json({ ok: true, sent: 0 });
+  const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
+  let sent = 0;
+  for (const it of items) {
+    const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: force ? it.id + "-t" + Date.now() : it.id }) });
+    if (s.status === 409) continue;
+    for (const c of [...new Set(rows.filter((r) => r.dept === "*" || it.to.includes(r.dept)).map((r) => r.chat_id))]) { const r = await say(c, it.text); if (r.ok) sent++; }
+  }
+  return json({ ok: true, sent, checked: items.length });
+}
+
 // Səhər 08:00 Bakı: hər şöbəyə "bu gün nə etməlisiniz"
 async function morning(force: boolean) {
   const t = today(), b = bakuNow();
@@ -615,6 +647,7 @@ Deno.serve(async (req) => {
   if (url.searchParams.has("morning")) return morning(url.searchParams.has("force"));
   if (url.searchParams.has("midday")) return midday(url.searchParams.has("force"));
   if (url.searchParams.has("evening")) return evening(url.searchParams.has("force"));
+  if (url.searchParams.has("stuck")) return stuckRun(url.searchParams.has("force"));
   if (url.searchParams.has("backup")) return backup(url.searchParams.has("force"));
   if (url.searchParams.has("report")) return reportRun(url.searchParams.get("report") ?? "auto", url.searchParams.has("force"));
   if (req.method === "GET" && url.searchParams.has("setup")) {
