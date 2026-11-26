@@ -129,3 +129,8 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 ## v93 — Admin hər şeyi silə bilir
 - Sifariş birbaşa açılanda (#nömrə, bildirişdən, siyahıdan “Ətraflı”) “🗑 Sil” düyməsi görünmürdü — `vOrders` tək sifarişə `ownBtns` əlavə edir. Admin istənilən mərhələdə (bağlanmış da) silir; silinənlər axtarışda “🗑 Silinənlər”də görünür.
 - Admin ↩ Qaytarma yazılarını (`data-rtdel`), 🛡 Aktları (`data-qadel`) və Satış tapşırıqlarını silə bilir. Yalnız `adminView()`.
+
+## v94 — Gündəlik hesabat: götürülən pul və qalıq
+- İstehsalat / Çeşidləmə “💵 Pul götürdüm” ilə götürdüyü məbləği yazır (istəyə görə; `S.exps` yazısı `kind:"in"`).
+- Yuxarıda: Götürülüb · Xərclənib · **Qalıq** (bütün vaxt üzrə). Hər yazının altında həmin andakı qalıq; xərc yazanda toast qalığı göstərir. Pul yazılmayıbsa — əvvəlki kimi yalnız xərclər.
+- Ay başlığı: “xərc X · götürülüb Y”. Test: `tests/v94.js`.
