@@ -137,3 +137,8 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 
 ## v95 — Hesabat dəftər formasında
 - Pul götürülübsə ay siyahısı `xLedger`: yuxarıdan aşağı xronoloji, hər sətirdə xərc (−15) və sağda böyük “Qalan pul” (200 → 185 → 170). Əvvəlki aydan qalıq ilk sətirdə. Pul yazılmayıbsa — köhnə gün-gün görünüş.
+
+## v96 — Satınalma 3 saatda qəbul etməyibsə anbar birbaşa qəbul edir
+- `spCanSkip(o)`: status `acik`, req deyil, saxlanmır, anbar sifarişi. Sifarişdən `SP_SKIP_H`=3 saat sonra anbar (və Admin) “📦 Mal gəldi — birbaşa qəbul et” görür (firma istəyə görə); əvvəl — vaxtı göstərən qeyd.
+- `act spskip`: `o.spSkip={at,by,h,firm}`, status `yolda`, eta bu gün → adi qəbul. Satınalma + Rəhbərliyə “⚠ Satınalma sifarişi vaxtında qəbul etməyib” (Telegram).
+- Statistika (həftəlik/aylıq): “⚠ Satınalma sifarişi vaxtında qəbul etməyib — anbar birbaşa qəbul etdi”. Test: `tests/v96.js`.

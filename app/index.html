@@ -2457,7 +2457,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v95 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v96 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -2636,6 +2636,10 @@ const ansForm = (key,i) => '<input id="an-'+key+'" class="qw" placeholder="Açı
 const remainQty = i => i.got && itemMissing(i) && i.qc!=="bad" && i.techRes!=="bad" ? fmtN(num(i.qty)-i.got)+String(i.qty).replace(/^[\d.,\s]+/," ") : i.qty;
 let dlDone = false; const datalistOnce = () => dlDone ? "" : (dlDone = true, datalist());
 // Kartın altındakı ümumi düymə (şöbənin addımını bitirmək)
+// v96: Satınalma sifarişi 3 saatda qəbul etməyibsə (firma/gün yazmayıb) — mal gələndə anbar özü birbaşa qəbul edə bilir
+const SP_SKIP_H = 3;
+const spSkipAt = o => new Date(o.created).getTime() + SP_SKIP_H*HOUR;
+const spCanSkip = o => o.status==="acik" && !o.req && !o.deleted && !held(o) && WAREHOUSES.includes(o.wh);
 function footActions(o){
   if (o.req){
     const need = o.needAt ? '<div class="'+(needLate(o) && o.status==="istek" ? "stk" : "meta")+'">⏰ Lazımdır: <b>'+needTxt(o)+'</b></div>' : "";
@@ -2654,6 +2658,13 @@ function footActions(o){
     return need+acc+'<div class="meta">📤 '+esc(o.wh)+(o.reqAcc?" hazırlayır":" hələ qəbul etməyib")+'</div>';
   }
   if (held(o)) return holdBox(o);
+  if (spCanSkip(o) && (role===o.wh || adminView())){
+    if (Date.now() < spSkipAt(o)) return '<div class="meta">⏳ Satınalma hələ qəbul etməyib. Mal gəlsə, <b>'+shortT(new Date(spSkipAt(o)))+'</b>-dan sonra birbaşa qəbul edə bilərsiniz.</div>';
+    return '<div class="box late"><div class="lbl">⚠ Satınalma '+SP_SKIP_H+' saatda sifarişi qəbul etməyib — mal gəlibsə, birbaşa qəbul edin</div>'+
+      '<input list="oflist" id="spf-'+o.id+'" placeholder="Hansı firma gətirdi? (istəyə görə)"><datalist id="oflist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>'+
+      '<button class="okb big" data-act="spskip" data-id="'+o.id+'">📦 Mal gəldi — birbaşa qəbul et</button>'+
+      '<div class="hint">Satınalma və Rəhbərlik xəbər tutacaq, statistikaya “Satınalma vaxtında qəbul etməyib” kimi yazılacaq. Sonra miqdarları yazıb qəbul edirsiniz.</div></div>';
+  }
   if (role==="Keyfiyyət" && qcPend(o)){
     const left = o.items.filter(i=>!i.qc && i.got!==0).length, noWhy = o.items.filter(i=>i.qc==="bad" && !(i.qcWhy||"").trim()).length;
     if (o.qcSkip) return '<div class="box'+(o.qcSkip.live?"":" late")+'"><div class="lbl">'+(o.qcSkip.live?"📝 "+esc(o.wh)+" qəbulu bitirib — yoxlasanız nəticəni qeyd edin":"⚠ Gecikmiş yoxlama — "+esc(o.wh)+" malı artıq qəbul edib")+'</div><button class="okb big" data-act="qcok" data-id="'+o.id+'">✓ Yoxladım · nəticəni qeyd et</button>'+
@@ -3093,6 +3104,7 @@ function stats(a,b){
     if (i.byFirm && !miss) return;              // başqa firma təmin edib — sifariş verilən firmaya gecikmə yazılmır
     if (ev.some(e=>e.days>0) || (miss && missDays>0) || (miss && o.recvDone)) st.notOnTime.push({ o, i, ev, miss, missDays });
   }));
+  st.spSkip = S.orders.filter(o=>!o.deleted && o.spSkip && inR(o.spSkip.at.slice(0,10)));
   st.retIn = S.orders.filter(o=>o.status!=="redd" && !o.deleted).flatMap(o=>o.items.filter(i=>i.ret && inR(i.ret.at.slice(0,10))).map(i=>({o,i})));
   st.other = S.orders.filter(o=>o.status!=="redd" && !o.deleted).flatMap(o=>o.items.filter(i=>i.byFirm && inR(i.byFirm.at.slice(0,10))).map(i=>({o,i})));
   st.lateRecv.forEach(({o})=>{ const k = o.supplier||"Firmasız", x = st.sup[k] = st.sup[k] || {n:0,full:0,bad:0,qc:0,bought:0,nf:0}; x.lr = (x.lr||0)+1; });
@@ -3135,6 +3147,7 @@ function statsHtml(a,b){
         return '<div class="sday"><b>📅 '+fmtD(d)+' gəlməli idi</b><span>'+wday(d)+' · '+day.length+' mal</span></div><div class="tbl card"><table><tbody>'+day.map(r=>'<tr><td><b>'+esc(pname(r.i.pid))+'</b> <span class="meta">'+esc(r.i.qty)+'</span><div class="meta">'+esc(r.o.supplier||"Firmasız")+' → '+esc(r.o.wh)+' · #'+r.o.id+' · sifariş '+fmtD(r.o.created.slice(0,10)).slice(0,5)+'</div></td><td>'+
           r.ev.map(e=>'<div>'+fmtN(e.qty)+' gəldi '+fmtD(e.date).slice(0,5)+' <span class="pill '+(e.days?"p-warn":"p-ok")+'">'+(e.days?e.days+" gün gec":"vaxtında")+'</span></div>').join("")+
           (r.miss ? '<div><span class="pill p-bad">'+fmtN(r.miss)+' hələ gəlməyib'+(r.missDays?' · '+r.missDays+' gün':"")+'</span></div>' : "")+'</td></tr>').join("")+'</tbody></table></div>'; }).join("") : "")(s.notOnTime))+
+    list("⚠ Satınalma sifarişi vaxtında qəbul etməyib — anbar birbaşa qəbul etdi", s.spSkip, o=>'<tr><td>'+fmtD(o.spSkip.at.slice(0,10)).slice(0,5)+'</td><td><button class="linkb mono" data-goorder="'+o.id+'">#'+o.id+'</button> '+esc(o.from)+' → '+esc(o.wh)+'<div class="meta">'+o.items.length+' mal'+(o.spSkip.firm?' · '+esc(o.spSkip.firm):"")+'</div></td><td class="rs">'+o.spSkip.h+' saat cavabsız</td></tr>')+
     list("↩ Qəbulda qaytarılan mallar", s.retIn, ({o,i})=>'<tr><td>'+fmtD(i.ret.at.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(pname(i.pid))+'</b> '+fmtN(i.ret.qty)+'<div class="meta">'+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · #'+o.id+'</div></td><td class="rs">'+esc(i.ret.why||"")+'</td></tr>')+
     list("🔄 Başqa firmadan təmin edilən mallar", s.other, ({o,i})=>'<tr><td>'+fmtD(i.byFirm.at.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(pname(i.pid))+'</b> '+fmtN(i.byFirm.qty)+'<div class="meta">#'+o.id+' · '+esc(o.wh)+'</div></td><td><b>'+esc(i.byFirm.firm)+'</b><div class="meta">sifariş: '+esc(i.byFirm.was||"—")+'</div></td></tr>')+
     list("📦 Sonradan gələn mallar (neçə gün gec)", s.lateRecv.slice().sort((a,b)=>b.x.at.localeCompare(a.x.at)), ({o,i,x})=>'<tr><td>'+fmtD(x.at.slice(0,10)).slice(0,5)+'</td><td><b>'+esc(pname(i.pid))+'</b> '+fmtN(x.qty)+'<div class="meta">'+esc(o.supplier||"Firmasız")+' → '+esc(o.wh)+' · #'+o.id+' · gəlməli idi '+fmtD(o.eta||"").slice(0,5)+'</div></td><td class="num"><span class="pill '+(x.days>2?"p-bad":"p-warn")+'">'+x.days+' gün gec</span></td></tr>')+
@@ -4117,6 +4130,17 @@ function orderAct(act, id){
     toast("Anbara OK verildi · "+o.wh+" xəbər tutdu");
   }
   else if (act==="allfull"){ return keep(()=>{ o.items.forEach(i=>{ if (i.qc!=="bad" && i.qc!=="none") i.got = num(i.qty); }); }); }
+  else if (act==="spskip"){
+    if (!spCanSkip(o) || Date.now() < spSkipAt(o)) return toast("Hələ tezdir — Satınalmanın "+SP_SKIP_H+" saatı var");
+    const now = new Date().toISOString(), firm = (v("spf")||"").trim(), h = Math.round((Date.now()-new Date(o.created).getTime())/HOUR*10)/10;
+    o.spSkip = { at:now, by:role, h, firm: firm || undefined };
+    if (firm) o.supplier = firm;
+    o.status = "yolda"; o.eta = today(); o.last_move = now;
+    addLog(o, "Satınalma qəbul etmədən mal gəldi — "+o.wh+" birbaşa qəbul edir", (firm?firm+" · ":"")+h+" saat Satınalma cavab verməyib");
+    notify(["Satınalma","Rəhbərlik"], "late", "⚠ #"+o.id+" · Satınalma sifarişi vaxtında qəbul etməyib", "Mal gəldi — "+o.wh+" birbaşa qəbul etdi"+(firm?" · "+firm:"")+" · sifarişdən "+h+" saat keçmişdi", o.items.slice(0,6).map(i=>pname(i.pid)+" "+i.qty), o.id);
+    homeOpen.add(o.id); fullSet.add(o.id);
+    toast("Qəbula açıldı · miqdarları yazıb “Qəbul et” basın");
+  }
   else if (act==="restnone"){ o.items.forEach(i=>{ if (i.got==null) i.got = 0; }); const n = receiveDone(o, v("rn")); toast(n ? n+" mal üçün Satınalma cavab verəcək" : "Bağlandı ✓"); }
   else if (act==="reopen"){
     const its = o.items.filter(i=>o.recvDone && (i.got||0)===0 && !i.ans && !(i.lateRecv||[]).length && !i.cover && !i.byFirm && !i.ret && i.qc!=="bad");
