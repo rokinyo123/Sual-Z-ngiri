@@ -17,8 +17,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   r.partial = await p.evaluate(()=>({ status:O.status, stage:stage(O).t, inAktiv:(role="Anbar",tab="orders",osec="aktiv",oq="",render(),!!document.querySelector('#o-'+O.id)), gelmeyen:resultRows().filter(x=>x.cat==="miss").length }));
   // later: Lahmacun comes, Ovaleks will not
   await p.evaluate(()=>{ tab="home"; homeOpen.add(O.id); render(); });
-  await p.click('[data-full="'+id+'-1"]'); await p.click('[data-gnone="'+id+'-2"]');
-  await p.click('[data-act="receive"][data-id="'+id+'"]'); await p.waitForTimeout(200);
+  await p.click('[data-full="'+id+'-1"]'); await p.click('[data-gnone="'+id+'-2"]'); await p.waitForTimeout(200);   // v91: qalanlar yazılanda özü bağlanır
   r.closed = await p.evaluate(()=>({ status:O.status, items:O.items.map(i=>pname(i.pid)+":"+i.got+":"+(problem(O,i)||"ok")) }));
   // reopen the not-arrived one
   r.reopen = await p.evaluate(()=>{ orderAct("reopen", O.id); return { status:O.status, items:O.items.map(i=>pname(i.pid)+":"+i.got), stage:stage(O).t }; });
