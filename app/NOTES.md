@@ -112,3 +112,8 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - xamAct stop/restart → `notify(..., "stop", ...)` (Anbar, Anbar (İnqilab), Satınalma, Rəhbərlik).
 - telegram-function: `onAlert` kind "stop" üçün iş saatı (08–18) yoxlamasını keçir — gecə də dərhal gedir; başlıq "⚠️⚠️ DİQQƏT · TEXNOLOQ".
 - Səhər planındakı "Sifariş olunmamalı xammallar" sətri silindi; gecə yığımı (`nightAlerts`) "stop"u daxil etmir → təkrar yoxdur.
+
+## v91 — qismən qəbuldan sonra sifariş özü bağlanır
+- Problem: anbar bir neçə malı qəbul edib "Qəbul et" basırdı (qismən qəbul), qalanlara sonra "Tam / Gəlmədi" basırdı — `saveGot` yalnız miqdarı yazırdı, sifariş "Qismən gəldi · 0 mal gözlənilir" kimi açıq qalırdı, kompüterdə "Qəbul et" yenə görünürdü.
+- Həll: `partDone(o)` — `partAt` var, bağlanmayıb, gözlənilən mal qalmayıb → `saveGot` dərhal `receiveDone` çağırır. Köhnə ilişmiş sifarişləri `partDoneFix()` açılışda (anbar / admin) bağlayır.
+- `stage`: 0 mal qalanda "Qismən gəldi" yazılmır. Test: `tests/v91.js`.

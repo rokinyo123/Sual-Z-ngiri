@@ -1327,7 +1327,7 @@ function stage(o){
   if (o.rep==="noorder") return {k:"done", t:"📦 Xəbərsiz mal · Rəhbərliyə bildirildi"};
   if (o.rep) return {k:"done", t:holdOf(o).ic+" "+holdOf(o).n+" · Satınalma cavab verdi"};
   if (o.status==="acik") return {k:"buy", t:"Satınalmada"};
-  if (o.status==="yolda" && o.items.some(i=>i.got!=null)) return {k:"wait", t:"Qismən gəldi · "+o.items.filter(i=>i.got==null).length+" mal gözlənilir"+(lateOpen(o)?" · gecikir":"")};
+  if (o.status==="yolda" && o.items.some(i=>i.got!=null) && partLeft(o)) return {k:"wait", t:"Qismən gəldi · "+o.items.filter(i=>i.got==null).length+" mal gözlənilir"+(lateOpen(o)?" · gecikir":"")};
   if (o.status==="yolda") return lateOpen(o) ? {k:"wait", t:"Gecikir · "+fmtD(o.eta).slice(0,5)+" gəlməli idi"} : dueNow(o) ? {k:"wait", t: new Date().getHours()>=16 ? "Bu gün gəlməli idi · hələ gəlməyib — firmaya zəng" : "Bu gün gəlməlidir"} : {k:"wait", t:"Gözlənilir · "+fmtD(o.eta).slice(0,5)};
   if (o.status==="anbar") return hasQC(o) && !o.qcAt ? (qcLate(o) ? {k:"chk", t:"Keyfiyyət gecikir · "+o.wh+" şərti qəbul edə bilər"} : {k:"chk", t:"Gəldi · Keyfiyyət yoxlayır"}) : {k:"chk", t:"Gəldi · "+o.wh+" qeyd edir"};
   if (needsAnswer(o)) return {k:"bad", t:"Satınalmanın cavabı gözlənilir"};
@@ -1561,7 +1561,7 @@ function renderTabs(){
 }
 function render(){
   requestAnimationFrame(()=>{ const b = document.querySelector("#tabs button.on"); if (b && b.scrollIntoView) b.scrollIntoView({inline:"nearest",block:"nearest"}); });
-  noorderFix(); arrSplitFix(); autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
+  noorderFix(); arrSplitFix(); partDoneFix(); autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
   $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, ledger:vLedger, xam:vXam, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, exp:vExp }[tab]();
@@ -1583,6 +1583,12 @@ const HOLD = { sample:{ ic:"🧪", n:"Xəbərsiz nümunə", btn:"🧪 Xəbərsiz
     hint:"Sifariş olunmuş mal gəlib, amma <b>qaiməsi gəlməyib</b>. Satınalma dərhal Telegramda xəbər tutur və cavab verənə qədər hər gün xatırladılır.", ph:"Hansı mal gəlib, nə qədər? Sifariş nömrəsini bilirsinizsə yazın (məs. #105)" },
   noorder:{ ic:"📦", n:"Xəbərsiz mal", btn:"📦 Xəbərsiz mal gəldi", need:"", wait:"", direct:true,
     hint:"Anbara <b>xəbər verilmədən</b> mal göndərilib (heç kim sifariş verməyib). Satınalmaya getmir — birbaşa <b>Rəhbərliyə</b> bildirilir və həftəlik / aylıq statistikaya düşür.", ph:"Nə gəlib, nə qədər, kim gətirib?" } };
+// v91: qismən qəbul olunmuş sifarişdə qalan mallar da yazılıbsa (Tam / miqdar / Gəlmədi) — sifariş özü bağlanır
+const partLeft = o => o.items.filter(i=>i.got==null && i.qc!=="bad" && i.qc!=="none" && i.techRes!=="bad").length;
+const partDone = o => !!o && !o.deleted && o.partAt && !o.recvDone && (o.status==="yolda" || o.status==="acik") && !partLeft(o);
+function partDoneFix(){
+  S.orders.filter(o=>partDone(o) && (role===o.wh || adminView())).forEach(o=>{ addLog(o, "Qalan mallar da yazıldı — avtomatik bağlandı", ""); receiveDone(o, ""); });
+}
 function arrSplitFix(){
   let ch = false;
   S.orders.slice().forEach(o=>{
@@ -2282,7 +2288,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v90 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v91 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3840,6 +3846,7 @@ function saveGot(el){
   if (val===i.got) return;
   i.got = val;
   addLog(o,"Qeyd edildi",pname(i.pid)+": "+i.qty+" sifariş, "+fmtN(val)+" gəldi");
+  if (partDone(o)){ addLog(o, "Qalan mallar da yazıldı — avtomatik bağlandı", ""); const n = receiveDone(o, ""); save(); render(); return toast(n ? "Sifariş bağlandı · "+n+" mal üçün Satınalma cavab verəcək" : "Qalan mallar da qəbul olundu · sifariş bağlandı ✓"); }
   save(); renderTabs();
 }
 function orderAct(act, id){
