@@ -134,3 +134,6 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - İstehsalat / Çeşidləmə “💵 Pul götürdüm” ilə götürdüyü məbləği yazır (istəyə görə; `S.exps` yazısı `kind:"in"`).
 - Yuxarıda: Götürülüb · Xərclənib · **Qalıq** (bütün vaxt üzrə). Hər yazının altında həmin andakı qalıq; xərc yazanda toast qalığı göstərir. Pul yazılmayıbsa — əvvəlki kimi yalnız xərclər.
 - Ay başlığı: “xərc X · götürülüb Y”. Test: `tests/v94.js`.
+
+## v95 — Hesabat dəftər formasında
+- Pul götürülübsə ay siyahısı `xLedger`: yuxarıdan aşağı xronoloji, hər sətirdə xərc (−15) və sağda böyük “Qalan pul” (200 → 185 → 170). Əvvəlki aydan qalıq ilk sətirdə. Pul yazılmayıbsa — köhnə gün-gün görünüş.
