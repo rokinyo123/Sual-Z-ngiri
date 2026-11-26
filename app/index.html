@@ -585,6 +585,13 @@ tr.lr-ok td:first-child{box-shadow:inset 3px 0 var(--ok)} tr.lr-warn td:first-ch
 
 .stopw{background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:6px 10px;font-size:13.5px;margin:-2px 0 8px}
 .card.stopc{border-left:5px solid var(--bad)}
+
+.xledger{padding:6px 12px}
+.xl{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px dashed var(--line)}
+.xl.xh{border-top:0;font-size:12.5px;color:var(--muted);justify-content:space-between;padding-right:48px}
+.xl .xw{flex:1;min-width:0}
+.xl .xa{font-size:13px;color:var(--bad)} .xl.xin .xa{color:var(--ok)}
+.xl .xb{font-size:20px;white-space:nowrap;color:var(--fg)} .xl .xb.neg{color:var(--bad)}
 </style>
 
 </head>
@@ -2249,12 +2256,24 @@ function vExp(){
       '<button class="pri big" data-xadd="1">Əlavə et</button>'+
       '<div class="meta">Bu gün: <b>'+money(todaySum)+'</b></div></div>'+
     '<div class="row" style="justify-content:space-between"><button class="sm" data-xmon="-1">‹</button><b>'+mName+' · xərc '+money(total)+(takenM?' · götürülüb '+money(takenM):'')+'</b><button class="sm" data-xmon="1"'+(m>=today().slice(0,7)?" disabled":"")+'>›</button></div>'+
-    (days.length ? days.map(day=>{ const L = inM.filter(x=>x.date===day).sort((a,b)=>a.at.localeCompare(b.at)), sum = L.filter(x=>x.kind!=="in").reduce((a,x)=>a+x.amt,0);
+    (hasIn ? xLedger(mine, inM, m, B) : days.length ? days.map(day=>{ const L = inM.filter(x=>x.date===day).sort((a,b)=>a.at.localeCompare(b.at)), sum = L.filter(x=>x.kind!=="in").reduce((a,x)=>a+x.amt,0);
       return '<div class="card"><div class="row" style="justify-content:space-between"><b>'+fmtD(day)+' · '+wday(day)+'</b><span class="pill p-wait">Cəmi '+money(sum)+'</span></div>'+
         L.map(x=>'<div class="row" style="justify-content:space-between;gap:8px;border-top:1px dashed var(--line);padding-top:6px">'+
           '<span class="grow">'+(x.kind==="in"?'💵 <b>Pul götürüldü</b>'+(x.what?' · '+esc(x.what):""):esc(x.what))+(hasIn?'<div class="meta">qalıq: <b>'+money(B.after[x.id])+'</b></div>':"")+(x.photo?' <a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Qəbz" style="height:34px;border-radius:6px;vertical-align:middle"></a>':"")+'</span>'+
           '<b class="mono" style="white-space:nowrap'+(x.kind==="in"?';color:var(--ok)">+':'">−')+money(x.amt)+'</b><button class="sm" data-xdel="'+x.id+'" aria-label="Sil">🗑</button></div>').join("")+'</div>'; }).join("")
       : '<div class="empty">Bu ayda yazı yoxdur</div>');
+}
+// v95: pul götürülübsə — hesab dəftəri kimi: yuxarıdan aşağı, hər yazıdan sonra qalan pul (200 → 185 → 170)
+function xLedger(mine, inM, m, B){
+  if (!inM.length) return '<div class="empty">Bu ayda yazı yoxdur</div>';
+  const prev = mine.filter(x=>x.date.slice(0,7)<m).reduce((a,x)=>a+(x.kind==="in"?x.amt:-x.amt),0);
+  const L = inM.slice().sort(xOrd);
+  const row = x => '<div class="xl'+(x.kind==="in"?" xin":"")+'"><div class="xw"><span class="meta">'+fmtD(x.date).slice(0,5)+'</span> '+(x.kind==="in"?'💵 <b>Pul götürüldü</b>'+(x.what?' · '+esc(x.what):""):esc(x.what))+
+    (x.photo?' <a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Qəbz" style="height:28px;border-radius:6px;vertical-align:middle"></a>':"")+
+    '<div class="mono xa">'+(x.kind==="in"?"+":"−")+money(x.amt)+'</div></div><b class="mono xb'+(B.after[x.id]<0?" neg":"")+'">'+money(B.after[x.id])+'</b><button class="sm" data-xdel="'+x.id+'" aria-label="Sil">🗑</button></div>';
+  return '<div class="card xledger"><div class="xl xh"><span>Yazı</span><span>Qalan pul</span></div>'+
+    (Math.abs(prev)>1e-9 ? '<div class="xl"><div class="xw meta">Əvvəlki aydan qalıq</div><b class="mono xb'+(prev<0?" neg":"")+'">'+money(prev)+'</b><span style="width:40px"></span></div>' : "")+
+    L.map(row).join("")+'</div>';
 }
 function expAct(d){
   if (d.xadd){ const amt = amtNum(xDraft.amt), what = (xDraft.what||"").trim();
@@ -2438,7 +2457,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v94 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v95 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir

@@ -9,14 +9,15 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   await p.evaluate(()=>{ V.reset(); S.exps=[]; role="İstehsalat"; tab="exp"; render(); });
   const r = {};
   // without money taken: plain expenses, no balance
-  await p.fill('[data-xf="amt"]','20'); await p.fill('[data-xf="what"]','Taksi'); await p.click('[data-xadd]');
   r.noBal = await p.evaluate(()=>!document.querySelector('#main').innerText.includes("Qalıq"));
-  await p.fill('[data-xi="amt"]','500'); await p.click('[data-xin]');
-  await p.fill('[data-xf="amt"]','35,5'); await p.fill('[data-xf="what"]','Lazer kəsim'); await p.click('[data-xadd]');
+  await p.fill('[data-xi="amt"]','200'); await p.click('[data-xin]');
+  await p.fill('[data-xf="amt"]','15'); await p.fill('[data-xf="what"]','Taksi'); await p.click('[data-xadd]');
+  await p.fill('[data-xf="amt"]','15'); await p.fill('[data-xf="what"]','Lazer kəsim'); await p.click('[data-xadd]'); await p.waitForTimeout(1500);
+  r.seq = await p.evaluate(()=>[...document.querySelectorAll('.xl .xb')].map(b=>b.textContent));
   r.txt = await p.evaluate(()=>document.querySelector('#main').innerText);
   r.bal = await p.evaluate(()=>xBal(S.exps.filter(x=>!x.deleted)).bal);
   await p.screenshot({path:path.join(require('os').tmpdir(),'v94.png'), fullPage:true});
-  console.log(JSON.stringify({ noBal:r.noBal, bal:r.bal, hasQ:/Qalıq: 444,50/.test(r.txt) }));
-  if (!r.noBal || Math.abs(r.bal-444.5)>1e-9 || !/Qalıq:\s*444,50/.test(r.txt) || !/xərc 55,50/.test(r.txt)) errs.push("exp balance failed");
+  console.log(JSON.stringify({ noBal:r.noBal, bal:r.bal, seq:r.seq }));
+  if (!r.noBal || Math.abs(r.bal-170)>1e-9 || r.seq.join("|")!=="200,00 ₼|185,00 ₼|170,00 ₼" || !/xərc 30,00/.test(r.txt)) errs.push("exp balance failed");
   console.log('JS', errs); await br.close();
 })();
