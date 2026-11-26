@@ -125,3 +125,7 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - **Qəbul et** artıq anbarın işini bitirir: boş qalan mal (gəliş günü çatıbsa) “Gəlmədi” → Gəlməyən; yalnız başqa firmadan sonrakı günə gözlənilən mal açıq qalır. `dueNow` qismən qəbulda yalnız günü çatan mala baxır. `partDoneFix` köhnə ilişmişləri bağlayır.
 - **📋 Bütün sifarişlər** bölməsi (Sifarişlər): yazılan hər sifariş gün-gün, statusundan asılı olmayaraq.
 - İstehsalat sifarişi silə bilmir (`canDelete`). Keyfiyyət sifariş verir (`pickWh`, tab `new`).
+
+## v93 — Admin hər şeyi silə bilir
+- Sifariş birbaşa açılanda (#nömrə, bildirişdən, siyahıdan “Ətraflı”) “🗑 Sil” düyməsi görünmürdü — `vOrders` tək sifarişə `ownBtns` əlavə edir. Admin istənilən mərhələdə (bağlanmış da) silir; silinənlər axtarışda “🗑 Silinənlər”də görünür.
+- Admin ↩ Qaytarma yazılarını (`data-rtdel`), 🛡 Aktları (`data-qadel`) və Satış tapşırıqlarını silə bilir. Yalnız `adminView()`.

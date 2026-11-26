@@ -1772,6 +1772,7 @@ function taskCard(t){
       : tkNo[t.id] ? '<div class="box">'+who+box+'<div class="row"><button class="badb" data-tknosend="'+t.id+'">✗ Yerinə yetirilmədi — göndər</button><button class="sm" data-tknocancel="'+t.id+'">Ləğv et</button></div></div>'
       : '<div class="row wrap"><button class="okb" data-tkok="'+t.id+'">✓ Yerinə yetirildi</button><button class="badb sm" data-tkno="'+t.id+'">Yerinə yetirilmədi</button></div>';
   }
+  if (adminView()) act += '<div class="row"><button class="linkb" data-tkdel="'+t.id+'">🗑 Sil (Admin)</button></div>';
   if (!t.done && role==="Satış") act += '<div class="meta">⏳ '+esc(t.to.join(" və "))+' cavab verməlidir</div><div class="row"><button class="linkb" data-tkdel="'+t.id+'">🗑 Tapşırığı sil</button></div>';
   return '<article class="oc" style="border-left-color:var('+(t.done ? (t.done.st==="ok"?"--ok":"--bad") : tkOver(t) ? "--bad" : "--wait")+')">'+
     '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:8px"><b style="white-space:pre-wrap">'+esc(t.title)+'</b>'+st+'</div>'+
@@ -2013,7 +2014,7 @@ function qaCard(x){
     '<div class="meta">'+esc(x.wh)+(x.qty?' · '+esc(x.qty):"")+' · '+esc(x.by)+' · '+shortT(new Date(x.at))+'</div>'+
     (x.desc?'<div style="white-space:pre-wrap">'+esc(x.desc)+'</div>':"")+
     (x.photo?'<a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Şəkil" style="max-height:120px;border-radius:10px"></a>':"")+
-    (tl.length?'<div class="spn">'+tl.join("<br>")+'</div>':"")+act+'</article>';
+    (tl.length?'<div class="spn">'+tl.join("<br>")+'</div>':"")+act+(adminView()?'<div class="ocb"><button class="sm badb" data-qadel="'+x.id+'">🗑 Sil (Admin)</button></div>':"")+'</article>';
 }
 function qaForm(){
   const d = qDraft;
@@ -2050,6 +2051,7 @@ function qaAct(d){
   const done = (msg) => { save(); render(); if (msg) toast(msg); return true; };
   if (d.qnew){ qDraft = { kind:d.qnew, product:"", ptype:"", desc:"", qty:"", sev:"mid", photo:"", exp:"", wh: WAREHOUSES.includes(role) ? role : "Anbar" }; render(); return true; }
   if (d.qcancel){ qDraft = null; render(); return true; }
+  if (d.qadel){ if (!adminView() || !confirm("Akt silinsin?")) return true; const x = X(d.qadel); if (x) x.deleted = { by:"Admin", at:now }; return done("Silindi"); }
   if (d.qsev){ qDraft.sev = d.qsev; render(); return true; }
   if (d.qaexp){ const [oid,k] = d.qaexp.split("-").map(Number), o = S.orders.find(x=>x.id===oid), i = o && o.items[k]; if (!i) return true;
     qDraft = { kind:"ret", product:pname(i.pid), ptype:"", desc:"#"+o.id+" · "+(o.supplier||""), qty:String(i.got!=null?i.got:i.qty), sev:"mid", photo:"", exp:i.exp||"", wh:o.wh };
@@ -2153,7 +2155,7 @@ function rtCard(x){
     '<div class="row wrap" style="gap:4px"><span class="pill p-info">'+esc(x.firm||"Firma yazılmayıb")+'</span><span class="pill '+(x.repl?"p-wait":"p-mute")+'">'+(x.repl?"🔄 Yerinə yenisi gəlsin":"Yenisi lazım deyil")+'</span>'+
       (x.oid?'<button class="linkb mono" data-goorder="'+x.oid+'">#'+x.oid+'</button>':"")+'</div>'+
     '<div class="meta">'+esc(x.wh)+(x.why?' · <b>Səbəb:</b> '+esc(x.why):"")+'</div>'+
-    '<div class="spn">'+tl.join("<br>")+'</div>'+act+'</article>';
+    '<div class="spn">'+tl.join("<br>")+'</div>'+act+(adminView()?'<div class="ocb"><button class="sm badb" data-rtdel="'+x.id+'">🗑 Sil (Admin)</button></div>':"")+'</article>';
 }
 function rtForm(){
   const d = rDraft, fl = '<datalist id="rflist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>';
@@ -2178,6 +2180,7 @@ function vRet(){
 function rtAct(d){
   const now = new Date().toISOString(), X = id => rtList().find(x=>x.id===id), txt = id => (rTxt[id]||"").trim();
   const done = msg => { save(); render(); if (msg) toast(msg); return true; };
+  if (d.rtdel){ if (!adminView() || !confirm("Qaytarma yazısı silinsin?")) return true; const x = X(d.rtdel); if (x){ x.deleted = { by:"Admin", at:now }; } return done("Silindi"); }
   if (d.rnew){ rDraft = { product:"", firm:"", qty:"", why:"", repl:null }; render(); return true; }
   if (d.rcancel){ rDraft = null; render(); return true; }
   if (d.rrepl){ rDraft.repl = d.rrepl==="1"; render(); return true; }
@@ -2418,7 +2421,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v92 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v93 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3208,7 +3211,7 @@ function vOrders(){
     const q = oq.trim().toLowerCase(), one = /^#\d+$/.test(q) ? S.orders.find(o=>"#"+o.id===q) : null;
     const mine = o => !o.deleted && o.status!=="redd" && (REQ.includes(role) ? o.from===role : ownWh(o));
     const gone = adminView() ? (S.trash||[]).filter(hit) : [];
-    if (one) body = orderCard(one);
+    if (one) body = fullSet.has(one.id) ? orderCard(one).replace(/<\/article>$/, ownBtns(one,1)+'</article>') : orderCard(one);
     else {
       const its = S.orders.filter(mine).flatMap(o=>o.items.map((i,k)=>({o,i,k}))).filter(({o,i})=>(pname(i.pid)+" "+(o.supplier||"")+" "+o.wh+" "+o.from).toLowerCase().includes(q))
         .sort((x,y)=>y.o.created.localeCompare(x.o.created)||y.o.id-x.o.id);
