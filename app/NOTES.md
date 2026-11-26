@@ -117,3 +117,11 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - Problem: anbar bir neçə malı qəbul edib "Qəbul et" basırdı (qismən qəbul), qalanlara sonra "Tam / Gəlmədi" basırdı — `saveGot` yalnız miqdarı yazırdı, sifariş "Qismən gəldi · 0 mal gözlənilir" kimi açıq qalırdı, kompüterdə "Qəbul et" yenə görünürdü.
 - Həll: `partDone(o)` — `partAt` var, bağlanmayıb, gözlənilən mal qalmayıb → `saveGot` dərhal `receiveDone` çağırır. Köhnə ilişmiş sifarişləri `partDoneFix()` açılışda (anbar / admin) bağlayır.
 - `stage`: 0 mal qalanda "Qismən gəldi" yazılmır. Test: `tests/v91.js`.
+
+## v92 — ↩ Qaytarma bölməsi, 📋 Bütün sifarişlər, qəbul anbarı bağlayır
+- **↩ Qaytarma** (tab `ret`, meta `rt-*`, `S.rets`): Anbar/İnqilab yazır (məhsul, firma, çəki, səbəb istəyə görə, yerinə yenisi gəlsin/lazım deyil) → Satınalma qaytarma gününü təyin edir (`dated`) → Anbar “Qaytarıldı” → yenisi istənibsə (`repl`) Satınalma gəliş gününü yazır → Anbar “Yenisi gəldi” (`done`). Hər addım bildiriş/Telegram.
+- Qəbulda “↩ Qaytarıldı” (+ “Yerinə yenisi gəlsin”) → qəbul bitəndə `rtFromItem` qaytarma yazısı yaradır; həmin mal artıq Gəlməyən/Az gələn deyil (`problem` qaytarılan hissəni əskik saymır).
+- Gün keçəndə: proqramda “stuck” xəbərdarlığı (`rtSignals`), Telegrama bot özü (`?stuck`: rt-open 24s, rt-late, rt-repl, rt-new). Səhər/axşam planında Satınalma və anbarlar üçün qaytarma sətirləri.
+- **Qəbul et** artıq anbarın işini bitirir: boş qalan mal (gəliş günü çatıbsa) “Gəlmədi” → Gəlməyən; yalnız başqa firmadan sonrakı günə gözlənilən mal açıq qalır. `dueNow` qismən qəbulda yalnız günü çatan mala baxır. `partDoneFix` köhnə ilişmişləri bağlayır.
+- **📋 Bütün sifarişlər** bölməsi (Sifarişlər): yazılan hər sifariş gün-gün, statusundan asılı olmayaraq.
+- İstehsalat sifarişi silə bilmir (`canDelete`). Keyfiyyət sifariş verir (`pickWh`, tab `new`).

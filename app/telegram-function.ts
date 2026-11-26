@@ -77,9 +77,9 @@ async function load() {
   const orders = out.filter((r) => r.kind === "order").map((r) => r.data).filter((o) => o && !o.deleted && o.status !== "redd");
   ALL = orders;
   // Satışın tapşırıqları, iclas öhdəlikləri, Aktlar (səhər / axşam şöbə siyahıları üçün)
-  const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*,id.like.stop-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
+  const meta: any[] = await db(`records?kind=eq.meta&or=(id.like.task-*,id.like.mt-*,id.like.qa-*,id.like.stop-*,id.like.rt-*)&select=id,data&limit=5000`).then((x) => x.json()).catch(() => []);
   const pick = (pre: string) => meta.filter((r) => String(r.id).startsWith(pre)).map((r) => r.data).filter((x) => x && !x.deleted);
-  return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), stops: pick("stop-").filter((x: any) => !x.endAt), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
+  return { orders, tasks: pick("task-"), mtasks: pick("mt-"), qas: pick("qa-"), stops: pick("stop-").filter((x: any) => !x.endAt), rets: pick("rt-").filter((x: any) => x.status !== "done"), pname: (id: unknown) => P.get(Number(id)) ?? "?" };
 }
 const hasQC = (o: any) => o.wh === "Anbar" && !o.sample && !o.techOrder && !o.rep && !o.req && o.stype !== "office" && o.stype !== "cargo";
 const held = (o: any) => !!(o.hold && !o.holdDone && o.rep !== "noorder");   // xəbərsiz mal Satınalmanı gözləmir — yalnız Rəhbərliyə və statistikaya
@@ -327,6 +327,14 @@ function plan(d: Awaited<ReturnType<typeof load>>, eve: boolean) {
   const qas = (d.qas || []).filter((x: any) => x.status !== "closed" && x.status !== "done");
   add("Satınalma", eve ? "Cavab vermədiyiniz aktlar" : "Aktlara cavab verin", qas.filter((x: any) => x.status === "open").map(qaTxt));
   add("Keyfiyyət", eve ? "Qərar vermədiyiniz aktlar" : "Aktlarda qərar verin", qas.filter((x: any) => x.status === "answered" || x.status === "dated").map(qaTxt));
+  // ↩ Qaytarma bölməsi
+  const rts = d.rets || [], rtTxt = (x: any) => `↩ ${esc(x.product || "")}${x.qty ? " " + esc(x.qty) : ""}${x.firm ? " · " + esc(x.firm) : ""} · ${esc(x.wh || "")}`;
+  add("Satınalma", eve ? "Qaytarma günü təyin etmədiniz" : "Qaytarma gününü təyin edin", rts.filter((x: any) => x.status === "open").map(rtTxt));
+  add("Satınalma", eve ? "Qaytarılanın yenisinin gününü yazmadınız" : "Qaytarılan malın yenisi — gəliş gününü yazın", rts.filter((x: any) => x.status === "repl" && !x.replEta).map(rtTxt));
+  for (const wh of ["Anbar", "Anbar (İnqilab)"]) {
+    add(wh, eve ? "Bu gün qaytarılmalı idi, qaytarılmadı" : "Bu gün qaytarılacaq mallar", rts.filter((x: any) => x.wh === wh && x.status === "dated" && x.date && x.date <= t).map((x: any) => rtTxt(x) + (x.date < t ? " · ⏰ " + fmtD(x.date) : "")));
+    add(wh, eve ? "Bu gün gəlməli olan yeni mal (qaytarılanın yerinə)" : "Qaytarılanın yerinə bu gün gələcək", rts.filter((x: any) => x.wh === wh && x.status === "repl" && x.replEta && x.replEta <= t).map(rtTxt));
+  }
   for (const wh of ["Anbar", "Anbar (İnqilab)"]) add(wh, eve ? "Qaytarılmayan mallar" : "Malı qaytarın", qas.filter((x: any) => x.status === "approved" && x.wh === wh).map(qaTxt));
   // Satışın tapşırıqları (Üzeyir, Elçin) — səhər: bu gün və gecikən, axşam: vaxtı keçən
   const now = bakuNow().toISOString().slice(0, 16);
@@ -389,6 +397,15 @@ async function stuckRun(force: boolean) {
     if (lateOpen(o) && !(lateEntry(o) || {}).note) push(`late-${o.id}`, (now - new Date(o.eta + "T23:59:00+04:00").getTime()) / H - ANS_H, ["Satınalma", "Rəhbərlik"], `#${o.id} · gəlmədi, Satınalma açıqlama yazmayıb`, `${esc(o.supplier || "Firmasız")} · ${fmtD(o.eta)} gəlməli idi → ${esc(o.wh)}`, o.id);
     const un = o.items.filter((i: any) => canAnswer(o, i) && ansLeftH(o, i) < 0);
     if (un.length) push(`ans-${o.id}`, -Math.max(...un.map((i: any) => ansLeftH(o, i))), ["Satınalma", "Rəhbərlik"], `#${o.id} · Satınalma ${ANS_H} saatda cavab verməyib · ${un.length} mal`, un.slice(0, 6).map((i: any) => esc(d.pname(i.pid)) + ": " + esc(problem(o, i))).join(", "), o.id);
+  }
+  // ↩ Qaytarma: Satınalma gün təyin etməyib (24 saat) · qaytarma günü keçib · yenisi gəlmədi
+  const endOf = (day: string) => new Date(day + "T23:59:00+04:00").getTime();
+  for (const x of (d.rets || [])) {
+    const nm = `↩ ${esc(x.product || "")} · ${esc(x.wh || "")}${x.firm ? " · " + esc(x.firm) : ""}${x.qty ? " · " + esc(x.qty) : ""}`;
+    if (x.status === "open") push(`rt-open-${x.id}`, (now - new Date(x.since || x.at).getTime()) / H - 24, ["Satınalma", "Rəhbərlik"], `Qaytarma · Satınalma qaytarma gününü təyin etməyib`, nm);
+    if (x.status === "dated" && x.date) push(`rt-late-${x.id}`, (now - endOf(x.date)) / H, ["Satınalma", x.wh, "Rəhbərlik"], `Qaytarma günü keçib · ${fmtD(x.date)} qaytarılmalı idi`, nm);
+    if (x.status === "repl" && !x.replEta) push(`rt-repl-${x.id}`, (now - new Date(x.since || x.at).getTime()) / H - 24, ["Satınalma", "Rəhbərlik"], `Qaytarılan malın yerinə yenisinin günü yazılmayıb`, nm);
+    if (x.status === "repl" && x.replEta) push(`rt-new-${x.id}`, (now - endOf(x.replEta)) / H, ["Satınalma", x.wh, "Rəhbərlik"], `Qaytarılan malın yenisi gəlmədi · ${fmtD(x.replEta)} gəlməli idi`, nm);
   }
   if (!items.length) return json({ ok: true, sent: 0 });
   const rows: any[] = await db("tg_chats?select=chat_id,dept").then((r) => r.json()).catch(() => []);
