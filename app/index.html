@@ -2219,17 +2219,28 @@ function rtAct(d){
 }
 // ===================== 💰 Gündəlik xərc hesabatı (İstehsalat, Çeşidləmə) =====================
 // Hər şöbə yalnız öz yazılarını görür. Gün-gün qruplanır, hər günün və ayın cəmi çıxır; istəsə qəbzin şəklini qoyur.
-let xDraft = { date:"", what:"", amt:"", photo:"" }, xMonth = "";
+let xDraft = { date:"", what:"", amt:"", photo:"" }, xMonth = "", xIn = { amt:"", note:"" };
+// v94: götürülən pul (kind:"in") — istəyə görə. Xərclər ondan çıxılır, hər yazıdan sonra qalıq göstərilir.
+const xOrd = (a,b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at);
+function xBal(mine){ let b = 0; const after = {}; mine.slice().sort(xOrd).forEach(x=>{ b += x.kind==="in" ? x.amt : -x.amt; after[x.id] = b; }); return { bal:b, after }; }
 const money = n => (Math.round(n*100)/100).toFixed(2).replace(".",",")+" ₼";
 const amtNum = v => { const n = Number(String(v||"").replace(",",".").replace(/[^\d.]/g,"")); return isFinite(n) ? n : 0; };
 function vExp(){
   const mine = (S.exps||[]).filter(x=>!x.deleted && x.dept===role);
   const m = xMonth || today().slice(0,7), d = xDraft;
-  const inM = mine.filter(x=>x.date.slice(0,7)===m), total = inM.reduce((a,x)=>a+x.amt,0);
+  const inM = mine.filter(x=>x.date.slice(0,7)===m), total = inM.filter(x=>x.kind!=="in").reduce((a,x)=>a+x.amt,0), takenM = inM.filter(x=>x.kind==="in").reduce((a,x)=>a+x.amt,0);
+  const hasIn = mine.some(x=>x.kind==="in"), B = xBal(mine);
+  const tIn = mine.filter(x=>x.kind==="in").reduce((a,x)=>a+x.amt,0), tOut = mine.filter(x=>x.kind!=="in").reduce((a,x)=>a+x.amt,0);
   const days = [...new Set(inM.map(x=>x.date))].sort().reverse();
   const mName = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"][Number(m.slice(5,7))-1]+" "+m.slice(0,4);
-  const todaySum = mine.filter(x=>x.date===today()).reduce((a,x)=>a+x.amt,0);
+  const todaySum = mine.filter(x=>x.date===today() && x.kind!=="in").reduce((a,x)=>a+x.amt,0);
   return '<h2>💰 Gündəlik hesabat · '+esc(role)+'</h2>'+
+    (hasIn ? '<div class="card" style="border-left:4px solid var(--'+(B.bal<0?"bad":"ok")+')"><div class="row wrap" style="justify-content:space-between;gap:6px">'+
+      '<span>💵 Götürülüb: <b>'+money(tIn)+'</b></span><span>🧾 Xərclənib: <b>'+money(tOut)+'</b></span></div>'+
+      '<div style="font-size:22px;margin-top:6px">Qalıq: <b class="mono" style="color:var(--'+(B.bal<0?"bad":"ok")+')">'+money(B.bal)+'</b></div>'+(B.bal<0?'<div class="meta">Xərc götürülən puldan çoxdur</div>':"")+'</div>' : "")+
+    '<details class="card"'+(hasIn?"":" open")+'><summary><b>💵 Pul götürdüm</b> <span class="meta">— istəyə görə: götürdüyünüz məbləği yazın, xərclər ondan çıxılsın</span></summary>'+
+      '<div class="row wrap" style="gap:6px"><input data-xi="amt" inputmode="decimal" placeholder="Məbləğ, ₼ (məs. 500)" value="'+esc(xIn.amt)+'" style="flex:1 1 120px"><input data-xi="note" placeholder="Qeyd (istəyə görə)" value="'+esc(xIn.note)+'" style="flex:2 1 160px"></div>'+
+      '<button class="pri" data-xin="1">+ Götürülən pulu yaz</button></details>'+
     '<div class="card"><div class="row wrap" style="gap:6px"><input type="date" data-xf="date" max="'+today()+'" value="'+esc(d.date||today())+'" style="flex:1 1 140px">'+
       '<input data-xf="amt" inputmode="decimal" placeholder="Məbləğ, ₼" value="'+esc(d.amt)+'" style="flex:1 1 110px"></div>'+
       '<input data-xf="what" placeholder="Nəyə xərcləndi? (məs. Taksi — lazer kəsim)" value="'+esc(d.what)+'">'+
@@ -2237,19 +2248,25 @@ function vExp(){
       (d.photo?'<span class="ph"><img src="'+d.photo+'" alt="" style="height:44px;border-radius:8px"><button class="phx" data-xphdel="1" aria-label="Şəkli sil">✕</button></span>':"")+'</div>'+
       '<button class="pri big" data-xadd="1">Əlavə et</button>'+
       '<div class="meta">Bu gün: <b>'+money(todaySum)+'</b></div></div>'+
-    '<div class="row" style="justify-content:space-between"><button class="sm" data-xmon="-1">‹</button><b>'+mName+' · cəmi '+money(total)+'</b><button class="sm" data-xmon="1"'+(m>=today().slice(0,7)?" disabled":"")+'>›</button></div>'+
-    (days.length ? days.map(day=>{ const L = inM.filter(x=>x.date===day).sort((a,b)=>a.at.localeCompare(b.at)), sum = L.reduce((a,x)=>a+x.amt,0);
+    '<div class="row" style="justify-content:space-between"><button class="sm" data-xmon="-1">‹</button><b>'+mName+' · xərc '+money(total)+(takenM?' · götürülüb '+money(takenM):'')+'</b><button class="sm" data-xmon="1"'+(m>=today().slice(0,7)?" disabled":"")+'>›</button></div>'+
+    (days.length ? days.map(day=>{ const L = inM.filter(x=>x.date===day).sort((a,b)=>a.at.localeCompare(b.at)), sum = L.filter(x=>x.kind!=="in").reduce((a,x)=>a+x.amt,0);
       return '<div class="card"><div class="row" style="justify-content:space-between"><b>'+fmtD(day)+' · '+wday(day)+'</b><span class="pill p-wait">Cəmi '+money(sum)+'</span></div>'+
         L.map(x=>'<div class="row" style="justify-content:space-between;gap:8px;border-top:1px dashed var(--line);padding-top:6px">'+
-          '<span class="grow">'+esc(x.what)+(x.photo?' <a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Qəbz" style="height:34px;border-radius:6px;vertical-align:middle"></a>':"")+'</span>'+
-          '<b class="mono" style="white-space:nowrap">'+money(x.amt)+'</b><button class="sm" data-xdel="'+x.id+'" aria-label="Sil">🗑</button></div>').join("")+'</div>'; }).join("")
+          '<span class="grow">'+(x.kind==="in"?'💵 <b>Pul götürüldü</b>'+(x.what?' · '+esc(x.what):""):esc(x.what))+(hasIn?'<div class="meta">qalıq: <b>'+money(B.after[x.id])+'</b></div>':"")+(x.photo?' <a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Qəbz" style="height:34px;border-radius:6px;vertical-align:middle"></a>':"")+'</span>'+
+          '<b class="mono" style="white-space:nowrap'+(x.kind==="in"?';color:var(--ok)">+':'">−')+money(x.amt)+'</b><button class="sm" data-xdel="'+x.id+'" aria-label="Sil">🗑</button></div>').join("")+'</div>'; }).join("")
       : '<div class="empty">Bu ayda yazı yoxdur</div>');
 }
 function expAct(d){
   if (d.xadd){ const amt = amtNum(xDraft.amt), what = (xDraft.what||"").trim();
     if (!what){ toast("Nəyə xərcləndiyini yazın"); return true; } if (!(amt>0)){ toast("Məbləği yazın"); return true; }
     (S.exps = S.exps||[]).push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), dept: role, date: xDraft.date||today(), what, amt, photo: xDraft.photo||undefined, at: new Date().toISOString() });
-    xDraft = { date: xDraft.date, what:"", amt:"", photo:"" }; save(); render(); toast("Yazıldı · "+money(amt)); return true; }
+    xDraft = { date: xDraft.date, what:"", amt:"", photo:"" }; save(); render();
+    const mine = (S.exps||[]).filter(x=>!x.deleted && x.dept===role);
+    toast("Yazıldı · "+money(amt)+(mine.some(x=>x.kind==="in") ? " · qalıq "+money(xBal(mine).bal) : "")); return true; }
+  if (d.xin){ const amt = amtNum(xIn.amt); if (!(amt>0)){ toast("Götürdüyünüz məbləği yazın"); return true; }
+    (S.exps = S.exps||[]).push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), dept: role, kind:"in", date: today(), what:(xIn.note||"").trim(), amt, at: new Date().toISOString() });
+    xIn = { amt:"", note:"" }; save(); render(); const mine = (S.exps||[]).filter(x=>!x.deleted && x.dept===role);
+    toast("+"+money(amt)+" yazıldı · qalıq "+money(xBal(mine).bal)); return true; }
   if (d.xdel){ if (!confirm("Bu yazı silinsin?")) return true; const x = (S.exps||[]).find(e=>e.id===d.xdel); if (x){ x.deleted = true; save(); render(); } return true; }
   if (d.xmon){ const [y,mo] = (xMonth||today().slice(0,7)).split("-").map(Number), t = new Date(y, mo-1+Number(d.xmon), 1);
     xMonth = t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0"); render(); return true; }
@@ -2421,7 +2438,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v93 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v94 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3935,6 +3952,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.qcw){ const [o,i]=itemOf(el.dataset.qcw); i.qcWhy = el.value; save(); }
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
   if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
+  if (el.dataset.xi){ xIn[el.dataset.xi] = el.value; return; }
   if (el.dataset.qf2 && qDraft){ qDraft[el.dataset.qf2] = el.value; return; }
   if (el.dataset.rf && rDraft){ rDraft[el.dataset.rf] = el.value; return; }
   if (el.dataset.rt){ rTxt[el.dataset.rt] = el.value; return; }
