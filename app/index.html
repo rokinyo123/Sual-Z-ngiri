@@ -596,6 +596,19 @@ tr.lr-ok td:first-child{box-shadow:inset 3px 0 var(--ok)} tr.lr-warn td:first-ch
 .rtm{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--wait);border-radius:10px;padding:8px 12px;margin:5px 0;color:var(--fg);font-size:15px}
 .rtm small{display:block;font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rtm.rt-bad{border-left-color:var(--bad)} .rtm.rt-ok{border-left-color:var(--ok)}
+
+.chlist{max-height:calc(100vh - 330px);min-height:240px;overflow-y:auto;padding:8px 2px;display:flex;flex-direction:column;gap:6px}
+.chm{max-width:82%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:7px 10px;font-size:15px;line-height:1.35;word-wrap:break-word}
+.chm.me{align-self:flex-end;background:color-mix(in srgb,var(--accent) 14%,var(--surface));border-radius:14px 14px 4px 14px}
+.chm .chf{display:block;font-size:12px;color:var(--accent)}
+.chm img{max-width:100%;max-height:220px;border-radius:10px;margin-top:4px;display:block}
+.chm .cht{display:block;text-align:right;font-size:11px;color:var(--muted);margin-top:2px}
+.chday{align-self:center;font-size:12px;color:var(--muted);background:var(--line);border-radius:10px;padding:1px 10px;margin:4px 0}
+.chin{position:sticky;bottom:84px;background:var(--bg);padding-top:6px}
+.chin textarea{min-height:44px}
+
+@media (max-width:430px){ header .top{gap:6px} header .who{gap:4px;min-width:0;flex-wrap:nowrap} header .who select{max-width:112px;padding:6px 8px;font-size:14px} header .outb{padding:5px 7px;font-size:14px} .brand b.abrand{font-size:25px} header .net{display:none} }
+@media (max-width:380px){ header .who select{max-width:88px} header .outb{padding:4px 5px} .brand b.abrand{font-size:22px} header #thm{display:none} }
 </style>
 
 </head>
@@ -764,6 +777,7 @@ const Cloud = (() => {
     }
     for (const p of S.products) if (isD(p.photo) && !C.noStore) p.photo = await up(p.photo, "mehsul.jpg");
     for (const x of (S.exps||[])) if (isD(x.photo) && !C.noStore) x.photo = await up(x.photo, "qebz.jpg");
+    for (const x of (S.chats||[])) if (isD(x.photo) && !C.noStore) x.photo = await up(x.photo, "cat.jpg");
     for (const x of (S.qas||[])) if (isD(x.photo) && !C.noStore) x.photo = await up(x.photo, "akt.jpg");
   }
   // Yerli vəziyyəti yazılara çevir
@@ -782,6 +796,7 @@ const Cloud = (() => {
     (S.xms||[]).forEach(x=>out.push(["meta", "xm-"+x.id, x]));
     (S.stops||[]).forEach(x=>out.push(["meta", "stop-"+x.id, x]));
     (S.rets||[]).forEach(x=>out.push(["meta", "rt-"+x.id, x]));
+    (S.chats||[]).forEach(x=>out.push(["meta", "ch-"+x.id, x]));
     out.push(["meta","firms",{ firms:S.firms }], ["meta","reports",{ reports:S.reports||{} }], ["meta","catalog",{ catalogV:S.catalogV||0 }]);
     return out;
   }
@@ -818,6 +833,7 @@ const Cloud = (() => {
     else if (row.id.startsWith("xm-")) put(S.xms = S.xms||[], d, x=>"xm-"+x.id===row.id);
     else if (row.id.startsWith("stop-")) put(S.stops = S.stops||[], d, x=>"stop-"+x.id===row.id);
     else if (row.id.startsWith("rt-")) put(S.rets = S.rets||[], d, x=>"rt-"+x.id===row.id);
+    else if (row.id.startsWith("ch-")) put(S.chats = S.chats||[], d, x=>"ch-"+x.id===row.id);
     else if (row.id==="firms") S.firms = d.firms||[];
     else if (row.id==="reports") S.reports = d.reports||{};
     else if (row.id==="catalog") S.catalogV = d.catalogV;
@@ -1555,10 +1571,13 @@ function renderRole(){
   if (!ONLINE && !$("rf")){ $("role").insertAdjacentHTML("afterend", '<button id="rf" class="outb rfb" title="Yenilə">🔄</button>'); $("rf").onclick = hardRefresh; }
   if (!$("bell")){ $("role").insertAdjacentHTML("afterend", '<button id="bell" class="outb rfb bellb" title="Bildirişlər" aria-label="Bildirişlər">🔔<span class="bn"></span></button>');
     $("bell").onclick = () => { tab = tab==="notif" ? "home" : "notif"; render(); window.scrollTo(0,0); }; }
+  if (!$("chatb")){ $("bell").insertAdjacentHTML("beforebegin", '<button id="chatb" class="outb rfb bellb" title="Çat" aria-label="Çat">💬<span class="bn"></span></button>');
+    $("chatb").onclick = () => { tab = tab==="chat" ? "home" : "chat"; chRoom = null; render(); window.scrollTo(0,0); }; }
 }
 let moreOpen = false;
 function renderTabs(){
-  const T = tabsFor(role); if (tab!=="notif" && tab!=="firm" && !T.some(t=>t[0]===tab)) tab = T[0][0];
+  const T = tabsFor(role); if (tab!=="notif" && tab!=="firm" && tab!=="chat" && !T.some(t=>t[0]===tab)) tab = T[0][0];
+  const cb = $("chatb"); if (cb){ const u = chUnreadAll(); cb.querySelector(".bn").textContent = u ? (u>99?"99+":u) : ""; cb.classList.toggle("on", tab==="chat"); cb.classList.toggle("has", u>0); }
   const nb = myAlerts().length, bl = $("bell");
   if (bl){ bl.querySelector(".bn").textContent = nb ? (nb>99?"99+":nb) : ""; bl.classList.toggle("on", tab==="notif"); bl.classList.toggle("has", nb>0); }
   const wa = T.some(t=>t[0]==="res") ? unanswered().length : 0;
@@ -1580,9 +1599,11 @@ function render(){
   noorderFix(); arrSplitFix(); partDoneFix(); autoMissing(); stuckSignals(); qcSignals(); taskSignals(); meetSignals(); qaSignals(); rtSignals(); expirySignals(); reportSignals(); pushNotify(); dlDone = false;
   document.documentElement.style.setProperty("--dc", DEPT_C[role] || DEPT_C.Anbar);
   renderTabs();
-  $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, ledger:vLedger, xam:vXam, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, ret:vRet, exp:vExp }[tab]();
+  $("main").innerHTML = { home:vHome, notif:vNotif, firm:vFirm, ledger:vLedger, xam:vXam, qc:vQc, buy:vBuy, prob:vProb, orders:vOrders, new:vNew, days:vDays, catalog:vCatalog, res:vRes, arch:vArch, tasks:vTasks, tcal:vTcal, meet:vMeet, qa:vQa, ret:vRet, exp:vExp, chat:vChat }[tab]();
   if (tab==="new" && role!=="Satınalma") bindNew();
   if ($("qPhoto")) $("qPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); qDraft.photo = sm; render(); };
+  if ($("chPhoto")) $("chPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); chDraft.photo = sm; render(); };
+  if (tab==="chat" && chRoom){ chMarkRead(chRoom); const L = $("chlist"); if (L) L.scrollTop = L.scrollHeight; }
   if ($("xPhoto")) $("xPhoto").onchange = async e => { const f = e.target.files[0]; if (!f) return; const [sm] = await shrink2(f, 1280, 1280); if (!sm) return toast("Şəkli oxumaq olmadı"); xDraft.photo = sm; render(); };
   if (tab==="catalog") filterRows($("cQ"));
   tabFx();
@@ -2236,6 +2257,59 @@ function rtAct(d){
     return done("Yenisi qəbul olundu ✓"); }
   return false;
 }
+// ===================== 💬 Çat =====================
+// Ümumi otaq (hamı) + şöbədən şöbəyə şəxsi yazışma. Mesaj Telegrama da gedir (iş saatında). #123 — sifarişə link.
+let chRoom = null, chDraft = { text:"", photo:"" };
+const CH_ALL = "all";
+const chList = () => (S.chats||[]).filter(x=>!x.deleted);
+const chPair = (a,b) => [a,b].sort().join("|");
+const chOther = room => room===CH_ALL ? "" : room.split("|").find(d=>d!==role) || room.split("|")[0];
+const chCanSee = room => room===CH_ALL || room.split("|").includes(role) || adminView();
+const chTitle = room => room===CH_ALL ? "🌐 Ümumi otaq" : room.split("|").includes(role) ? "👤 "+chOther(room) : "👥 "+room.split("|").join(" ↔ ");
+function chRead(){ try { return JSON.parse(localStorage.getItem("almond-chat-read")||"{}"); } catch(e){ return {}; } }
+function chMarkRead(room){ const m = chRead(), k = role+"@"+room, last = chList().filter(x=>x.room===room).reduce((a,x)=>x.at>a?x.at:a, ""); if (!last || (m[k]||"")>=last) return;
+  m[k] = last; try { localStorage.setItem("almond-chat-read", JSON.stringify(m)); } catch(e){} renderTabs(); }
+const chUnread = room => { const r = chRead()[role+"@"+room] || ""; return chList().filter(x=>x.room===room && x.from!==role && x.at>r).length; };
+const chUnreadAll = () => [...new Set(chList().map(x=>x.room))].filter(r=>r===CH_ALL || r.split("|").includes(role)).reduce((a,r)=>a+chUnread(r),0);
+const chLink = t => esc(t).replace(/#(\d{2,6})\b/g, (m,n)=>'<button class="linkb mono" data-goorder="'+n+'">#'+n+'</button>').replace(/\n/g,"<br>");
+function vChat(){
+  if (chRoom && chCanSee(chRoom)){
+    const L = chList().filter(x=>x.room===chRoom).sort((a,b)=>a.at.localeCompare(b.at)).slice(-300);
+    let lastDay = "";
+    const msgs = L.map(x=>{ const day = x.at.slice(0,10), mine = x.from===role;
+      const sep = day!==lastDay ? '<div class="chday">'+fmtD(day)+'</div>' : ""; lastDay = day;
+      return sep+'<div class="chm'+(mine?" me":"")+'">'+(mine?"":'<b class="chf">'+esc(x.from)+'</b>')+
+        (x.text?'<div>'+chLink(x.text)+'</div>':"")+(x.photo?'<a href="'+x.photo+'" target="_blank" rel="noopener"><img src="'+x.photo+'" alt="Şəkil"></a>':"")+
+        '<span class="cht">'+new Date(x.at).toTimeString().slice(0,5)+(adminView()?' <button class="linkb" data-chdel="'+x.id+'" aria-label="Sil">🗑</button>':"")+'</span></div>'; }).join("");
+    return '<div class="row" style="justify-content:space-between"><button class="sm" data-chroom="">‹ Otaqlar</button><b>'+esc(chTitle(chRoom))+'</b></div>'+
+      '<div id="chlist" class="chlist">'+(msgs || '<div class="empty">Hələ mesaj yoxdur — ilk yazan siz olun</div>')+'</div>'+
+      '<div class="chin"><textarea id="chT" data-chf="text" rows="2" placeholder="Mesaj yazın… (#123 — sifariş)">'+esc(chDraft.text)+'</textarea>'+
+      '<div class="row" style="gap:6px"><label class="btnlink" title="Şəkil">📷<input type="file" id="chPhoto" accept="image/*" class="fpick"></label>'+
+      (chDraft.photo?'<span class="ph"><img src="'+chDraft.photo+'" alt="" style="height:40px;border-radius:8px"><button class="phx" data-chphdel="1" aria-label="Şəkli sil">✕</button></span>':"")+
+      '<button class="pri grow" data-chsend="1">Göndər ➤</button></div>'+
+      '<div class="hint">'+(chRoom===CH_ALL?"Hamı görür":"Yalnız "+esc(chRoom.split("|").join(" və "))+" görür")+' · Telegrama da gedir (08:00–18:00)</div></div>';
+  }
+  const rooms = [CH_ALL].concat(DEPTS.filter(d=>d!==role && d!=="Admin").map(d=>chPair(role,d)));
+  if (adminView()) [...new Set(chList().map(x=>x.room))].forEach(r=>{ if (!rooms.includes(r)) rooms.push(r); });
+  const last = r => chList().filter(x=>x.room===r).sort((a,b)=>b.at.localeCompare(a.at))[0];
+  const sorted = rooms.slice().sort((a,b)=> a===CH_ALL ? -1 : b===CH_ALL ? 1 : ((last(b)||{}).at||"").localeCompare((last(a)||{}).at||"") || a.localeCompare(b,"az"));
+  return '<h2>💬 Çat</h2><div class="meta">Ümumi otaqda hamı görür; şöbənin adına basın — yalnız ikiniz görürsünüz.</div>'+
+    sorted.map(r=>{ const l = last(r), u = chUnread(r);
+      return '<button class="nline chr" data-chroom="'+esc(r)+'"><b>'+esc(chTitle(r))+(u?' <span class="pill p-bad">'+u+'</span>':"")+'</b><span>'+(l ? esc(l.from)+': '+esc((l.text||"📷 şəkil").slice(0,60))+' · '+shortT(new Date(l.at)) : '<i class="meta">mesaj yoxdur</i>')+'</span></button>'; }).join("");
+}
+function chAct(d){
+  if (d.chroom!=null){ chRoom = d.chroom || null; render(); window.scrollTo(0,0); return true; }
+  if (d.chphdel){ chDraft.photo = ""; render(); return true; }
+  if (d.chdel){ if (!adminView() || !confirm("Mesaj silinsin?")) return true; const x = chList().find(m=>m.id===d.chdel); if (x){ x.deleted = { by:"Admin", at:new Date().toISOString() }; save(); render(); } return true; }
+  if (d.chsend){ const text = (($("chT")||{}).value||chDraft.text||"").trim(); if (!text && !chDraft.photo){ toast("Mesaj yazın"); return true; }
+    const room = chRoom, x = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,5), room, from:role, text, photo: chDraft.photo || undefined, at:new Date().toISOString() };
+    (S.chats = S.chats||[]).push(x); chDraft = { text:"", photo:"" }; save(); render();
+    if (ONLINE){ const to = room===CH_ALL ? DEPTS.filter(d=>d!==role && d!=="Admin") : [chOther(room)], m = text.match(/#(\d{2,6})\b/);
+      Cloud.tg({ id:"chat-"+x.id, kind:"chat", title:"💬 "+role+" → "+(room===CH_ALL?"Ümumi otaq":chOther(room)), sub:(text||"📷 şəkil göndərdi").slice(0,500), items:[], to, oid: m ? Number(m[1]) : undefined, at:x.at })
+        .then(r=>{ if (!r.ok && r.status!==404) console.warn("Telegram:", r); }).catch(()=>{}); }
+    return true; }
+  return false;
+}
 // ===================== 💰 Gündəlik xərc hesabatı (İstehsalat, Çeşidləmə) =====================
 // Hər şöbə yalnız öz yazılarını görür. Gün-gün qruplanır, hər günün və ayın cəmi çıxır; istəsə qəbzin şəklini qoyur.
 let xDraft = { date:"", what:"", amt:"", photo:"" }, xMonth = "", xIn = { amt:"", note:"" };
@@ -2469,7 +2543,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v97 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v99 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3913,6 +3987,7 @@ $("main").addEventListener("click", e => {
   if (meetAct(d)) return;
   if (qaAct(d)) return;
   if (rtAct(d)) return;
+  if (chAct(d)) return;
   if (expAct(d)) return;
   if (d.sopen){ sDraft = { mode:d.sopen, firm:"", eta:plusDays(1), wh: WAREHOUSES.includes(role) ? role : "Anbar", rows:[{n:"",q:""}], note:"", desc:"" }; render(); return; }
   if (d.scancel){ sDraft = null; render(); return; }
@@ -3997,6 +4072,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.hd){ const [id,f]=el.dataset.hd.split("|"); hDraft[id][f]=el.value; return; }
   if (el.dataset.tkf){ tkDraft[el.dataset.tkf] = el.value; return; }
   if (el.dataset.xi){ xIn[el.dataset.xi] = el.value; return; }
+  if (el.dataset.chf){ chDraft[el.dataset.chf] = el.value; return; }
   if (el.dataset.qf2 && qDraft){ qDraft[el.dataset.qf2] = el.value; return; }
   if (el.dataset.rf && rDraft){ rDraft[el.dataset.rf] = el.value; return; }
   if (el.dataset.rfi && rDraft){ const [k,f] = el.dataset.rfi.split("|"); rDraft.rows[Number(k)][f] = el.value; return; }

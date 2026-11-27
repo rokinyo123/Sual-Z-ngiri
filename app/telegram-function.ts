@@ -35,7 +35,7 @@ const DEPTS: Record<string, string> = {
   "anbar(inqilab)": "Anbar (İnqilab)", anbarinqilab: "Anbar (İnqilab)", texnoloq: "Texnoloq",
   rehberlik: "Rəhbərlik", satis: "Satış", uzeyir: "Üzeyir", elcin: "Elçin", istehsalat: "İstehsalat", cesidleme: "Çeşidləmə", admin: "Admin", ehtiyat: "Ehtiyat", hamisi: "*", hamsi: "*", all: "*", "*": "*",
 };
-const ICON: Record<string, string> = { stop: "⛔", stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
+const ICON: Record<string, string> = { chat: "", stop: "⛔", stuck: "🚨", late: "⚠️", ok: "✅", arr: "📦", res: "📋", note: "📌" };
 
 const fold = (s: string) => s.toLowerCase().replace(/ə/g, "e").replace(/ı/g, "i").replace(/i̇/g, "i").replace(/ş/g, "s")
   .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u").replace(/\s+/g, "");
@@ -268,10 +268,10 @@ async function onAlert(req: Request, body: any) {
   const chats = [...new Set(rows.filter((r) => r.dept === "*" || to.includes(r.dept)).map((r) => r.chat_id))];
   if (!chats.length) return json({ ok: true, sent: 0 });
   const items: string[] = Array.isArray(a.items) ? a.items.slice(0, 10) : [];
-  const text = (a.kind === "stuck" ? "🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n" : a.kind === "stop" ? "⚠️⚠️ <b>DİQQƏT · TEXNOLOQ</b> ⚠️⚠️\n" : "") + `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>` +
+  const text = (a.kind === "stuck" ? "🚨🚨🚨 <b>İŞ İLİŞİB</b> 🚨🚨🚨\n" : a.kind === "stop" ? "⚠️⚠️ <b>DİQQƏT · TEXNOLOQ</b> ⚠️⚠️\n" : "") + (a.kind === "chat" ? `<b>${esc(a.title)}</b>` : `${ICON[a.kind] ?? "🔔"} <b>${esc(a.title)}</b>`) +
     (a.sub ? `\n${esc(a.sub)}` : "") +
     (items.length ? "\n" + items.map((x) => "• " + esc(x)).join("\n") : "") +
-    (to.length ? `\n<i>Kimə: ${esc(to.join(", "))}</i>` : "") +
+    (to.length && a.kind !== "chat" ? `\n<i>Kimə: ${esc(to.join(", "))}</i>` : "") +
     `\n\n<a href="${APP}${a.oid ? "#o=" + a.oid : ""}">👉 Proqramda aç</a>`;
   let sent = 0;
   for (const c of chats) { const r = await say(c, text); if (r.ok) sent++; }
