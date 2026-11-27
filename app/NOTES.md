@@ -149,3 +149,9 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 
 ## v98 — Sabah gələcək mallar: 1 gün qabaq Telegram
 - `midday` (16:00 Bakı, almond-gunorta) Satınalmaya əvvəlcə “📅 SABAH gələcək — firmaya zəng edib təsdiqləyin”: sabah gəliş günü olan mallar (malın öz `eta`sı da), firma → anbar, #sifariş; sabah qaytarılacaq və qaytarılanın sabah gələcək yenisi. Sonra köhnə “bu gün gəlməli idi” hissəsi. Funksiyanı yenidən Deploy etmək lazımdır.
+
+## v99 — 💬 Çat
+- Başlıqda 💬 düyməsi (oxunmamış sayı ilə) → `tab="chat"` (`vChat`). Otaqlar: “🌐 Ümumi otaq” (`room:"all"`) + hər şöbə ilə şəxsi yazışma (`room = chPair(a,b)` = adlar əlifba ilə “A|B”). Şəxsi otağı yalnız iki şöbə görür (Admin hamısını, mesaj silə bilir).
+- Mesaj: mətn, şəkil (`chPhoto`, Storage-ə yüklənir), `#123` → sifariş linki. Meta `ch-*`, `S.chats`. Oxunma vaxtı cihazda (`localStorage almond-chat-read`, açar `rol@otaq`).
+- Göndərəndə `Cloud.tg({kind:"chat"})` — Telegrama həmin şöbəyə (ümumi otaq: hamıya), iş saatında (08–18); bildirişlər siyahısına yazılmır. TG funksiyasında `kind:"chat"` üçün başlıq/“Kimə” sadələşdirilib — Deploy lazımdır.
+- Kiçik ekranlarda başlıq yığcamlaşdı (≤430px), ≤380px-də 🌙 gizlənir.
