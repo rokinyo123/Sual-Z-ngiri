@@ -592,6 +592,10 @@ tr.lr-ok td:first-child{box-shadow:inset 3px 0 var(--ok)} tr.lr-warn td:first-ch
 .xl .xw{flex:1;min-width:0}
 .xl .xa{font-size:13px;color:var(--bad)} .xl.xin .xa{color:var(--ok)}
 .xl .xb{font-size:20px;white-space:nowrap;color:var(--fg)} .xl .xb.neg{color:var(--bad)}
+
+.rtm{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--wait);border-radius:10px;padding:8px 12px;margin:5px 0;color:var(--fg);font-size:15px}
+.rtm small{display:block;font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtm.rt-bad{border-left-color:var(--bad)} .rtm.rt-ok{border-left-color:var(--ok)}
 </style>
 
 </head>
@@ -2106,7 +2110,7 @@ function qaAct(d){
 // ===================== ↩ Qaytarma (Anbar, İnqilab → Satınalma) =====================
 // Anbar yazır (məhsul, haradan gəlib, çəki, səbəb, yerinə yenisi lazımdırmı) → Satınalma qaytarma gününü təyin edir →
 // Anbar həmin gün “Qaytarıldı” basır → yenisi istənibsə Satınalma gəliş gününü yazır → Anbar “Yenisi gəldi” basır.
-let rDraft = null; const rTxt = {}, rtDt = {};
+let rDraft = null; const rTxt = {}, rtDt = {}, rtOpen = new Set();   // v97: kartlar yığcam — adına basanda açılır, bir neçəsi birdən açıq qala bilər
 const rtList = () => (S.rets||[]).filter(x=>!x.deleted);
 const rtLate = x => (x.status==="dated" && x.date && x.date < today()) || (x.status==="repl" && x.replEta && x.replEta < today());
 function rtMine(){
@@ -2135,6 +2139,11 @@ function rtSignals(){
   });
 }
 function rtCard(x){
+  if (!rtOpen.has(x.id)){
+    const short = { open:"Satınalma gün təyin etməlidir", dated:(rtLate(x)?"⏰ günü keçib · ":"qaytarılacaq · ")+fmtD(x.date||"").slice(0,5), repl:!x.replEta?"yenisinin günü yazılmayıb":(rtLate(x)?"⏰ yenisi gəlmədi · ":"yenisi gələcək · ")+fmtD(x.replEta).slice(0,5), done:"✓ bağlandı" }[x.status]||"";
+    const c = x.status==="done" ? "ok" : rtLate(x)||x.status==="open" ? "bad" : "wait";
+    return '<button class="rtm rt-'+c+'" data-rtopen="'+x.id+'"><b>↩ '+esc(x.product)+'</b> <span class="mono meta">'+esc(x.qty||"")+'</span><small>'+esc(short)+(x.firm?' · '+esc(x.firm):"")+(x.why?' · '+esc(x.why):"")+'</small></button>';
+  }
   const ST = { open:["⏳ Satınalma qaytarma gününü təyin etməlidir","p-wait"],
     dated:[rtLate(x)?"⏰ Qaytarma günü keçib · "+fmtD(x.date):"↩ "+fmtD(x.date||"")+" qaytarılacaq", rtLate(x)?"p-bad":"p-wait"],
     repl:[!x.replEta?"🔄 Satınalma yenisinin gəliş gününü yazmalıdır":rtLate(x)?"⏰ Yenisi gəlmədi · "+fmtD(x.replEta):"🔄 Yenisi "+fmtD(x.replEta)+" gələcək", rtLate(x)||!x.replEta?"p-bad":"p-wait"],
@@ -2162,14 +2171,14 @@ function rtCard(x){
     '<div class="row wrap" style="gap:4px"><span class="pill p-info">'+esc(x.firm||"Firma yazılmayıb")+'</span><span class="pill '+(x.repl?"p-wait":"p-mute")+'">'+(x.repl?"🔄 Yerinə yenisi gəlsin":"Yenisi lazım deyil")+'</span>'+
       (x.oid?'<button class="linkb mono" data-goorder="'+x.oid+'">#'+x.oid+'</button>':"")+'</div>'+
     '<div class="meta">'+esc(x.wh)+(x.why?' · <b>Səbəb:</b> '+esc(x.why):"")+'</div>'+
-    '<div class="spn">'+tl.join("<br>")+'</div>'+act+(adminView()?'<div class="ocb"><button class="sm badb" data-rtdel="'+x.id+'">🗑 Sil (Admin)</button></div>':"")+'</article>';
+    '<div class="spn">'+tl.join("<br>")+'</div>'+act+'<button class="sm linkb" data-rtopen="'+x.id+'">▴ Yığ</button>'+(adminView()?'<div class="ocb"><button class="sm badb" data-rtdel="'+x.id+'">🗑 Sil (Admin)</button></div>':"")+'</article>';
 }
 function rtForm(){
   const d = rDraft, fl = '<datalist id="rflist">'+(S.firms||[]).map(f=>'<option value="'+esc(f)+'">').join("")+'</datalist>';
   return '<div class="card"><h2>↩ Qaytarma yaz</h2>'+datalist()+fl+
-    '<input list="plist" data-rf="product" placeholder="Məhsul *" value="'+esc(d.product)+'">'+
+    d.rows.map((r,k)=>'<div class="row" style="gap:6px"><input list="plist" data-rfi="'+k+'|product" placeholder="Məhsul *" value="'+esc(r.product)+'" style="flex:2 1 150px"><input data-rfi="'+k+'|qty" placeholder="Çəki * (25 kq)" value="'+esc(r.qty)+'" style="flex:1 1 90px">'+(d.rows.length>1?'<button class="sm" data-rdelrow="'+k+'" aria-label="Sətri sil">✕</button>':"")+'</div>').join("")+
+    '<button class="sm" data-raddrow="1">+ Daha bir məhsul</button>'+
     '<input list="rflist" data-rf="firm" placeholder="Hansı firmadan gəlib *" value="'+esc(d.firm)+'">'+
-    '<input data-rf="qty" placeholder="Çəki / miqdar * (məs. 25 kq)" value="'+esc(d.qty)+'">'+
     '<textarea data-rf="why" placeholder="Qaytarılma səbəbi (istəyə görə: zədəli, keyfiyyətsiz, səhv mal...)">'+esc(d.why)+'</textarea>'+
     '<div class="row wrap"><span class="hint">Yerinə yenisi:</span><button class="'+(d.repl===true?"pri":"sm")+'" data-rrepl="1">🔄 Gəlsin</button><button class="'+(d.repl===false?"pri":"sm")+'" data-rrepl="0">Lazım deyil</button></div>'+
     '<div class="row"><button class="pri big grow" data-rsend="1">Göndər → Satınalma</button><button data-rcancel="1">Ləğv et</button></div></div>';
@@ -2188,16 +2197,19 @@ function rtAct(d){
   const now = new Date().toISOString(), X = id => rtList().find(x=>x.id===id), txt = id => (rTxt[id]||"").trim();
   const done = msg => { save(); render(); if (msg) toast(msg); return true; };
   if (d.rtdel){ if (!adminView() || !confirm("Qaytarma yazısı silinsin?")) return true; const x = X(d.rtdel); if (x){ x.deleted = { by:"Admin", at:now }; } return done("Silindi"); }
-  if (d.rnew){ rDraft = { product:"", firm:"", qty:"", why:"", repl:null }; render(); return true; }
+  if (d.rnew){ rDraft = { rows:[{product:"",qty:""}], firm:"", why:"", repl:null }; render(); return true; }
+  if (d.raddrow){ rDraft.rows.push({product:"",qty:""}); render(); return true; }
+  if (d.rdelrow!=null){ rDraft.rows.splice(Number(d.rdelrow),1); render(); return true; }
+  if (d.rtopen){ rtOpen.has(d.rtopen) ? rtOpen.delete(d.rtopen) : rtOpen.add(d.rtopen); render(); return true; }
   if (d.rcancel){ rDraft = null; render(); return true; }
   if (d.rrepl){ rDraft.repl = d.rrepl==="1"; render(); return true; }
-  if (d.rsend){ const q = rDraft;
-    if (!(q.product||"").trim()) { toast("Məhsulu yazın"); return true; }
+  if (d.rsend){ const q = rDraft, rows = q.rows.filter(r=>(r.product||"").trim()||(r.qty||"").trim());
+    if (!rows.length) { toast("Məhsulu yazın"); return true; }
+    const bad = rows.find(r=>!(r.product||"").trim() || !(r.qty||"").trim()); if (bad) { toast("Hər məhsulun adını və çəkisini yazın"); return true; }
     if (!(q.firm||"").trim()) { toast("Hansı firmadan gəldiyini yazın"); return true; }
-    if (!(q.qty||"").trim()) { toast("Çəkini / miqdarı yazın"); return true; }
     if (q.repl==null) { toast("Yerinə yenisi gəlsin, yoxsa lazım deyil — seçin"); return true; }
-    const x = rtNew({ wh:role, product:q.product.trim(), firm:q.firm.trim(), qty:q.qty.trim(), why:(q.why||"").trim(), repl:q.repl });
-    notify(["Satınalma","Rəhbərlik"], "late", "↩ Qaytarma · "+x.product+" · "+x.wh, (x.firm)+" · "+x.qty+(x.why?" · "+x.why:"")+" — Satınalma qaytarma gününü təyin etsin"+(x.repl?" · yerinə yenisi istənir":""), [], null);
+    const xs = rows.map(r=>rtNew({ wh:role, product:r.product.trim(), firm:q.firm.trim(), qty:r.qty.trim(), why:(q.why||"").trim(), repl:q.repl }));
+    notify(["Satınalma","Rəhbərlik"], "late", "↩ Qaytarma · "+(xs.length>1?xs.length+" məhsul":xs[0].product)+" · "+role, q.firm.trim()+(q.why?" · "+q.why.trim():"")+" — Satınalma qaytarma gününü təyin etsin"+(q.repl?" · yerinə yenisi istənir":""), xs.map(x=>x.product+" "+x.qty), null);
     rDraft = null; return done("Göndərildi → Satınalma gün təyin edəcək"); }
   if (d.rtdate){ const x = X(d.rtdate), dt = rtDt[d.rtdate]; if (!x) return true;
     if (!dt){ toast("Qaytarılacaq günü seçin"); return true; }
@@ -2457,7 +2469,7 @@ function vHome(){
 function footHtml(){
   let html = '';
   const canAsk = (()=>{ try { return "Notification" in window && Notification.permission==="default"; } catch(e){ return false; } })();
-  html += '<div class="foot"><span class="meta">v96 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
+  html += '<div class="foot"><span class="meta">v97 · sınaq</span> · '+(!isStandalone()?'<button class="linkb" id="install">📲 Telefona yüklə</button> · ':"")+(canAsk?'<button class="linkb" id="notif">🔔 Bildirişləri aç</button> · ':"")+''+(ONLINE?'Siz: <b>'+esc(role)+'</b> · <button class="linkb" id="out2">🚪 Hesabdan çıxış</button> · <button class="linkb" id="tgtest">📨 Telegram sınağı</button>':'Məlumatlar bu cihazda saxlanılır · <button class="linkb" id="reset">Hamısını sıfırla</button>')+'</div>';
   return html;
 }
 // Anbar / İnqilab "Bu gün": yuxarıda 4 rəqəm, sonra yalnız indi ediləcək işlər; Keyfiyyəti gözləyənlər qısa sətir
@@ -3987,6 +3999,7 @@ $("main").addEventListener("input", e => {
   if (el.dataset.xi){ xIn[el.dataset.xi] = el.value; return; }
   if (el.dataset.qf2 && qDraft){ qDraft[el.dataset.qf2] = el.value; return; }
   if (el.dataset.rf && rDraft){ rDraft[el.dataset.rf] = el.value; return; }
+  if (el.dataset.rfi && rDraft){ const [k,f] = el.dataset.rfi.split("|"); rDraft.rows[Number(k)][f] = el.value; return; }
   if (el.dataset.rt){ rTxt[el.dataset.rt] = el.value; return; }
   if (el.dataset.rq){ rTxt["q"+el.dataset.rq] = el.value; return; }
   if (el.dataset.rd){ rtDt[el.dataset.rd] = el.value; return; }
