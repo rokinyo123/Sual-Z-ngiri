@@ -146,3 +146,6 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 ## v97 — Qaytarma yığcam, bir neçə məhsul birdən
 - `rtCard`: yığcam sətir (ad + çəki, altında kiçik qeyd: vəziyyət · firma · səbəb); basanda açılır (`rtOpen`), bir neçəsi birdən açıq qala bilər, “▴ Yığ”.
 - Forma: `rDraft.rows` — “+ Daha bir məhsul”; firma, səbəb və “yerinə yenisi” hamısına ortaqdır; hər məhsul ayrıca qaytarma yazısı olur, Satınalmaya bir bildiriş (məhsulların siyahısı ilə).
+
+## v98 — Sabah gələcək mallar: 1 gün qabaq Telegram
+- `midday` (16:00 Bakı, almond-gunorta) Satınalmaya əvvəlcə “📅 SABAH gələcək — firmaya zəng edib təsdiqləyin”: sabah gəliş günü olan mallar (malın öz `eta`sı da), firma → anbar, #sifariş; sabah qaytarılacaq və qaytarılanın sabah gələcək yenisi. Sonra köhnə “bu gün gəlməli idi” hissəsi. Funksiyanı yenidən Deploy etmək lazımdır.

@@ -438,12 +438,20 @@ async function midday(force: boolean) {
   if (!force && b.getUTCHours() * 60 + b.getUTCMinutes() < 15 * 60 + 50) return json({ ok: true, skip: "tez" });
   const d = await load();
   const list = d.orders.filter((o) => o.status === "yolda" && o.eta === t), hl = d.orders.filter(held);
-  if (!list.length && !hl.length) return json({ ok: true, sent: 0, skip: "hamısı gəlib" });
+  // v98: 1 gün qabaq xəbərdarlıq — Satınalmanın gün yazdığı mallar SABAH gələcək (firmaya zəng edib təsdiqləsin)
+  const tm = new Date(new Date(t + "T00:00:00Z").getTime() + 24 * H).toISOString().slice(0, 10);
+  const tmL = d.orders.filter((o) => o.status === "yolda" && o.items.some((i: any) => i.got == null && (i.eta || o.eta) === tm));
+  const tmR = (d.rets || []).filter((x: any) => (x.status === "dated" && x.date === tm) || (x.status === "repl" && x.replEta === tm));
+  const tmText = !tmL.length && !tmR.length ? "" : `📅 <b>SABAH (${fmtD(tm)}) gələcək — firmaya zəng edib təsdiqləyin</b>\n` +
+    tmL.map((o) => { const its = o.items.filter((i: any) => i.got == null && (i.eta || o.eta) === tm);
+      return `📞 <b>${esc([...new Set(its.map((i: any) => i.sup || o.supplier || "Firmasız"))].join(", "))}</b> → ${esc(o.wh)} · ${link(o.id)}\n   ${esc(its.slice(0, 6).map((i: any) => d.pname(i.pid) + " " + i.qty).join(", "))}${its.length > 6 ? "…" : ""}`; }).join("\n") +
+    (tmR.length ? "\n" + tmR.map((x: any) => x.status === "dated" ? `↩ Sabah qaytarılacaq: ${esc(x.product)} ${esc(x.qty || "")} · ${esc(x.firm || "")} · ${esc(x.wh)}` : `🔄 Qaytarılanın yenisi sabah gələcək: ${esc(x.product)} · ${esc(x.firm || "")} → ${esc(x.wh)}`).join("\n") : "");
+  if (!list.length && !hl.length && !tmText) return json({ ok: true, sent: 0, skip: "hamısı gəlib" });
   const s = await db("tg_sent", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: (force ? "midday-test-" + Date.now() : "midday-" + t) }) });
   if (s.status === 409) return json({ ok: true, skip: "bu gün göndərilib" });
   const by = new Map<string, any[]>();
   list.forEach((o) => { const k = o.supplier || "Firmasız"; by.set(k, [...(by.get(k) ?? []), o]); });
-  const text = cut((hl.length ? `🔔 <b>Satınalma, cavab gözlənilir · ${hl.length}</b>\n` + hl.map(holdLine).join("\n") + "\n\n" : "") + (!list.length ? "" : `⏰ <b>Saat 16:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
+  const text = cut((tmText ? tmText + "\n\n" : "") + (hl.length ? `🔔 <b>Satınalma, cavab gözlənilir · ${hl.length}</b>\n` + hl.map(holdLine).join("\n") + "\n\n" : "") + (!list.length ? "" : `⏰ <b>Saat 16:00 — bu gün gəlməli idi, hələ gəlməyib (${fmtD(t)})</b>\n<i>Satınalma: firmalara zəng edin, gecikirsə proqramda yeni tarix yazın</i>\n\n` +
     [...by.entries()].map(([f, os]) => `📞 <b>${esc(f)}</b> → ${[...new Set(os.map((o) => esc(o.wh)))].join(", ")} · ${os.reduce((a, o) => a + o.items.length, 0)} mal · ${os.map((o) => link(o.id)).join(" ")}\n   ` +
       ((ns) => esc(ns.slice(0, 6).join(", ")) + (ns.length > 6 ? "…" : ""))([...new Set(os.flatMap((o) => o.items.map((i: any) => d.pname(i.pid))))])).join("\n")) +
     `\n\n<a href="${APP}">👉 Proqramı aç</a>`);
