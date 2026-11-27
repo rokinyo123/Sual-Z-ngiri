@@ -142,3 +142,7 @@ Navy design: splash `#spl` (inline in `<body>`, auto-hides after 2.3s), login `n
 - `spCanSkip(o)`: status `acik`, req deyil, saxlanmır, anbar sifarişi. Sifarişdən `SP_SKIP_H`=3 saat sonra anbar (və Admin) “📦 Mal gəldi — birbaşa qəbul et” görür (firma istəyə görə); əvvəl — vaxtı göstərən qeyd.
 - `act spskip`: `o.spSkip={at,by,h,firm}`, status `yolda`, eta bu gün → adi qəbul. Satınalma + Rəhbərliyə “⚠ Satınalma sifarişi vaxtında qəbul etməyib” (Telegram).
 - Statistika (həftəlik/aylıq): “⚠ Satınalma sifarişi vaxtında qəbul etməyib — anbar birbaşa qəbul etdi”. Test: `tests/v96.js`.
+
+## v97 — Qaytarma yığcam, bir neçə məhsul birdən
+- `rtCard`: yığcam sətir (ad + çəki, altında kiçik qeyd: vəziyyət · firma · səbəb); basanda açılır (`rtOpen`), bir neçəsi birdən açıq qala bilər, “▴ Yığ”.
+- Forma: `rDraft.rows` — “+ Daha bir məhsul”; firma, səbəb və “yerinə yenisi” hamısına ortaqdır; hər məhsul ayrıca qaytarma yazısı olur, Satınalmaya bir bildiriş (məhsulların siyahısı ilə).

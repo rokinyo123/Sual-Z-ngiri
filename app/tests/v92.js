@@ -10,8 +10,11 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   // 1. Anbar writes a return in the ↩ Qaytarma section
   await p.evaluate(()=>{ V.reset(); role="Anbar"; tab="ret"; render(); });
   await p.click('[data-rnew]');
-  await p.fill('[data-rf="product"]','Kakao'); await p.fill('[data-rf="firm"]','A Agro'); await p.fill('[data-rf="qty"]','25 kq'); await p.fill('[data-rf="why"]','zədəli');
+  await p.fill('[data-rfi="0|product"]','Kakao'); await p.fill('[data-rfi="0|qty"]','25 kq'); await p.fill('[data-rf="firm"]','A Agro');
+  await p.click('[data-raddrow]'); await p.fill('[data-rfi="1|product"]','Ovaleks'); await p.fill('[data-rfi="1|qty"]','3 kq'); await p.fill('[data-rf="why"]','zədəli');
   await p.click('[data-rrepl="1"]'); await p.click('[data-rsend]'); await p.waitForTimeout(100);
+  r.two = await p.evaluate(()=>S.rets.length===2 && document.querySelectorAll('.rtm').length===2);
+  await p.evaluate(()=>{ S.rets.splice(1,1); rtList().forEach(x=>rtOpen.add(x.id)); render(); });
   r.created = await p.evaluate(()=>{ const x = S.rets[0]; return { st:x.status, repl:x.repl, alert:S.alerts[0].to.join(","), title:S.alerts[0].title }; });
   // 2. Satınalma sets the day
   await p.evaluate(()=>{ role="Satınalma"; tab="ret"; render(); });
@@ -45,7 +48,7 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
     role="Anbar"; tab="orders"; osec="hamisi"; oq=""; render(); const all = document.querySelector('[data-osec="hamisi"]').innerText;
     return { del, kf, all, hasClosed: document.querySelector('#main').innerText.includes("#"+O.id) }; });
   console.log(JSON.stringify(r,null,1));
-  const ok = r.created.st==="open" && /Satınalma/.test(r.created.alert) && r.spMine===1 && r.dated.st==="dated" && r.returned==="repl" && r.done.st==="done" && r.done.html && r.late &&
+  const ok = r.two && r.created.st==="open" && /Satınalma/.test(r.created.alert) && r.spMine===1 && r.dated.st==="dated" && r.returned==="repl" && r.done.st==="done" && r.done.html && r.late &&
     r.recv.status==="bagli" && r.recv.miss===0 && r.recv.rt.length===1 && /^repl/.test(r.recv.rt[0]) && !r.perm.del && r.perm.kf && r.perm.hasClosed;
   if (!ok) errs.push("v92 failed");
   console.log('JS', errs); await br.close();

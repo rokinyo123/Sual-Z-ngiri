@@ -16,12 +16,12 @@ const HELPER = eval('(' + fs.readFileSync(path.join(__dirname,'helper.txt'),'utf
   r.deleted = await p.evaluate(()=>!S.orders.some(o=>o.id===O.id) || !!(S.orders.find(o=>o.id===O.id)||{}).deleted);
   // returns + acts deletable by Admin
   await p.evaluate(()=>{ rtNew({ wh:"Anbar", product:"Ovaleks", firm:"X", qty:"5 kq", why:"", repl:false }); tab="ret"; render(); });
-  await p.click('[data-rtdel]'); await p.waitForTimeout(100);
+  await p.evaluate(()=>{ rtList().forEach(x=>rtOpen.add(x.id)); render(); }); await p.click('[data-rtdel]'); await p.waitForTimeout(100);
   r.rt = await p.evaluate(()=>rtList().length);
   await p.evaluate(()=>{ (S.qas=S.qas||[]).push({ id:"q1", kind:"ncr", product:"Kakao", ptype:"Digər", desc:"x", sev:"mid", wh:"Anbar", by:"Keyfiyyət", at:new Date().toISOString(), status:"open" }); tab="qa"; render(); });
   await p.click('[data-qadel="q1"]'); await p.waitForTimeout(100);
   r.qa = await p.evaluate(()=>qaList().length);
-  r.notAdmin = await p.evaluate(()=>{ role="Anbar"; tab="ret"; rtNew({ wh:"Anbar", product:"A", firm:"X", qty:"1", why:"", repl:false }); render(); return !document.querySelector('[data-rtdel]'); });
+  r.notAdmin = await p.evaluate(()=>{ role="Anbar"; tab="ret"; const y = rtNew({ wh:"Anbar", product:"A", firm:"X", qty:"1", why:"", repl:false }); rtOpen.add(y.id); render(); return !document.querySelector('[data-rtdel]'); });
   console.log(JSON.stringify(r));
   if (!r.btn || !r.deleted || r.rt!==0 || r.qa!==0 || !r.notAdmin) errs.push("admin delete failed");
   console.log('JS', errs); await br.close();
